@@ -1,0 +1,94 @@
+task run
+  describe PhoenixGuard pipeline: setup -> build -> package-esp -> verify -> virtual tests
+  shell ./pf.py build-setup build-build build-package-esp
+  shell ./pf.py verify-esp-robust
+  shell ./pf.py test-virtual
+end
+
+task secure-pipeline
+  describe PhoenixGuard secure pipeline: setup -> build -> enroll -> verify -> secure tests
+  shell ./pf.py build-setup build-build secure-package-esp-enroll secure-enroll-secureboot build-package-esp
+  shell ./pf.py verify-esp-robust
+  shell ./pf.py test-qemu-secure-positive test-qemu-secure-strict
+end
+
+task verify
+  describe Run validation (validate-all + verify-esp-robust)
+  shell ./pf.py validate-all
+  shell ./pf.py verify-esp-robust
+end
+
+# --- Convenience Secure/MOK flows & aliases ---
+
+task mok-keys
+  describe Show MOK keys: status, verify, find enrolled, inventory
+  shell ./pf.py secure-mok-status secure-mok-verify secure-mok-find-enrolled secure-mok-inventory
+end
+
+task enroll-mok
+  describe Enroll PhoenixGuard MOK certificate (uses MOK_CERT_* env)
+  shell ./pf.py secure-enroll-mok
+end
+
+task mok-flow
+  describe Full MOK workflow: status -> verify -> find -> inventory; then enroll if needed
+  shell ./pf.py secure-mok-status secure-mok-verify secure-mok-find-enrolled secure-mok-inventory
+  shell echo "If enrollment is desired: ./pf.py enroll-mok"
+end
+
+task secure-on
+  describe Enable Secure Boot in OVMF UI
+  shell ./pf.py secure-qemu-run-secure-ui
+end
+
+task secure-flow
+  describe Secure Boot flow: keygen -> make-auth -> package enroll ESP -> enroll in OVMF
+  shell ./pf.py secure-keygen secure-make-auth secure-package-esp-enroll secure-enroll-secureboot
+end
+
+task keygen
+  describe Alias for secure-keygen
+  shell ./pf.py secure-keygen
+end
+
+task secure-enroll
+  describe Alias: enroll Secure Boot keys in OVMF
+  shell ./pf.py secure-enroll-secureboot
+end
+
+task esp
+  describe Convenience: build + package ESP
+  shell ./pf.py build-build build-package-esp
+end
+
+task usb-flow
+  describe USB flow: build -> package -> verify -> organize USB (writing optional)
+  shell ./pf.py build-build build-package-esp
+  shell ./pf.py verify-esp-robust
+  shell ./pf.py organize-media
+end
+
+task cleanup
+  describe Cleanup build artifacts (DEEP_CLEAN=1 for full ESP clean)
+  shell ./pf.py maint-clean
+end
+
+# Release convenience flow
+# Usage: TAG=vX.Y.Z [ASSETS="path1 path2" NAME="Release name" NOTES="..." ] ./pf.py release-flow
+# Requires gh auth or GH_TOKEN for upload.
+# Note: assets should already exist; flow does not build them.
+task release-flow
+  describe Release flow: Create/update GitHub release using TAG/ASSETS/NAME/NOTES
+  shell bash -lc '[ -n "${TAG:-}" ] || { echo "Set TAG=vX.Y.Z and optionally ASSETS=\"path1 path2\" NAME=... NOTES=..."; exit 1; }'
+  shell ./pf.py build-release-create
+end
+
+# Guarded USB writer flow (DESTRUCTIVE)
+# Requires USB1_DEV or USB_DEVICE and explicit confirmation via CONFIRM=1 or USB_DEVICE_CONFIRM=I_UNDERSTAND/YES
+task usb-write-flow
+  describe DESTRUCTIVE: Write ESP image to USB (requires USB1_DEV or USB_DEVICE and confirmation)
+  shell bash -lc 'DEV=${USB1_DEV:-${USB_DEVICE:-}}; [ -n "$DEV" ] || { echo "Set USB1_DEV=/dev/sdX (or USB_DEVICE)"; exit 1; }'
+  shell bash -lc '[ "${CONFIRM:-0}" = "1" ] || { case "${USB_DEVICE_CONFIRM:-}" in I_UNDERSTAND|YES) ;; *) echo "Set CONFIRM=1 or USB_DEVICE_CONFIRM=I_UNDERSTAND"; exit 1;; esac }'
+  shell bash -lc '[ -f out/esp/esp.img ] || echo "INFO: ESP image not found; build first with ./pf.py esp"'
+  shell ./pf.py usb-media-write
+end

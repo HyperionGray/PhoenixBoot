@@ -1,0 +1,44 @@
+Build/
+.DS_Store
+*_extdep/
+*.pyc
+__pycache__/
+tags/
+.vscode/
+.venv/
+PROJECT.txt
+AUTOMATION.txt
+
+# Production-first hygiene additions
+# Build artifacts and outputs
+out/
+
+# Object/library artifacts
+utils/*.o
+utils/*.a
+utils/*.so
+
+# Virtual environments anywhere in the tree
+**/.venv/
+**/venv/
+
+# Large vendor/artifact directories
+isos/
+nuclear-cd-build/iso/
+nuclear-cd-build/iso/recovery/drivers/
+BIOS_Samples/
+
+# Safety net: ignore ISO files anywhere
+*.iso
+
+# Build dir (generated artifacts)
+build/
+
+# Large demo archives
+examples_and_samples/demo/**/*.tar.gz
+
+# Session/process leftovers
+# Prevent accidental inclusion of nohup outputs anywhere in the tree
+nohup.out
+nohup.out*
+nohup*.out

@@ -43,7 +43,11 @@ if [ -z "${EDK_TOOLS_PATH:-}" ]; then
         # Initialize submodules
         git submodule update --init --depth=1 || true
         # Build BaseTools if missing
-        make -C BaseTools -j"${NPROC:-$(nproc 2>/dev/null || echo 2)}" || make -C BaseTools
+        NPROC="${NPROC:-$(nproc 2>/dev/null || echo 2)}"
+        if ! make -C BaseTools -j"$NPROC"; then
+            echo "Parallel build failed, trying sequential build..."
+            make -C BaseTools
+        fi
         # Ensure Python is set for edksetup.sh
         export PYTHON_COMMAND=${PYTHON_COMMAND:-python3}
         # Temporarily relax 'set -u' for edksetup.sh

@@ -9,6 +9,7 @@
 #include <efilib.h>
 
 #define UUEFI_VERSION L"1.0.0-gnuefi"
+#define MAX_BOOT_ENTRIES 10
 
 EFI_STATUS
 EFIAPI
@@ -152,7 +153,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
             if (!EFI_ERROR(Status)) {
                 UINTN Count = Size / sizeof(UINT16);
                 Print(L"Boot Order: ");
-                for (UINTN i = 0; i < Count && i < 10; i++) {
+                for (UINTN i = 0; i < Count && i < MAX_BOOT_ENTRIES; i++) {
                     Print(L"%04x ", BootOrder[i]);
                 }
                 Print(L"\n");

@@ -1,0 +1,37 @@
+## @file
+#  UUEFI - Universal UEFI Diagnostic Application
+#
+#  A simple UEFI application that displays system information
+#  and provides a diagnostic interface for PhoenixGuard.
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = UUEFI
+  FILE_GUID                      = 12345678-1234-5678-1234-567812345678
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = UefiMain
+
+[Sources]
+  UUEFI.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  UefiApplicationEntryPoint
+  UefiLib
+  UefiBootServicesTableLib
+  UefiRuntimeServicesTableLib
+  MemoryAllocationLib
+  BaseMemoryLib
+  PrintLib
+
+[Protocols]
+  gEfiSimpleFileSystemProtocolGuid
+  gEfiLoadedImageProtocolGuid
+
+[Guids]
+  gEfiFileInfoGuid
+  gEfiGlobalVariableGuid

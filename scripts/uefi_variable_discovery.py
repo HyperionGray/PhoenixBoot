@@ -45,14 +45,14 @@ class UEFIVariableDiscovery:
     
     def discover_all_variables(self) -> Dict:
         """Discover and categorize all EFI variables"""
-        print("🔍 Discovering ALL UEFI variables...")
+        print("☠ Discovering ALL UEFI variables...")
         
         if not self.efi_vars_path.exists():
-            print("❌ EFI variables not accessible - need UEFI system")
+            print("☠ EFI variables not accessible - need UEFI system")
             return {}
         
         var_files = list(self.efi_vars_path.glob("*"))
-        print(f"📊 Found {len(var_files)} EFI variables")
+        print(f"☠ Found {len(var_files)} EFI variables")
         
         for var_file in var_files:
             try:
@@ -61,7 +61,7 @@ class UEFIVariableDiscovery:
                     self.variables[var_info['name']] = var_info
                     self._categorize_variable(var_info)
             except Exception as e:
-                print(f"⚠️  Failed to parse {var_file.name}: {e}")
+                print(f"☠  Failed to parse {var_file.name}: {e}")
         
         return self.variables
     
@@ -156,7 +156,7 @@ class UEFIVariableDiscovery:
     
     def analyze_asus_variables(self):
         """Deep analysis of ASUS-specific variables"""
-        print("\n🎯 ANALYZING ASUS-SPECIFIC VARIABLES:")
+        print("\n☠ ANALYZING ASUS-SPECIFIC VARIABLES:")
         print("=" * 50)
         
         asus_vars = self.categories.get('asus_specific', [])
@@ -165,7 +165,7 @@ class UEFIVariableDiscovery:
             return
             
         for var in asus_vars:
-            print(f"\n📱 {var['name']}")
+            print(f"\n☠ {var['name']}")
             print(f"   GUID: {var['guid']}")
             print(f"   Size: {var['size']} bytes")
             
@@ -216,7 +216,7 @@ class UEFIVariableDiscovery:
     
     def build_hardware_profile(self):
         """Build complete hardware configuration profile"""
-        print("\n🚀 BUILDING COMPLETE G615LP HARDWARE PROFILE:")
+        print("\n☠ BUILDING COMPLETE G615LP HARDWARE PROFILE:")
         print("=" * 60)
         
         self.hardware_profile['total_variables'] = len(self.variables)
@@ -257,7 +257,7 @@ class UEFIVariableDiscovery:
     
     def generate_universal_config_template(self):
         """Generate template for universal BIOS config"""
-        print("\n🎯 GENERATING UNIVERSAL CONFIG TEMPLATE:")
+        print("\n☠ GENERATING UNIVERSAL CONFIG TEMPLATE:")
         print("=" * 50)
         
         template = {
@@ -315,11 +315,11 @@ class UEFIVariableDiscovery:
         with open(output_path, 'w') as f:
             json.dump(results, f, indent=2)
         
-        print(f"\n✅ Complete discovery results saved to: {output_path}")
+        print(f"\n☠ Complete discovery results saved to: {output_path}")
         return output_path
 
 def main():
-    print("🔥 PHOENIXGUARD UEFI VARIABLE DISCOVERY ENGINE")
+    print("☠ PHOENIXGUARD UEFI VARIABLE DISCOVERY ENGINE")
     print("=" * 60)
     print("Goal: 100% hardware support by discovering EVERY variable!")
     print()
@@ -336,18 +336,18 @@ def main():
     profile = discovery.build_hardware_profile()
     
     # Step 4: Show summary
-    print(f"\n🎯 DISCOVERY SUMMARY FOR {profile['hardware_id']}:")
+    print(f"\n☠ DISCOVERY SUMMARY FOR {profile['hardware_id']}:")
     print("=" * 60)
-    print(f"📊 Total Variables: {profile['total_variables']}")
-    print(f"📱 ASUS Variables: {profile['categories'].get('asus_specific', 0)}")
-    print(f"🔧 Setup Variables: {profile['categories'].get('setup_config', 0)}")  
-    print(f"⚡ Performance Variables: {profile['categories'].get('performance', 0)}")
-    print(f"🌡️ Thermal Variables: {profile['categories'].get('thermal_power', 0)}")
+    print(f"☠ Total Variables: {profile['total_variables']}")
+    print(f"☠ ASUS Variables: {profile['categories'].get('asus_specific', 0)}")
+    print(f"☠ Setup Variables: {profile['categories'].get('setup_config', 0)}")  
+    print(f"☠ Performance Variables: {profile['categories'].get('performance', 0)}")
+    print(f"☠ Thermal Variables: {profile['categories'].get('thermal_power', 0)}")
     
     # Step 5: Save results
     output_file = discovery.save_discovery_results()
     
-    print(f"\n🚀 NEXT STEPS:")
+    print(f"\n☠ NEXT STEPS:")
     print("=" * 30)
     print("1. Analyze the generated profile")
     print("2. Test variable modifications safely")  

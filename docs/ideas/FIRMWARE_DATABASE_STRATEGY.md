@@ -1,10 +1,10 @@
-# 🗄️ PhoenixGuard Firmware Database Strategy
+# ☠ PhoenixGuard Firmware Database Strategy
 
 ## Overview
 
 PhoenixGuard needs a comprehensive database of **known-clean firmware images** to enable effective bootkit detection and recovery. This document outlines a strategy for automatically discovering, collecting, and verifying firmware from multiple sources.
 
-## 🎯 Database Architecture
+## ☠ Database Architecture
 
 ### Core Schema
 ```sql
@@ -63,7 +63,7 @@ CREATE INDEX idx_firmware_sha256 ON firmware_images(sha256);
 CREATE INDEX idx_hardware_device ON hardware_mappings(device_id, subsystem_id);
 ```
 
-## 🕷️ Automated Collection System
+## ☠ Automated Collection System
 
 ### Multi-Source Spider Architecture
 ```python
@@ -124,7 +124,7 @@ class FirmwareSpider:
         """Main discovery method - searches all configured sources"""
         candidates = []
         
-        self.logger.info("🕷️ Starting firmware discovery...")
+        self.logger.info("☠ Starting firmware discovery...")
         
         # Vendor official sites
         candidates.extend(await self.discover_asus_firmware())
@@ -147,7 +147,7 @@ class FirmwareSpider:
         candidates.extend(await self.discover_github_repos())
         candidates.extend(await self.discover_firmware_dumps())
         
-        self.logger.info(f"📊 Discovered {len(candidates)} firmware candidates")
+        self.logger.info(f"☠ Discovered {len(candidates)} firmware candidates")
         return candidates
 
     async def discover_asus_firmware(self) -> List[FirmwareCandidate]:
@@ -243,7 +243,7 @@ class FirmwareSpider:
         download_path = self.download_dir / f"{safe_name}.bin"
         
         try:
-            self.logger.info(f"⬇️ Downloading {candidate.vendor} {candidate.model} {candidate.version}")
+            self.logger.info(f"☠ Downloading {candidate.vendor} {candidate.model} {candidate.version}")
             
             async with self.session.get(candidate.url) as resp:
                 if resp.status != 200:
@@ -397,7 +397,7 @@ class FirmwareSpider:
                 # Rate limiting - be nice to servers
                 await asyncio.sleep(1)
             
-            self.logger.info(f"✅ Discovery complete: {successful_downloads}/{len(candidates)} successful downloads")
+            self.logger.info(f"☠ Discovery complete: {successful_downloads}/{len(candidates)} successful downloads")
 
 # Usage example
 async def main():
@@ -408,7 +408,7 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## 🔍 Verification and Validation System
+## ☠ Verification and Validation System
 
 ### Multi-Layer Verification
 ```python
@@ -637,7 +637,7 @@ class FirmwareDatabaseManager:
         return [dict(zip([col[0] for col in cursor.description], row)) for row in results]
 ```
 
-## 🚀 Deployment Strategy
+## ☠ Deployment Strategy
 
 ### Containerized Database Service
 ```dockerfile

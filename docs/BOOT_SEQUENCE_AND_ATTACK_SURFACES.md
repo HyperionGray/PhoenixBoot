@@ -1,111 +1,111 @@
-# 🚀 Boot Sequence Deep Dive: Where Bootkits Hide
+# ☠ Boot Sequence Deep Dive: Where Bootkits Hide
 
 ## Overview
 
 Understanding the complete x86 boot sequence is crucial for PhoenixGuard because **bootkits hide at every stage**. This guide explains the boot process from power-on to OS handoff, highlighting exactly where sophisticated malware establishes persistence.
 
-## 🔋 Complete x86 Boot Sequence
+## ☠ Complete x86 Boot Sequence
 
 ```
 POWER ON
     ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    1. HARDWARE RESET                           │
-│  • CPU starts in Real Mode (16-bit)                            │
-│  • Executes reset vector at 0xFFFFFFF0                         │
-│  • Initializes basic CPU state                                 │
-│  • Bootkit Attack: Microcode modification                      │
-└─────────────────────────────────────────────────────────────────┘
+☠
+☠                    1. HARDWARE RESET                           ☠
+☠  • CPU starts in Real Mode (16-bit)                            ☠
+☠  • Executes reset vector at 0xFFFFFFF0                         ☠
+☠  • Initializes basic CPU state                                 ☠
+☠  • Bootkit Attack: Microcode modification                      ☠
+☠
     ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    2. SEC (Security Phase)                     │
-│  • First executable code from SPI flash                        │
-│  • CPU cache-as-RAM (CAR) initialization                       │
-│  • Find and verify PEI core                                    │
-│  • Bootkit Attack: SEC module replacement, CAR manipulation    │
-└─────────────────────────────────────────────────────────────────┘
+☠
+☠                    2. SEC (Security Phase)                     ☠
+☠  • First executable code from SPI flash                        ☠
+☠  • CPU cache-as-RAM (CAR) initialization                       ☠
+☠  • Find and verify PEI core                                    ☠
+☠  • Bootkit Attack: SEC module replacement, CAR manipulation    ☠
+☠
     ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    3. PEI (Pre-EFI Initialization)             │
-│  • Memory initialization and sizing                            │
-│  • CPU, chipset, and platform initialization                  │
-│  • Locate DXE core in firmware volumes                         │
-│  • Bootkit Attack: PEI module hooks, memory layout attacks     │
-└─────────────────────────────────────────────────────────────────┘
+☠
+☠                    3. PEI (Pre-EFI Initialization)             ☠
+☠  • Memory initialization and sizing                            ☠
+☠  • CPU, chipset, and platform initialization                  ☠
+☠  • Locate DXE core in firmware volumes                         ☠
+☠  • Bootkit Attack: PEI module hooks, memory layout attacks     ☠
+☠
     ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    4. DXE (Driver Execution Environment)       │
-│  • Full 32/64-bit protected mode                               │
-│  • Load and execute UEFI drivers                               │
-│  • Initialize hardware devices                                 │
-│  • Establish UEFI protocol database                            │
-│  • Bootkit Attack: Driver replacement, protocol hijacking      │
-└─────────────────────────────────────────────────────────────────┘
+☠
+☠                    4. DXE (Driver Execution Environment)       ☠
+☠  • Full 32/64-bit protected mode                               ☠
+☠  • Load and execute UEFI drivers                               ☠
+☠  • Initialize hardware devices                                 ☠
+☠  • Establish UEFI protocol database                            ☠
+☠  • Bootkit Attack: Driver replacement, protocol hijacking      ☠
+☠
     ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    5. BDS (Boot Device Selection)              │
-│  • Enumerate boot devices                                      │
-│  • Process boot variables (BootOrder, Boot####)                │
-│  • Load and execute boot applications                          │
-│  • Bootkit Attack: Boot variable manipulation, loader hijack   │
-└─────────────────────────────────────────────────────────────────┘
+☠
+☠                    5. BDS (Boot Device Selection)              ☠
+☠  • Enumerate boot devices                                      ☠
+☠  • Process boot variables (BootOrder, Boot####)                ☠
+☠  • Load and execute boot applications                          ☠
+☠  • Bootkit Attack: Boot variable manipulation, loader hijack   ☠
+☠
     ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    6. TSL (Transient System Load)              │
-│  • Load OS bootloader (grub, Windows Boot Manager)             │
-│  • Execute ExitBootServices()                                  │
-│  • Transfer control to OS                                      │
-│  • Bootkit Attack: Bootloader modification, ExitBootServices   │
-└─────────────────────────────────────────────────────────────────┘
+☠
+☠                    6. TSL (Transient System Load)              ☠
+☠  • Load OS bootloader (grub, Windows Boot Manager)             ☠
+☠  • Execute ExitBootServices()                                  ☠
+☠  • Transfer control to OS                                      ☠
+☠  • Bootkit Attack: Bootloader modification, ExitBootServices   ☠
+☠
     ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    7. RT (Runtime)                             │
-│  • OS takes control                                            │
-│  • UEFI Runtime Services available                             │
-│  • SMM continues running                                       │
-│  • Bootkit Attack: SMM rootkits, runtime service hooks         │
-└─────────────────────────────────────────────────────────────────┘
+☠
+☠                    7. RT (Runtime)                             ☠
+☠  • OS takes control                                            ☠
+☠  • UEFI Runtime Services available                             ☠
+☠  • SMM continues running                                       ☠
+☠  • Bootkit Attack: SMM rootkits, runtime service hooks         ☠
+☠
     ↓
   OS BOOT
 ```
 
-## 🎯 Critical Boot Attack Surfaces
+## ☠ Critical Boot Attack Surfaces
 
 ### 1. **SPI Flash Layout - The Foundation**
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    SPI FLASH CHIP (16MB typical)               │
-├─────────────────────────────────────────────────────────────────┤
-│ 0x00000000 │ Flash Descriptor  (4KB)    │ Layout metadata      │
-│            │ ⚠️ BOOTKIT TARGET          │ Control access       │
-├─────────────────────────────────────────────────────────────────┤
-│ 0x00001000 │ Intel ME Region   (7MB)    │ Management Engine    │
-│            │ 🚨 HIGH-VALUE TARGET       │ Ring -3 execution    │
-├─────────────────────────────────────────────────────────────────┤
-│ 0x00800000 │ BIOS Region       (8MB)    │ UEFI Firmware        │
-│            │ 🎯 PRIME BOOTKIT TARGET    │ All boot code        │
-│            │                            │                      │
-│            │ ┌─────────────────────────┐ │                      │
-│            │ │ SEC Modules             │ │ First executed       │
-│            │ │ 🔥 BOOTKIT FAVORITE     │ │                      │
-│            │ ├─────────────────────────┤ │                      │
-│            │ │ PEI Modules             │ │ Memory initialization│
-│            │ │ 🎯 Memory layout attack │ │                      │
-│            │ ├─────────────────────────┤ │                      │
-│            │ │ DXE Drivers             │ │ Device initialization│
-│            │ │ ⚠️ Protocol hijacking   │ │                      │
-│            │ ├─────────────────────────┤ │                      │
-│            │ │ UEFI Variables          │ │ Boot configuration   │
-│            │ │ 🚨 Boot order attacks   │ │                      │
-│            │ ├─────────────────────────┤ │                      │
-│            │ │ SMM Modules             │ │ Ring -2 execution    │
-│            │ │ 💀 ULTIMATE TARGET      │ │ OS-invisible         │
-│            │ └─────────────────────────┘ │                      │
-├─────────────────────────────────────────────────────────────────┤
-│ 0x01000000 │ Microcode Updates (1MB)    │ CPU instructions     │
-│            │ 💀 MOST DANGEROUS TARGET   │ Control CPU behavior │
-└─────────────────────────────────────────────────────────────────┘
+☠
+☠                    SPI FLASH CHIP (16MB typical)               ☠
+☠
+☠ 0x00000000 ☠ Flash Descriptor  (4KB)    ☠ Layout metadata      ☠
+☠            ☠ ☠ BOOTKIT TARGET          ☠ Control access       ☠
+☠
+☠ 0x00001000 ☠ Intel ME Region   (7MB)    ☠ Management Engine    ☠
+☠            ☠ ☠ HIGH-VALUE TARGET       ☠ Ring -3 execution    ☠
+☠
+☠ 0x00800000 ☠ BIOS Region       (8MB)    ☠ UEFI Firmware        ☠
+☠            ☠ ☠ PRIME BOOTKIT TARGET    ☠ All boot code        ☠
+☠            ☠                            ☠                      ☠
+☠            ☠ ☠ ☠                      ☠
+☠            ☠ ☠ SEC Modules             ☠ ☠ First executed       ☠
+☠            ☠ ☠ ☠ BOOTKIT FAVORITE     ☠ ☠                      ☠
+☠            ☠ ☠ ☠                      ☠
+☠            ☠ ☠ PEI Modules             ☠ ☠ Memory initialization☠
+☠            ☠ ☠ ☠ Memory layout attack ☠ ☠                      ☠
+☠            ☠ ☠ ☠                      ☠
+☠            ☠ ☠ DXE Drivers             ☠ ☠ Device initialization☠
+☠            ☠ ☠ ☠ Protocol hijacking   ☠ ☠                      ☠
+☠            ☠ ☠ ☠                      ☠
+☠            ☠ ☠ UEFI Variables          ☠ ☠ Boot configuration   ☠
+☠            ☠ ☠ ☠ Boot order attacks   ☠ ☠                      ☠
+☠            ☠ ☠ ☠                      ☠
+☠            ☠ ☠ SMM Modules             ☠ ☠ Ring -2 execution    ☠
+☠            ☠ ☠ ☠ ULTIMATE TARGET      ☠ ☠ OS-invisible         ☠
+☠            ☠ ☠ ☠                      ☠
+☠
+☠ 0x01000000 ☠ Microcode Updates (1MB)    ☠ CPU instructions     ☠
+☠            ☠ ☠ MOST DANGEROUS TARGET   ☠ Control CPU behavior ☠
+☠
 ```
 
 ### 2. **Bootkit Persistence Locations**
@@ -176,7 +176,7 @@ POWER ON
 // Known runtime bootkits: ESPecter, MosaicRegressor
 ```
 
-## 🔍 PhoenixGuard Detection Points
+## ☠ PhoenixGuard Detection Points
 
 ### SEC Phase Detection
 ```c
@@ -235,7 +235,7 @@ EFI_STATUS RFKillaValidateDxePhase() {
 }
 ```
 
-## 🚨 Advanced Bootkit Techniques
+## ☠ Advanced Bootkit Techniques
 
 ### 1. **Switcheroo Attacks**
 ```
@@ -256,7 +256,7 @@ EFI_STATUS ValidateMicrocode() {
     UINT64 ExpectedSignature = GetExpectedMicrocodeSignature();
     
     if (CurrentSignature != ExpectedSignature) {
-        DEBUG((DEBUG_ERROR, "🚨 MICROCODE TAMPERING DETECTED!\n"));
+        DEBUG((DEBUG_ERROR, "☠ MICROCODE TAMPERING DETECTED!\n"));
         DEBUG((DEBUG_ERROR, "Expected: 0x%016lx, Found: 0x%016lx\n", 
                ExpectedSignature, CurrentSignature));
         return EFI_CRC_ERROR;
@@ -279,7 +279,7 @@ EFI_STATUS ValidateFlashDescriptor() {
     
     // Check descriptor signature
     if (Descriptor->Signature != FLASH_DESCRIPTOR_SIGNATURE) {
-        DEBUG((DEBUG_ERROR, "🚨 FLASH DESCRIPTOR CORRUPTED!\n"));
+        DEBUG((DEBUG_ERROR, "☠ FLASH DESCRIPTOR CORRUPTED!\n"));
         return EFI_CRC_ERROR;
     }
     
@@ -290,7 +290,7 @@ EFI_STATUS ValidateFlashDescriptor() {
 }
 ```
 
-## 🛡️ PhoenixGuard Protection Strategy
+## ☠ PhoenixGuard Protection Strategy
 
 ### Multi-Phase Validation
 ```c
@@ -329,7 +329,7 @@ typedef enum {
 } RECOVERY_TRIGGER_TYPE;
 
 EFI_STATUS TriggerPhoenixGuardRecovery(RECOVERY_TRIGGER_TYPE TriggerType) {
-    DEBUG((DEBUG_ERROR, "🔥 PhoenixGuard Recovery Triggered: %d\n", TriggerType));
+    DEBUG((DEBUG_ERROR, "☠ PhoenixGuard Recovery Triggered: %d\n", TriggerType));
     
     // Log the compromise details
     LogCompromiseDetails(TriggerType);
@@ -348,7 +348,7 @@ EFI_STATUS TriggerPhoenixGuardRecovery(RECOVERY_TRIGGER_TYPE TriggerType) {
 }
 ```
 
-## 📊 Bootkit Detection Confidence Levels
+## ☠ Bootkit Detection Confidence Levels
 
 ### High Confidence (Immediate Recovery)
 - Microcode signature mismatch
@@ -368,7 +368,7 @@ EFI_STATUS TriggerPhoenixGuardRecovery(RECOVERY_TRIGGER_TYPE TriggerType) {
 - Unexpected hardware states
 - Suspicious API usage patterns
 
-## 🎯 Bootkit Families PhoenixGuard Protects Against
+## ☠ Bootkit Families PhoenixGuard Protects Against
 
 ### **Nation-State Level**
 - **MoonBounce** (SMM-based, extremely stealthy)

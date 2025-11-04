@@ -5,7 +5,7 @@ set -euo pipefail
 
 VENV_PY=${VENV_BIN:-/home/punk/.venv/bin}/python
 
-echo "🔐 MOK and Secure Boot Status"
+echo "☠ MOK and Secure Boot Status"
 echo "============================="
 
 echo

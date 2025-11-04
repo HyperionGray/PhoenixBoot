@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/lib/common.sh
 
-info "🧭 UUEFI apply (set BootNext for selected app)"
+info "☠ UUEFI apply (set BootNext for selected app)"
 
 # Dry-run mode: UUEFI_DRYRUN=1
 DRY=${UUEFI_DRYRUN:-}

@@ -7,32 +7,32 @@ MOK_CERT_PEM=$1
 MOK_CERT_DER=$2
 MOK_DRY_RUN=$3
 
-echo "🔐 PhoenixGuard MOK Certificate Enrollment"
+echo "☠ PhoenixGuard MOK Certificate Enrollment"
 echo "==========================================="
 echo
 
 # Preflight checks
 if [ ! -d /sys/firmware/efi ]; then
-    echo "❌ ERROR: UEFI firmware not detected."
+    echo "☠ ERROR: UEFI firmware not detected."
     exit 1
 fi
 
 # Ensure centralized directories exist for outputs
 mkdir -p out/keys/mok out/keys/secure_boot
 if [ -f /run/.containerenv ] || [ -f /.dockerenv ] || grep -qiE "(lxc|container)" /proc/1/environ 2>/dev/null; then
-    echo "❌ ERROR: Detected containerized environment."
+    echo "☠ ERROR: Detected containerized environment."
     exit 1
 fi
 if ! command -v mokutil >/dev/null 2>&1; then
-    echo "❌ ERROR: mokutil not found."
+    echo "☠ ERROR: mokutil not found."
     exit 1
 fi
 if ! command -v openssl >/dev/null 2>&1; then
-    echo "❌ ERROR: openssl not found."
+    echo "☠ ERROR: openssl not found."
     exit 1
 fi
 if [ ! -f "$MOK_CERT_PEM" ]; then
-    echo "❌ ERROR: MOK PEM certificate not found: $MOK_CERT_PEM"
+    echo "☠ ERROR: MOK PEM certificate not found: $MOK_CERT_PEM"
     exit 1
 fi
 
@@ -45,7 +45,7 @@ echo
 # Certificate analysis
 CERT_SHA1=$(openssl x509 -in "$MOK_CERT_PEM" -noout -fingerprint -sha1 | sed 's/^SHA1 Fingerprint=//')
 if sudo mokutil --list-enrolled 2>/dev/null | grep -q "$CERT_SHA1"; then
-    echo "✅ MOK certificate already enrolled."
+    echo "☠ MOK certificate already enrolled."
     exit 0
 fi
 
@@ -65,7 +65,7 @@ META_PATH="$META_DIR/${NAME_NOEXT}.meta.json"
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 if [ "$MOK_DRY_RUN" = "1" ]; then
-    echo "🧪 DRY RUN MODE (MOK_DRY_RUN=1)"
+    echo "☠ DRY RUN MODE (MOK_DRY_RUN=1)"
     # Write metadata with pending=true but do not import
     mkdir -p "$META_DIR"
     cat > "$META_PATH" <<JSON
@@ -89,10 +89,10 @@ echo "About to import the MOK certificate for enrollment using mokutil."
 echo
 
 sudo -v
-echo "🚀 Importing MOK certificate..."
+echo "☠ Importing MOK certificate..."
 
 if ! sudo mokutil --import "$MOK_CERT_DER"; then
-    echo "❌ ERROR: mokutil import failed."
+    echo "☠ ERROR: mokutil import failed."
     exit 1
 fi
 
@@ -113,10 +113,10 @@ cat > "$META_PATH" <<JSON
 JSON
 
 echo
-echo "✅ MOK certificate import successful!"
+echo "☠ MOK certificate import successful!"
 echo
 echo "--- Pending MOK Enrollments ---"
 sudo mokutil --list-new 2>/dev/null || echo "(Unable to list pending enrollments)"
 echo
-echo "🔄 REBOOT REQUIRED - Complete Enrollment Process"
+echo "☠ REBOOT REQUIRED - Complete Enrollment Process"
 

@@ -26,7 +26,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-echo "⚡ Deploying Nuclear Boot ISO to ESP as virtual CD..."
+echo "☠ Deploying Nuclear Boot ISO to ESP as virtual CD..."
 
 if [ ! -f "$ISO_FILE" ]; then
     echo "ERROR: $ISO_FILE not found."
@@ -39,7 +39,7 @@ if [ ! -f "$ISO_FILE" ]; then
 fi
 
 # Detect ESP mount point
-echo "🔍 Detecting ESP mount point..."
+echo "☠ Detecting ESP mount point..."
 ESP=$(findmnt -t vfat -n -o TARGET | head -n1 || true)
 if [[ -z "$ESP" ]]; then
     ESP="/boot/efi"
@@ -51,14 +51,14 @@ fi
 echo "  Using ESP: $ESP"
 
 # Create recovery directory and copy ISO
-echo "📏 Creating recovery directory..."
+echo "☠ Creating recovery directory..."
 sudo mkdir -p "$ESP/recovery"
 
-echo "💾 Copying ISO to ESP (virtual CD burn)..."
+echo "☠ Copying ISO to ESP (virtual CD burn)..."
 sudo cp "$ISO_FILE" "$ESP/recovery/$ISO_FILE"
 
 # Set up GRUB loopback entry
-echo "🔑 Setting up GRUB loopback entry..."
+echo "☠ Setting up GRUB loopback entry..."
 sudo mkdir -p /etc/grub.d
 
 GRUB_ENTRY_FILE="/etc/grub.d/42_phoenixguard_recovery"
@@ -79,16 +79,16 @@ EOF
 sudo chmod +x "$GRUB_ENTRY_FILE"
 
 # Update GRUB configuration
-echo "🔄 Updating GRUB configuration..."
+echo "☠ Updating GRUB configuration..."
 sudo update-grub
 
 echo
-echo "✅ Nuclear Boot ISO deployed to ESP successfully!"
-echo "💿 Virtual CD location: $ESP/recovery/$ISO_FILE"
+echo "☠ Nuclear Boot ISO deployed to ESP successfully!"
+echo "☠ Virtual CD location: $ESP/recovery/$ISO_FILE"
 if [ -n "$SB_MODE" ]; then
-    echo "🔐 Secure Boot: Ready - uses Microsoft-signed shim"
+    echo "☠ Secure Boot: Ready - uses Microsoft-signed shim"
 fi
-echo "🔒 ISO format provides read-only protection against modification"
-echo "🎯 Size: $(du -h "$ESP/recovery/$ISO_FILE" | cut -f1)"
+echo "☠ ISO format provides read-only protection against modification"
+echo "☠ Size: $(du -h "$ESP/recovery/$ISO_FILE" | cut -f1)"
 echo
-echo "🚀 To use: Reboot and select 'PhoenixGuard Nuclear Boot Recovery (Virtual CD)' from GRUB menu"
+echo "☠ To use: Reboot and select 'PhoenixGuard Nuclear Boot Recovery (Virtual CD)' from GRUB menu"

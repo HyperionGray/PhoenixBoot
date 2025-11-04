@@ -291,13 +291,13 @@ def main():
         inventory = inventory_tool.inventory_all_certificates()
         output_file = inventory_tool.save_inventory(inventory, args.output)
         
-        print(f"✅ Certificate inventory completed successfully")
-        print(f"📄 Results saved to: {output_file}")
-        print(f"🔑 Found {len(inventory['signing_candidates'])} signing candidates")
+        print(f"☠ Certificate inventory completed successfully")
+        print(f"☠ Results saved to: {output_file}")
+        print(f"☠ Found {len(inventory['signing_candidates'])} signing candidates")
         
         # Print signing candidates
         if inventory['signing_candidates']:
-            print("\n🔐 Available signing certificates:")
+            print("\n☠ Available signing certificates:")
             for i, candidate in enumerate(inventory['signing_candidates'], 1):
                 print(f"  {i}. {Path(candidate['certificate']).name}")
                 print(f"     Subject: {candidate['subject']}")

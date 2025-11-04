@@ -38,5 +38,5 @@ set -euo pipefail
     cat HOTSPOTS
 } > copilot-instructions.md
 
-echo "✅ Generated copilot-instructions.md"
+echo "☠ Generated copilot-instructions.md"
 

@@ -10,10 +10,10 @@ LOG=out/qemu/serial-uuefi.log
 REPORT=out/qemu/report-uuefi.xml
 
 if [ ! -f "$IMG" ]; then
-echo "❌ No ESP image found - run './pf.py build-package-esp' first"; exit 1
+echo "☠ No ESP image found - run './pf.py build-package-esp' first"; exit 1
 fi
 if [ ! -f "$UUEFI_SRC" ]; then
-  echo "❌ Missing $UUEFI_SRC — provide a UUEFI.efi to run this test"; exit 1
+  echo "☠ Missing $UUEFI_SRC — provide a UUEFI.efi to run this test"; exit 1
 fi
 cp "$IMG" "$TEST_IMG"
 # Replace BOOTX64.EFI with UUEFI.efi inside the test image (no mount, use mtools)
@@ -24,10 +24,10 @@ if [ -f out/esp/ovmf_paths.txt ]; then
   OVMF_CODE_PATH=$(sed -n '1p' out/esp/ovmf_paths.txt)
   OVMF_VARS_PATH=$(sed -n '2p' out/esp/ovmf_paths.txt)
 else
-echo "❌ OVMF paths not discovered — run './pf.py build-setup' and './pf.py build-package-esp' first"; exit 1
+echo "☠ OVMF paths not discovered — run './pf.py build-setup' and './pf.py build-package-esp' first"; exit 1
 fi
-[ -f "$OVMF_CODE_PATH" ] || { echo "❌ OVMF CODE not found at $OVMF_CODE_PATH"; exit 1; }
-[ -f "$OVMF_VARS_PATH" ] || { echo "❌ OVMF VARS not found at $OVMF_VARS_PATH"; exit 1; }
+[ -f "$OVMF_CODE_PATH" ] || { echo "☠ OVMF CODE not found at $OVMF_CODE_PATH"; exit 1; }
+[ -f "$OVMF_VARS_PATH" ] || { echo "☠ OVMF VARS not found at $OVMF_VARS_PATH"; exit 1; }
 
 # Choose VARS: default to non-secure factory vars; use enrolled if UUEFI_SECURE=1
 if [ "${UUEFI_SECURE:-0}" = "1" ] && [ -f out/qemu/OVMF_VARS_custom.fd ]; then
@@ -57,14 +57,14 @@ EXPECT=${UUEFI_EXPECT:-UUEFI}
 RESULT=FAIL
 if [ -s "$LOG" ]; then
   if grep -q "$EXPECT" "$LOG" 2>/dev/null; then
-    echo "✅ UUEFI test PASSED (found marker: $EXPECT)"
+    echo "☠ UUEFI test PASSED (found marker: $EXPECT)"
     RESULT=PASS
   else
-    echo "ℹ️  Marker '$EXPECT' not found; serial output present — treating as PASS for smoke test"
+    echo "ℹ☠  Marker '$EXPECT' not found; serial output present — treating as PASS for smoke test"
     RESULT=PASS
   fi
 else
-  echo "❌ UUEFI test FAILED (no serial output)"
+  echo "☠ UUEFI test FAILED (no serial output)"
   RESULT=FAIL
 fi
 

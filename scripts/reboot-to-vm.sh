@@ -4,23 +4,23 @@
 
 set -e
 
-echo "🚨 WARNING: This will REBOOT your system into PhoenixGuard recovery mode!"
+echo "☠ WARNING: This will REBOOT your system into PhoenixGuard recovery mode!"
 echo "The system will reboot automatically in 10 seconds. Press Ctrl+C to cancel."
 sleep 10 || exit 0
 
-echo "🔧 Initiating PhoenixGuard Recovery VM staging..."
+echo "☠ Initiating PhoenixGuard Recovery VM staging..."
 
 # Run bootkit detection scan first
-echo "🎯 Running bootkit detection scan first..."
+echo "☠ Running bootkit detection scan first..."
 if [ -f firmware_baseline.json ]; then
-    python3 scripts/detect_bootkit.py --output bootkit_scan_prereboot.json || echo "⚠️  Bootkit scan failed, continuing..."
+    python3 scripts/detect_bootkit.py --output bootkit_scan_prereboot.json || echo "☠  Bootkit scan failed, continuing..."
 else
-    echo "⚠️  No firmware baseline found - creating from clean BIOS..."
+    echo "☠  No firmware baseline found - creating from clean BIOS..."
     if [ -f drivers/G615LPAS.325 ]; then
-        python3 scripts/analyze_firmware_baseline.py drivers/G615LPAS.325 -o firmware_baseline.json || echo "⚠️  Baseline creation failed"
-        python3 scripts/detect_bootkit.py --output bootkit_scan_prereboot.json || echo "⚠️  Bootkit scan failed"
+        python3 scripts/analyze_firmware_baseline.py drivers/G615LPAS.325 -o firmware_baseline.json || echo "☠  Baseline creation failed"
+        python3 scripts/detect_bootkit.py --output bootkit_scan_prereboot.json || echo "☠  Bootkit scan failed"
     else
-        echo "⚠️  Clean BIOS dump not found at drivers/G615LPAS.325"
+        echo "☠  Clean BIOS dump not found at drivers/G615LPAS.325"
     fi
 fi
 
@@ -69,7 +69,7 @@ echo "[kvm] Installing KVM snapshot jump configuration"
 ./scripts/install_kvm_snapshot_jump.sh \
     --esp "$ESP" --vmlinuz "$VMLINUZ" --initrd "$INITRD" --root-uuid "$ROOT_UUID" \
     --qcow2 "$QCOW2" --loadvm base-snapshot \
-    --gpu-bdf 0000:02:00.0 --gpu-ids 10de:2d58 || echo "⚠️  KVM config failed, continuing..."
+    --gpu-bdf 0000:02:00.0 --gpu-ids 10de:2d58 || echo "☠  KVM config failed, continuing..."
 
 # Configure UEFI boot entry
 echo "[uefi] Configuring UEFI boot entry for PhoenixGuard"
@@ -93,11 +93,11 @@ if [[ -n "$NEWNUM" ]]; then
 fi
 
 echo "[reboot] System will reboot to PhoenixGuard recovery in 5 seconds..."
-echo "✅ Staged: ESP at $ESP/EFI/PhoenixGuard/"
-echo "✅ Configured: UEFI boot entry $NEWNUM (set as BootNext)"
-echo "✅ Recovery VM: $QCOW2 ready to launch"
+echo "☠ Staged: ESP at $ESP/EFI/PhoenixGuard/"
+echo "☠ Configured: UEFI boot entry $NEWNUM (set as BootNext)"
+echo "☠ Recovery VM: $QCOW2 ready to launch"
 echo
-echo "🎯 After reboot:"
+echo "☠ After reboot:"
 echo "  1. PhoenixGuard menu will appear"
 echo "  2. Select 'KVM Snapshot Jump' to launch recovery VM"
 echo "  3. Use recovery VM to fix infected bootloaders safely"

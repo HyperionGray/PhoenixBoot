@@ -241,7 +241,7 @@ class BootkitHunter:
     
     def scan_for_bootkits(self):
         """Main bootkit detection scan"""
-        logging.info("🔍 Starting bootkit detection scan...")
+        logging.info("☠ Starting bootkit detection scan...")
         self.detection_results['scan_timestamp'] = datetime.utcnow().isoformat()
         
         # Read current firmware state
@@ -271,15 +271,15 @@ class BootkitHunter:
         """Print formatted detection results"""
         results = self.detection_results
         
-        print(f"\n🎯 PhoenixGuard Bootkit Detection Results")
+        print(f"\n☠ PhoenixGuard Bootkit Detection Results")
         print(f"{'='*50}")
         print(f"⏰ Scan Time: {results['scan_timestamp']}")
-        print(f"⚠️  Risk Level: {results['risk_level']}")
-        print(f"🎯 Action: {results['recommended_action']}")
+        print(f"☠  Risk Level: {results['risk_level']}")
+        print(f"☠ Action: {results['recommended_action']}")
         print()
         
         if results['threats_detected']:
-            print(f"🚨 THREATS DETECTED ({len(results['threats_detected'])}):")
+            print(f"☠ THREATS DETECTED ({len(results['threats_detected'])}):")
             for i, threat in enumerate(results['threats_detected'], 1):
                 print(f"  {i}. [{threat['severity']}] {threat['type']}")
                 print(f"     Details: {threat['details']}")
@@ -288,7 +288,7 @@ class BootkitHunter:
                 print()
         
         if results['modifications_found']:
-            print(f"🔧 MODIFICATIONS FOUND ({len(results['modifications_found'])}):")
+            print(f"☠ MODIFICATIONS FOUND ({len(results['modifications_found'])}):")
             for i, mod in enumerate(results['modifications_found'], 1):
                 print(f"  {i}. [{mod['severity']}] {mod['type']}")
                 print(f"     Details: {mod['details']}")
@@ -299,17 +299,17 @@ class BootkitHunter:
         # Action recommendations
         action = results['recommended_action']
         if action == 'IMMEDIATE_RECOVERY':
-            print("🚨 CRITICAL: Immediate recovery required!")
+            print("☠ CRITICAL: Immediate recovery required!")
             print("   Run: sudo make reboot-to-vm")
         elif action == 'RECOVERY_RECOMMENDED':
-            print("⚠️  HIGH RISK: Recovery strongly recommended")
+            print("☠  HIGH RISK: Recovery strongly recommended")
             print("   Run: sudo make reboot-to-vm")
         elif action == 'INVESTIGATE':
-            print("🔍 Medium risk: Further investigation needed")
+            print("☠ Medium risk: Further investigation needed")
         elif action == 'MONITOR':
-            print("👁️  Low risk: Continue monitoring")
+            print("☠  Low risk: Continue monitoring")
         else:
-            print("✅ System appears clean")
+            print("☠ System appears clean")
     
     def save_results(self, output_path):
         """Save detection results to file"""
@@ -343,13 +343,13 @@ def main():
     
     # Check if running as root (needed for firmware access)
     if os.geteuid() != 0:
-        print("⚠️  Warning: Not running as root. Some firmware checks may be limited.")
+        print("☠  Warning: Not running as root. Some firmware checks may be limited.")
         print("   For full detection capabilities, run: sudo python3 detect_bootkit.py")
     
     # Validate baseline file
     if not os.path.exists(args.baseline):
         logging.error(f"Baseline file not found: {args.baseline}")
-        print("💡 Create baseline first: python3 scripts/analyze_firmware_baseline.py drivers/G615LPAS.325")
+        print("☠ Create baseline first: python3 scripts/analyze_firmware_baseline.py drivers/G615LPAS.325")
         return 1
     
     # Create bootkit hunter and run scan
@@ -367,7 +367,7 @@ def main():
     
     # Auto-recovery if requested and critical threat detected
     if args.auto_recovery and hunter.detection_results['risk_level'] == 'CRITICAL':
-        print("\n🚨 AUTO-RECOVERY TRIGGERED!")
+        print("\n☠ AUTO-RECOVERY TRIGGERED!")
         print("Launching PhoenixGuard recovery in 10 seconds...")
         time.sleep(10)
         

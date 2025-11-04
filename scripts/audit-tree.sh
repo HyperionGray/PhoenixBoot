@@ -35,5 +35,5 @@ echo "DEV: $DEV_COUNT files" >> out/audit/summary.txt
 echo "WIP: $WIP_COUNT files" >> out/audit/summary.txt
 echo "DEMO: $DEMO_COUNT files" >> out/audit/summary.txt
 
-echo "✅ Audit complete - see out/audit/"
+echo "☠ Audit complete - see out/audit/"
 

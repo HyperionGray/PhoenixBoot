@@ -1,10 +1,10 @@
-# 🔥 PhoenixGuard - Production Firmware Defense System
+# ☠ PhoenixGuard - Production Firmware Defense System
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](out/qemu/report.xml)
 [![QEMU Boot Test](https://img.shields.io/badge/qemu--boot-validated-blue)](#qemu-boot-validation)
 [![Production Ready](https://img.shields.io/badge/production-ready-success)](#production-first-architecture)
 
-## 🚀 Production-First Quick Start
+## ☠ Production-First Quick Start
 
 **PhoenixGuard has been completely reorganized** around a production-first architecture with strict separation between production code and development/demo content.
 
@@ -31,25 +31,25 @@ just nuke progressive
 
 See docs/PROGRESSIVE_RECOVERY.md for the recovery ladder, safety gates, and rollback steps.
 
-### 🏗️ Production Directory Structure
+### ☠ Production Directory Structure
 ```
 PhoenixGuard/
-├── 🎯 staging/          # Production-ready code (ONLY source for builds)
-│   ├── src/            # Core UEFI applications (NuclearBootEdk2, KeyEnrollEdk2)
-│   ├── boot/           # Compiled EFI binaries
-│   ├── tools/          # Production build scripts
-│   └── include/        # Production headers
-├── 🔧 dev/             # Hardware development (isolated from production)
-├── 🚧 wip/             # Work-in-progress (excluded from builds)
-├── 🎭 demo/            # Demonstration content (completely quarantined)
-├── 📦 out/             # Build artifacts (strict staging/ sourcing)
-└── 📋 Justfile         # Production orchestrator (replaces Makefiles)
+☠ ☠ staging/          # Production-ready code (ONLY source for builds)
+☠   ☠ src/            # Core UEFI applications (NuclearBootEdk2, KeyEnrollEdk2)
+☠   ☠ boot/           # Compiled EFI binaries
+☠   ☠ tools/          # Production build scripts
+☠   ☠ include/        # Production headers
+☠ ☠ dev/             # Hardware development (isolated from production)
+☠ ☠ wip/             # Work-in-progress (excluded from builds)
+☠ ☠ demo/            # Demonstration content (completely quarantined)
+☠ ☠ out/             # Build artifacts (strict staging/ sourcing)
+☠ ☠ Justfile         # Production orchestrator (replaces Makefiles)
 ```
 
-### 🛡️ Zero-Contamination Policy
+### ☠ Zero-Contamination Policy
 **Production builds cannot access demo, wip, or dev content.** The build system validates this constraint and fails if any external dependencies are detected.
 
-### 🖥️ Real QEMU Boot Validation
+### ☠ Real QEMU Boot Validation
 The `just qemu-test` target performs actual UEFI boot testing:
 - **OVMF firmware** - Real UEFI environment
 - **Production ESP image** - Bootable FAT32 with BootX64.efi
@@ -59,7 +59,7 @@ The `just qemu-test` target performs actual UEFI boot testing:
 
 ## Quickstart: Hardware-Level Firmware Recovery
 
-### 🛠️ **Hardware Firmware Recovery**
+### ☠ **Hardware Firmware Recovery**
 
 PhoenixGuard includes a hardware-level firmware recovery system that can detect and bypass bootkit protections, extract SPI flash firmware, and perform clean firmware replacement.
 
@@ -88,7 +88,7 @@ sudo python3 scripts/hardware_firmware_recovery.py clean_firmware.bin
 - **Dom0 Firmware Audits**: Automatic firmware verification from Xen dom0 VMs
 - **Host-to-VM Communication**: SSH-based firmware recovery coordination
 
-### 🔐 **Clean GRUB Boot & Xen Snapshot Jump**
+### ☠ **Clean GRUB Boot & Xen Snapshot Jump**
 
 You can chainload a known-clean GRUB from NuclearBoot as an alternative to the Xen jump. This is useful when you want a simple, non‑hypervisor path while still avoiding a potentially compromised on‑disk bootloader.
 
@@ -150,22 +150,22 @@ As long as the OS is clean, firmware compromise becomes irrelevant for most atta
 
 ## Recovery Strategies
 
-### 🌐 **1. Network Recovery**
+### ☠ **1. Network Recovery**
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    NETWORK RECOVERY                        │
-├─────────────────────────────────────────────────────────────┤
-│  1. Download clean BIOS from trusted HTTPS server          │
-│  2. Verify cryptographic signature and integrity           │
-│  3. Flash clean firmware over compromised version          │
-│  4. Reboot with restored firmware                          │
-└─────────────────────────────────────────────────────────────┘
+☠
+☠                    NETWORK RECOVERY                        ☠
+☠
+☠  1. Download clean BIOS from trusted HTTPS server          ☠
+☠  2. Verify cryptographic signature and integrity           ☠
+☠  3. Flash clean firmware over compromised version          ☠
+☠  4. Reboot with restored firmware                          ☠
+☠
 
 Benefits:
-✅ Always up-to-date firmware
-✅ Centrally managed recovery images
-✅ Works even if local storage is compromised
-✅ Can be automated in corporate environments
+☠ Always up-to-date firmware
+☠ Centrally managed recovery images
+☠ Works even if local storage is compromised
+☠ Can be automated in corporate environments
 
 Use Cases:
 - Corporate environments with recovery servers
@@ -173,22 +173,22 @@ Use Cases:
 - Automatic security updates and recovery
 ```
 
-### 💿 **2. Physical Media Recovery**
+### ☠ **2. Physical Media Recovery**
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                  PHYSICAL MEDIA RECOVERY                   │
-├─────────────────────────────────────────────────────────────┤
-│  1. Detect write-protected CD/DVD/USB with clean firmware  │
-│  2. Verify media is truly write-protected                  │
-│  3. Load and verify clean firmware image                   │
-│  4. Flash firmware from trusted media                      │
-└─────────────────────────────────────────────────────────────┘
+☠
+☠                  PHYSICAL MEDIA RECOVERY                   ☠
+☠
+☠  1. Detect write-protected CD/DVD/USB with clean firmware  ☠
+☠  2. Verify media is truly write-protected                  ☠
+☠  3. Load and verify clean firmware image                   ☠
+☠  4. Flash firmware from trusted media                      ☠
+☠
 
 Benefits:
-✅ Air-gapped security (no network required)
-✅ Write-protection prevents media infection
-✅ Physical control over recovery process
-✅ Works even if network is compromised
+☠ Air-gapped security (no network required)
+☠ Write-protection prevents media infection
+☠ Physical control over recovery process
+☠ Works even if network is compromised
 
 Use Cases:
 - High-security environments
@@ -197,22 +197,22 @@ Use Cases:
 - Systems without network access
 ```
 
-### 🔒 **3. Embedded Backup Recovery**
+### ☠ **3. Embedded Backup Recovery**
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                  EMBEDDED BACKUP RECOVERY                  │
-├─────────────────────────────────────────────────────────────┤
-│  1. Use backup firmware stored in protected flash region   │
-│  2. Verify backup integrity with cryptographic hash        │
-│  3. Copy backup to main BIOS region                        │
-│  4. Reboot with restored firmware                          │
-└─────────────────────────────────────────────────────────────┘
+☠
+☠                  EMBEDDED BACKUP RECOVERY                  ☠
+☠
+☠  1. Use backup firmware stored in protected flash region   ☠
+☠  2. Verify backup integrity with cryptographic hash        ☠
+☠  3. Copy backup to main BIOS region                        ☠
+☠  4. Reboot with restored firmware                          ☠
+☠
 
 Benefits:
-✅ Always available (stored on-chip)
-✅ Fastest recovery method
-✅ No external dependencies
-✅ Protected flash region prevents corruption
+☠ Always available (stored on-chip)
+☠ Fastest recovery method
+☠ No external dependencies
+☠ Protected flash region prevents corruption
 
 Use Cases:
 - Systems with dual-BIOS support
@@ -231,19 +231,19 @@ PhoenixGuard's **Clean OS Boot Recovery** implements the philosophy that firmwar
 
 ```
 TRADITIONAL APPROACH:        PHOENIXGUARD APPROACH:
-┌─────────────────────┐     ┌─────────────────────┐
-│   Prevent Infection │     │   Embrace Infection │
-│         ↓           │     │         ↓           │
-│   ❌ Often Fails    │     │   🔄 Always Recover │
-│         ↓           │     │         ↓           │
-│   System Halts     │     │   Clean OS Boots    │
-│   (Availability ↓)  │     │   (Availability ↑)  │
-└─────────────────────┘     └─────────────────────┘
+☠     ☠
+☠   Prevent Infection ☠     ☠   Embrace Infection ☠
+☠         ↓           ☠     ☠         ↓           ☠
+☠   ☠ Often Fails    ☠     ☠   ☠ Always Recover ☠
+☠         ↓           ☠     ☠         ↓           ☠
+☠   System Halts     ☠     ☠   Clean OS Boots    ☠
+☠   (Availability ↓)  ☠     ☠   (Availability ↑)  ☠
+☠     ☠
 ```
 
 ### Clean OS Sources
 
-#### 🌐 **Network PXE Boot**
+#### ☠ **Network PXE Boot**
 ```yaml
 Source: Network PXE Server
 Priority: 100 (Highest)
@@ -255,7 +255,7 @@ Configuration:
   Protocol: TFTP (port 69) or HTTPS (port 443)
 ```
 
-#### 💿 **Read-Only Media Boot**
+#### ☠ **Read-Only Media Boot**
 ```yaml
 Source: CD/DVD/Write-Protected USB
 Priority: 90
@@ -266,7 +266,7 @@ Configuration:
   Verification: SHA-256 hash + write-protection check
 ```
 
-#### 🔐 **Cryptographically Signed Images**
+#### ☠ **Cryptographically Signed Images**
 ```yaml
 Source: Signed OS Image
 Priority: 80
@@ -287,7 +287,7 @@ PhoenixGuard replaces the traditional "halt on compromise" approach in RFKilla:
 ```c
 if (MicrocodeCompromised || ThermalTampering || BootkitDetected) {
     DEBUG((DEBUG_ERROR, "CRITICAL COMPROMISE DETECTED!"));
-    CpuDeadLoop();  // 💀 System halts - availability lost
+    CpuDeadLoop();  // ☠ System halts - availability lost
 }
 ```
 
@@ -296,14 +296,14 @@ if (MicrocodeCompromised || ThermalTampering || BootkitDetected) {
 if (MicrocodeCompromised || ThermalTampering || BootkitDetected) {
     DEBUG((DEBUG_ERROR, "COMPROMISE DETECTED - INITIATING RECOVERY!"));
     
-    // 🔥 Phoenix rises from the ashes
+    // ☠ Phoenix rises from the ashes
     Status = PhoenixGuardExecuteRecovery(CompromiseType, SecurityLevel);
     
     if (!EFI_ERROR(Status)) {
-        // 🎉 System recovered and rebooting clean
+        // ☠ System recovered and rebooting clean
         gRT->ResetSystem(EfiResetCold, EFI_SUCCESS, 0, NULL);
     } else {
-        // 🛡️ Fall back to clean OS boot
+        // ☠ Fall back to clean OS boot
         PhoenixGuardCleanOsBoot();
     }
 }
@@ -313,18 +313,18 @@ if (MicrocodeCompromised || ThermalTampering || BootkitDetected) {
 
 | Aspect | Traditional Halt | PhoenixGuard Recovery |
 |--------|------------------|----------------------|
-| **Availability** | ❌ System down until manual intervention | ✅ System automatically recovers |
-| **Response Time** | ❌ Hours/days for manual recovery | ✅ Minutes for automatic recovery |
-| **Expertise Required** | ❌ Skilled technician needed | ✅ Fully automated |
-| **Attack Persistence** | ❌ Malware may survive manual recovery | ✅ Clean firmware/OS breaks persistence |
-| **Business Impact** | ❌ Significant downtime costs | ✅ Minimal business disruption |
-| **Scalability** | ❌ Doesn't scale to many systems | ✅ Scales to enterprise deployments |
+| **Availability** | ☠ System down until manual intervention | ☠ System automatically recovers |
+| **Response Time** | ☠ Hours/days for manual recovery | ☠ Minutes for automatic recovery |
+| **Expertise Required** | ☠ Skilled technician needed | ☠ Fully automated |
+| **Attack Persistence** | ☠ Malware may survive manual recovery | ☠ Clean firmware/OS breaks persistence |
+| **Business Impact** | ☠ Significant downtime costs | ☠ Minimal business disruption |
+| **Scalability** | ☠ Doesn't scale to many systems | ☠ Scales to enterprise deployments |
 
 ---
 
 ## Use Case Scenarios
 
-### 🏢 **Corporate Environment**
+### ☠ **Corporate Environment**
 ```
 Scenario: 1000 workstations, sophisticated APT attack
 Traditional: 1000 systems halt, IT team overwhelmed
@@ -339,7 +339,7 @@ Recovery Flow:
 6. User back to work in < 10 minutes
 ```
 
-### 🏥 **Critical Infrastructure** 
+### ☠ **Critical Infrastructure** 
 ```
 Scenario: Hospital systems under attack, patient safety critical
 Traditional: Systems halt, medical equipment offline
@@ -353,7 +353,7 @@ Recovery Flow:
 5. IT notified but no emergency response needed
 ```
 
-### 🏠 **Home/SOHO Environment**
+### ☠ **Home/SOHO Environment**
 ```
 Scenario: Home user infected by sophisticated malware
 Traditional: User sees "System Halted" message, calls IT support
@@ -407,17 +407,17 @@ Mitigation:
 ### Threat Model
 
 PhoenixGuard defends against:
-- ✅ **Firmware-persistent malware** (bootkits, UEFI rootkits)
-- ✅ **Microcode manipulation attacks**
-- ✅ **Thermal management sabotage**
-- ✅ **SPI flash corruption**
-- ✅ **EFI variable tampering**
-- ✅ **Supply chain attacks** (if recovery sources are clean)
+- ☠ **Firmware-persistent malware** (bootkits, UEFI rootkits)
+- ☠ **Microcode manipulation attacks**
+- ☠ **Thermal management sabotage**
+- ☠ **SPI flash corruption**
+- ☠ **EFI variable tampering**
+- ☠ **Supply chain attacks** (if recovery sources are clean)
 
 PhoenixGuard may not defend against:
-- ⚠️ **Hardware-level attacks** (if all recovery paths compromised)
-- ⚠️ **Physical attacks** (if attacker has physical access to block recovery)
-- ⚠️ **Network infrastructure attacks** (if all recovery servers compromised)
+- ☠ **Hardware-level attacks** (if all recovery paths compromised)
+- ☠ **Physical attacks** (if attacker has physical access to block recovery)
+- ☠ **Network infrastructure attacks** (if all recovery servers compromised)
 
 ---
 
@@ -489,11 +489,11 @@ The beauty is that each "rebirth" cycle breaks the attack persistence chain - ev
 ## Future Enhancements
 
 ### Planned Features
-- **🤖 AI-Powered Recovery**: Machine learning to optimize recovery source selection
-- **🔗 Blockchain Verification**: Immutable firmware integrity verification
-- **☁️ Cloud Integration**: Integration with cloud security services
-- **📱 Mobile Management**: Smartphone app for recovery management
-- **🌐 Mesh Recovery**: Peer-to-peer recovery networks
+- **☠ AI-Powered Recovery**: Machine learning to optimize recovery source selection
+- **☠ Blockchain Verification**: Immutable firmware integrity verification
+- **☠ Cloud Integration**: Integration with cloud security services
+- **☠ Mobile Management**: Smartphone app for recovery management
+- **☠ Mesh Recovery**: Peer-to-peer recovery networks
 
 ### Advanced Capabilities
 - **Predictive Recovery**: Trigger recovery before compromise is complete

@@ -23,5 +23,5 @@ for dir in staging/{src,include,boot,drivers,platform,tests,tools} dev/{boot,bri
     touch "$dir/.gitkeep"
 done
 
-echo "✅ Production directory structure created"
+echo "☠ Production directory structure created"
 

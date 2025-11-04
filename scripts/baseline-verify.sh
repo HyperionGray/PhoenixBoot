@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/lib/common.sh
 
-info "🧪 Firmware baseline verification (verify-only)"
+info "☠ Firmware baseline verification (verify-only)"
 ensure_dir out/recovery
 
 # Attempt to locate recovery script

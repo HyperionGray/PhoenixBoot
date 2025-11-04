@@ -197,7 +197,7 @@ class PhoenixGuardModuleSigner:
                     "sign_file_utility": sign_file,
                     "command_executed": " ".join(cmd),
                 }
-                logger.info("✅ Module signed successfully")
+                logger.info("☠ Module signed successfully")
             else:
                 result = {
                     "status": "failed",
@@ -205,7 +205,7 @@ class PhoenixGuardModuleSigner:
                     "module_path": str(module),
                     "timestamp": datetime.now().isoformat(),
                 }
-                logger.error("❌ Module signing failed - signature not detected")
+                logger.error("☠ Module signing failed - signature not detected")
         except Exception as e:
             result = {
                 "status": "error",
@@ -213,7 +213,7 @@ class PhoenixGuardModuleSigner:
                 "module_path": str(module),
                 "timestamp": datetime.now().isoformat(),
             }
-            logger.error("❌ Module signing error: %s", e)
+            logger.error("☠ Module signing error: %s", e)
 
         self.signing_log.append(result)
         return result
@@ -332,14 +332,14 @@ def main() -> int:
         skipped = len([r for r in results if r.get("status") == "skipped"])
         failed = len([r for r in results if r.get("status") in ("failed", "error")])
 
-        print("\n📊 Signing Summary:")
-        print(f"  ✅ Successfully signed: {successful}")
-        print(f"  ⏭️  Skipped (already signed): {skipped}")
-        print(f"  ❌ Failed: {failed}")
-        print(f"  📄 Log file: {log_file}")
+        print("\n☠ Signing Summary:")
+        print(f"  ☠ Successfully signed: {successful}")
+        print(f"  ☠  Skipped (already signed): {skipped}")
+        print(f"  ☠ Failed: {failed}")
+        print(f"  ☠ Log file: {log_file}")
 
         if failed:
-            print("\n❌ Some modules failed to sign:")
+            print("\n☠ Some modules failed to sign:")
             for r in results:
                 if r.get("status") in ("failed", "error"):
                     mod = Path(r.get("module_path", "?"))

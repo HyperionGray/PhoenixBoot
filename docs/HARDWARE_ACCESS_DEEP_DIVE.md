@@ -1,54 +1,54 @@
-# 🔧 PhoenixGuard Hardware Access Deep Dive
+# ☠ PhoenixGuard Hardware Access Deep Dive
 
 ## Overview
 
 PhoenixGuard's bootkit protection bypass capabilities rely on **direct hardware register manipulation** at the chipset level. This document explains the precise mechanisms, register layouts, and access patterns used to circumvent bootkit-installed hardware locks.
 
-## 🏗️ x86 Platform Architecture
+## ☠ x86 Platform Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                          CPU COMPLEX                           │
-│  ┌─────────────────┬─────────────────┬─────────────────────────┐ │
-│  │   CPU CORE 0    │   CPU CORE 1    │       SHARED L3         │ │
-│  │  ┌───────────┐  │  ┌───────────┐  │  ┌─────────────────────┐ │ │
-│  │  │MSR SPACE  │  │  │MSR SPACE  │  │  │   MICROCODE RAM     │ │ │
-│  │  │0x0-0x1FFF │  │  │0x0-0x1FFF │  │  │                     │ │ │
-│  │  └───────────┘  │  └───────────┘  │  └─────────────────────┘ │ │
-│  └─────────────────┴─────────────────┴─────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                    ┌───────────▼───────────┐
-                    │     MEMORY HUB        │
-                    │  ┌─────────────────┐  │
-                    │  │  DRAM CHANNELS  │  │
-                    │  │     DDR4/DDR5   │  │
-                    │  └─────────────────┘  │
-                    └───────────┬───────────┘
-                                │
-    ┌───────────────────────────▼───────────────────────────┐
-    │              PLATFORM CONTROLLER HUB (PCH)           │
-    │  ┌─────────────────┬─────────────────┬───────────────┐ │
-    │  │  SPI CONTROLLER │  LPC CONTROLLER │ OTHER DEVICES │ │
-    │  │                 │                 │  (SATA, USB)  │ │
-    │  │ ┌─────────────┐ │ ┌─────────────┐ │               │ │
-    │  │ │MMIO REGISTERS│ │ │I/O REGISTERS│ │               │ │
-    │  │ │0xFED1xxxx   │ │ │0x80-0xFF    │ │               │ │
-    │  │ └─────────────┘ │ └─────────────┘ │               │ │
-    │  └─────────────────┴─────────────────┴───────────────┘ │
-    └─────────────────────────┬─────────────────────────────┘
-                              │
-              ┌───────────────▼───────────────┐
-              │         SPI FLASH CHIP        │
-              │  ┌───────────┬───────────────┐ │
-              │  │DESCRIPTOR │     BIOS      │ │
-              │  │           │   REGION      │ │
-              │  │   0-4KB   │   4MB-16MB    │ │
-              │  └───────────┴───────────────┘ │
-              └───────────────────────────────┘
+☠
+☠                          CPU COMPLEX                           ☠
+☠  ☠ ☠
+☠  ☠   CPU CORE 0    ☠   CPU CORE 1    ☠       SHARED L3         ☠ ☠
+☠  ☠  ☠  ☠  ☠  ☠  ☠ ☠ ☠
+☠  ☠  ☠MSR SPACE  ☠  ☠  ☠MSR SPACE  ☠  ☠  ☠   MICROCODE RAM     ☠ ☠ ☠
+☠  ☠  ☠0x0-0x1FFF ☠  ☠  ☠0x0-0x1FFF ☠  ☠  ☠                     ☠ ☠ ☠
+☠  ☠  ☠  ☠  ☠  ☠  ☠ ☠ ☠
+☠  ☠ ☠
+☠
+                                ☠
+                    ☠
+                    ☠     MEMORY HUB        ☠
+                    ☠  ☠  ☠
+                    ☠  ☠  DRAM CHANNELS  ☠  ☠
+                    ☠  ☠     DDR4/DDR5   ☠  ☠
+                    ☠  ☠  ☠
+                    ☠
+                                ☠
+    ☠
+    ☠              PLATFORM CONTROLLER HUB (PCH)           ☠
+    ☠  ☠ ☠
+    ☠  ☠  SPI CONTROLLER ☠  LPC CONTROLLER ☠ OTHER DEVICES ☠ ☠
+    ☠  ☠                 ☠                 ☠  (SATA, USB)  ☠ ☠
+    ☠  ☠ ☠ ☠ ☠ ☠               ☠ ☠
+    ☠  ☠ ☠MMIO REGISTERS☠ ☠ ☠I/O REGISTERS☠ ☠               ☠ ☠
+    ☠  ☠ ☠0xFED1xxxx   ☠ ☠ ☠0x80-0xFF    ☠ ☠               ☠ ☠
+    ☠  ☠ ☠ ☠ ☠ ☠               ☠ ☠
+    ☠  ☠ ☠
+    ☠
+                              ☠
+              ☠
+              ☠         SPI FLASH CHIP        ☠
+              ☠  ☠ ☠
+              ☠  ☠DESCRIPTOR ☠     BIOS      ☠ ☠
+              ☠  ☠           ☠   REGION      ☠ ☠
+              ☠  ☠   0-4KB   ☠   4MB-16MB    ☠ ☠
+              ☠  ☠ ☠
+              ☠
 ```
 
-## 🎯 Key Hardware Components PhoenixGuard Manipulates
+## ☠ Key Hardware Components PhoenixGuard Manipulates
 
 ### 1. **CPU Model Specific Registers (MSRs)**
 
@@ -150,7 +150,7 @@ typedef union {
 } PROTECTED_RANGE_REGISTER;
 ```
 
-## 🔓 How PhoenixGuard Bypasses Bootkit Locks
+## ☠ How PhoenixGuard Bypasses Bootkit Locks
 
 ### Method 1: Direct MMIO Register Manipulation
 
@@ -203,7 +203,7 @@ class HardwareBypass:
         PhoenixGuard's core bypass sequence
         This is what makes bootkit-proof recovery possible
         """
-        print("🔧 PhoenixGuard Hardware Lock Bypass")
+        print("☠ PhoenixGuard Hardware Lock Bypass")
         print("=" * 50)
         
         # Step 1: Check current lock status
@@ -215,8 +215,8 @@ class HardwareBypass:
         
         # Check if FLOCKDN (Flash Lock Down) is set
         if hsfs & (1 << 15):  # FLOCKDN = bit 15
-            print("⚠️  FLOCKDN is SET - bootkit has locked configuration")
-            print("🔧 Attempting bypass...")
+            print("☠  FLOCKDN is SET - bootkit has locked configuration")
+            print("☠ Attempting bypass...")
             
             # BYPASS METHOD 1: Clear FLOCKDN bit directly
             # This works if the bootkit hasn't set additional protections
@@ -226,26 +226,26 @@ class HardwareBypass:
             # Verify the bypass worked
             verify_hsfs = self.read_spi_register(0x04)
             if verify_hsfs & (1 << 15):
-                print("❌ Direct FLOCKDN bypass failed - trying alternative method")
+                print("☠ Direct FLOCKDN bypass failed - trying alternative method")
                 return self._advanced_bypass()
             else:
-                print("✅ FLOCKDN bypass successful!")
+                print("☠ FLOCKDN bypass successful!")
         
         # Step 2: Enable BIOS Write Enable (BIOSWE)
         if not (bios_cntl & 1):  # BIOSWE = bit 0
-            print("🔧 Enabling BIOS Write Enable...")
+            print("☠ Enabling BIOS Write Enable...")
             new_bios_cntl = bios_cntl | 1  # Set bit 0
             struct.pack_into("<I", self.lpc_mmio, 0xDC0, new_bios_cntl)
             
             verify_bios_cntl = struct.unpack_from("<I", self.lpc_mmio, 0xDC0)[0]
             if verify_bios_cntl & 1:
-                print("✅ BIOSWE enabled successfully!")
+                print("☠ BIOSWE enabled successfully!")
             else:
-                print("❌ BIOSWE enable failed")
+                print("☠ BIOSWE enable failed")
                 return False
         
         # Step 3: Clear Protected Ranges (PR0-PR4)
-        print("🔧 Clearing SPI Protected Ranges...")
+        print("☠ Clearing SPI Protected Ranges...")
         for i in range(5):  # PR0 through PR4
             pr_offset = 0x20 + (i * 4)  # Each PR register is 4 bytes
             current_pr = self.read_spi_register(pr_offset)
@@ -254,7 +254,7 @@ class HardwareBypass:
                 print(f"   Clearing PR{i} (was 0x{current_pr:08x})")
                 self.write_spi_register(pr_offset, 0)  # Clear entire register
             
-        print("✅ Hardware bypass complete!")
+        print("☠ Hardware bypass complete!")
         return True
     
     def _advanced_bypass(self):
@@ -262,7 +262,7 @@ class HardwareBypass:
         Advanced bypass for sophisticated bootkits
         Uses multiple techniques when direct register writes fail
         """
-        print("🚨 Attempting advanced bypass techniques...")
+        print("☠ Attempting advanced bypass techniques...")
         
         # Method 1: Reset SPI controller
         print("   Trying SPI controller reset...")
@@ -277,7 +277,7 @@ class HardwareBypass:
         # Implementation would use known chipset vulnerabilities
         
         # For now, return failure - these require more complex implementation
-        print("❌ Advanced bypass methods require additional implementation")
+        print("☠ Advanced bypass methods require additional implementation")
         return False
     
     def close(self):
@@ -289,16 +289,16 @@ class HardwareBypass:
 # Usage example
 if __name__ == "__main__":
     if os.geteuid() != 0:
-        print("❌ Root privileges required for hardware access")
+        print("☠ Root privileges required for hardware access")
         exit(1)
     
     bypass = HardwareBypass()
     try:
         success = bypass.bypass_flash_locks()
         if success:
-            print("🎉 System is ready for firmware recovery!")
+            print("☠ System is ready for firmware recovery!")
         else:
-            print("❌ Hardware bypass failed - external programmer may be needed")
+            print("☠ Hardware bypass failed - external programmer may be needed")
     finally:
         bypass.close()
 ```
@@ -321,7 +321,7 @@ try:
     from chipsec.chipset import Chipset
     from chipsec_main import logger
 except ImportError:
-    print("❌ Chipsec not available - install with: pip install chipsec")
+    print("☠ Chipsec not available - install with: pip install chipsec")
     sys.exit(1)
 
 class ChipsecBypass:
@@ -338,7 +338,7 @@ class ChipsecBypass:
         """
         Deep analysis of current bootkit protection mechanisms
         """
-        print("🔍 PhoenixGuard Protection Analysis")
+        print("☠ PhoenixGuard Protection Analysis")
         print("=" * 40)
         
         results = {
@@ -353,25 +353,25 @@ class ChipsecBypass:
         try:
             hsfs = self.spi.read_HSFS()
             if hsfs & 0x8000:  # FLOCKDN bit
-                print("🚨 SPI Flash Configuration LOCKED (FLOCKDN)")
+                print("☠ SPI Flash Configuration LOCKED (FLOCKDN)")
                 results['spi_flash_locked'] = True
                 results['bypass_methods'].append('direct_register_clear')
             else:
-                print("✅ SPI Flash Configuration unlocked")
+                print("☠ SPI Flash Configuration unlocked")
         except Exception as e:
-            print(f"⚠️  Could not read HSFS: {e}")
+            print(f"☠  Could not read HSFS: {e}")
         
         # Check BIOS Write Enable
         try:
             bios_cntl = self.cs.read_register('BIOS_CNTL')
             if not (bios_cntl & 1):  # BIOSWE bit
-                print("🚨 BIOS Write DISABLED (BIOSWE=0)")
+                print("☠ BIOS Write DISABLED (BIOSWE=0)")
                 results['bios_write_locked'] = True
                 results['bypass_methods'].append('enable_bioswe')
             else:
-                print("✅ BIOS Write enabled")
+                print("☠ BIOS Write enabled")
         except Exception as e:
-            print(f"⚠️  Could not read BIOS_CNTL: {e}")
+            print(f"☠  Could not read BIOS_CNTL: {e}")
         
         # Check Protected Ranges
         for i in range(5):  # PR0-PR4
@@ -380,7 +380,7 @@ class ChipsecBypass:
                 if pr_value & 0x80000000:  # WPE bit
                     base = (pr_value & 0x1FFF) * 4096  # 4KB alignment
                     limit = ((pr_value >> 16) & 0x1FFF) * 4096
-                    print(f"🚨 Protected Range {i}: 0x{base:x}-0x{limit:x}")
+                    print(f"☠ Protected Range {i}: 0x{base:x}-0x{limit:x}")
                     results['protected_ranges_active'].append({
                         'range': i,
                         'base': base,
@@ -388,7 +388,7 @@ class ChipsecBypass:
                     })
                     results['bypass_methods'].append(f'clear_pr{i}')
             except Exception as e:
-                print(f"⚠️  Could not read PR{i}: {e}")
+                print(f"☠  Could not read PR{i}: {e}")
         
         return results
     
@@ -396,7 +396,7 @@ class ChipsecBypass:
         """
         Execute bypass methods based on detected protections
         """
-        print("\n🔧 Executing PhoenixGuard Bypass Sequence")
+        print("\n☠ Executing PhoenixGuard Bypass Sequence")
         print("=" * 50)
         
         success_count = 0
@@ -408,26 +408,26 @@ class ChipsecBypass:
             if method == 'direct_register_clear':
                 if self._bypass_flockdn():
                     success_count += 1
-                    print("✅ FLOCKDN bypass successful")
+                    print("☠ FLOCKDN bypass successful")
                 else:
-                    print("❌ FLOCKDN bypass failed")
+                    print("☠ FLOCKDN bypass failed")
             
             elif method == 'enable_bioswe':
                 if self._enable_bioswe():
                     success_count += 1
-                    print("✅ BIOSWE enable successful") 
+                    print("☠ BIOSWE enable successful") 
                 else:
-                    print("❌ BIOSWE enable failed")
+                    print("☠ BIOSWE enable failed")
                     
             elif method.startswith('clear_pr'):
                 pr_num = int(method[-1])
                 if self._clear_protected_range(pr_num):
                     success_count += 1
-                    print(f"✅ PR{pr_num} clear successful")
+                    print(f"☠ PR{pr_num} clear successful")
                 else:
-                    print(f"❌ PR{pr_num} clear failed")
+                    print(f"☠ PR{pr_num} clear failed")
         
-        print(f"\n🎯 Bypass Results: {success_count}/{total_methods} successful")
+        print(f"\n☠ Bypass Results: {success_count}/{total_methods} successful")
         return success_count == total_methods
     
     def _bypass_flockdn(self):
@@ -470,7 +470,7 @@ class ChipsecBypass:
 # Usage example
 if __name__ == "__main__":
     if os.geteuid() != 0:
-        print("❌ Root privileges required for hardware access")
+        print("☠ Root privileges required for hardware access")
         sys.exit(1)
     
     bypass = ChipsecBypass()
@@ -482,16 +482,16 @@ if __name__ == "__main__":
     if analysis['bypass_methods']:
         success = bypass.execute_bypass(analysis)
         if success:
-            print("\n🎉 All bootkit protections bypassed successfully!")
+            print("\n☠ All bootkit protections bypassed successfully!")
             print("System is ready for PhoenixGuard firmware recovery.")
         else:
-            print("\n⚠️  Some bypass methods failed.")
+            print("\n☠  Some bypass methods failed.")
             print("External hardware programmer may be required.")
     else:
-        print("\n✅ No bootkit protections detected - system is clean!")
+        print("\n☠ No bootkit protections detected - system is clean!")
 ```
 
-## 🧠 Understanding What Makes This Work
+## ☠ Understanding What Makes This Work
 
 ### Why Direct Hardware Access Bypasses Bootkits
 

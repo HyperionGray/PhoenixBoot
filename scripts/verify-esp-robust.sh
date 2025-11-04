@@ -7,7 +7,7 @@ IMG=out/esp/esp.img
 [ -f "$IMG" ] || die "Missing $IMG; run './pf.py build-package-esp' first"
 
 FAIL=0
-info "🔎 Verifying ESP essentials..."
+info "☠ Verifying ESP essentials..."
 for f in "/EFI/BOOT/BOOTX64.EFI" "/EFI/PhoenixGuard/NuclearBootEdk2.sha256" "/EFI/BOOT/grub.cfg"; do
   if mtype -i "$IMG" ::$f >/dev/null 2>&1; then
     ok "Present: $f"

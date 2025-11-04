@@ -2,6 +2,21 @@
 set -euo pipefail
 
 # Stage a clean GRUB (or shim+grub) and a minimal grub.cfg on the ESP for Clean GRUB Boot.
+#
+# ☠ WARNING: This script may conflict with existing GRUB configurations!
+#
+# Known issues with already-customized Linux distros:
+# - Existing custom GRUB configurations in /boot/grub or /boot/efi/EFI/*/grub.cfg
+# - Custom boot menu entries created by distro package managers
+# - BIOS settings with hardcoded boot entries pointing to old GRUB locations
+# - SecureBoot configurations with distro-specific keys
+#
+# For best results on a fresh system:
+# 1. Back up existing /boot/efi/EFI directory
+# 2. Clear conflicting UEFI boot entries: efibootmgr -b <num> -B
+# 3. Ensure BIOS is set to default boot order
+# 4. Verify SecureBoot keys are enrolled if using Secure Boot
+#
 # Usage:
 #   sudo ./scripts/install_clean_grub_boot.sh --esp /boot/efi \
 #     [--shim /usr/lib/shim/shimx64.efi.signed] \
@@ -9,7 +24,7 @@ set -euo pipefail
 #     --root-uuid <UUID> [--vmlinuz /boot/vmlinuz-<ver>] [--initrd /boot/initrd.img-<ver>]
 # Notes:
 # - On Secure Boot, prefer shimx64.efi.signed; grubx64.efi must be trusted (MOK/vendor key).
-# - If you don’t provide vmlinuz/initrd, the grub.cfg entry can boot the installed OS by UUID.
+# - If you do not provide vmlinuz/initrd, the grub.cfg entry can boot the installed OS by UUID.
 
 ESP=
 SHIM=
@@ -63,5 +78,4 @@ sed "s/<ROOT-UUID>/$ROOT_UUID/g" \
 mv "$CFG_TMP" "$CFG_DIR/grub.cfg"
 
 echo "Installed Clean GRUB Boot assets to $ESP/EFI/PhoenixGuard"
-echo "Add a firmware boot entry to shimx64.efi (if present) or grubx64.efi, or use NuclearBoot’s Clean GRUB Boot option."
-
+echo "Add a firmware boot entry to shimx64.efi (if present) or grubx64.efi, or use NuclearBoot's Clean GRUB Boot option."

@@ -2,7 +2,7 @@
 
 VMKit now supports **GPU and NVMe passthrough** for high-performance VMs! This enables gaming VMs, AI/ML workloads, and development environments with direct hardware access.
 
-## 🚀 Features
+## ☠ Features
 
 - **GPU Passthrough** - Direct graphics card access for gaming, AI/ML, rendering
 - **NVMe Passthrough** - High-speed storage for fast I/O, databases, compilation
@@ -12,7 +12,7 @@ VMKit now supports **GPU and NVMe passthrough** for high-performance VMs! This e
 - **Multi-device Support** - Pass through multiple devices to single VM
 - **Easy CLI** - Simple command-line interface for common scenarios
 
-## 📋 System Requirements
+## ☠ System Requirements
 
 ### BIOS/UEFI Settings
 - **Intel**: VT-d enabled
@@ -43,7 +43,7 @@ sudo reboot
 sudo modprobe vfio-pci
 ```
 
-## 🎮 Quick Examples
+## ☠ Quick Examples
 
 ### Gaming VM with GPU + NVMe
 ```bash
@@ -78,7 +78,7 @@ sudo vmkit create ai-vm ubuntu-22.04.img \
   --gpu 0000:03:00.0 --memory 32G --graphics none
 ```
 
-## 🐍 Python API
+## ☠ Python API
 
 ### Basic Usage
 ```python
@@ -125,7 +125,7 @@ device = manager.get_device_by_id("0000:01:00.0")
 vm = SecureVM("custom-vm", passthrough_devices=[device])
 ```
 
-## 🔧 CLI Commands
+## ☠ CLI Commands
 
 ### List Available Devices
 ```bash
@@ -149,7 +149,7 @@ sudo vmkit destroy <name>
 - `--nvme <pci_id|auto>` - NVMe passthrough  
 - `--passthrough <pci_id>` - Generic PCI device (can use multiple times)
 
-## 🛠️ Troubleshooting
+## ☠ Troubleshooting
 
 ### Check System Status
 ```bash
@@ -202,7 +202,7 @@ lspci -k | grep -A3 -i nvidia
 find /sys/kernel/iommu_groups/ -type l
 ```
 
-## 🎯 Use Cases
+## ☠ Use Cases
 
 ### Gaming
 - **GPU**: Direct graphics performance, no virtualization overhead
@@ -228,7 +228,7 @@ find /sys/kernel/iommu_groups/ -type l
 - **RAM**: 32GB+ for video editing
 - **CPU**: Many cores for encoding
 
-## ⚡ Performance Tips
+## ☠ Performance Tips
 
 1. **CPU Pinning**: Pin VM cores to specific physical cores
 2. **Hugepages**: Use hugepages for better memory performance  
@@ -236,7 +236,7 @@ find /sys/kernel/iommu_groups/ -type l
 4. **I/O Threading**: Use multiple virtio queues
 5. **MSI-X**: Enable MSI-X interrupts for devices
 
-## 🔒 Security Considerations
+## ☠ Security Considerations
 
 - **IOMMU Isolation**: Devices are isolated from host kernel
 - **Secure Boot**: VMKit maintains UEFI Secure Boot compatibility
@@ -244,7 +244,7 @@ find /sys/kernel/iommu_groups/ -type l
 - **Memory Protection**: IOMMU provides memory access control
 - **Device Reset**: Devices are reset between VM sessions
 
-## 📚 Advanced Examples
+## ☠ Advanced Examples
 
 See `examples/passthrough_examples.py` for detailed examples including:
 - Gaming VM configuration
@@ -252,7 +252,7 @@ See `examples/passthrough_examples.py` for detailed examples including:
 - Multi-GPU configurations
 - Troubleshooting workflows
 
-## 🤝 Contributing
+## ☠ Contributing
 
 Found issues or want to improve passthrough support? 
 - Test on different hardware configurations
@@ -262,4 +262,4 @@ Found issues or want to improve passthrough support?
 
 ---
 
-**VMKit Passthrough: Because VMs shouldn't be slow!** 🚀
+**VMKit Passthrough: Because VMs shouldn't be slow!** ☠

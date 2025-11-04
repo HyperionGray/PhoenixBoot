@@ -4,21 +4,21 @@
 set -euo pipefail
 
 IMG=out/esp/esp.img
-[ -f "$IMG" ] || { echo "❌ Missing $IMG; run './pf.py build-package-esp' first"; exit 1; }
+[ -f "$IMG" ] || { echo "☠ Missing $IMG; run './pf.py build-package-esp' first"; exit 1; }
 FAIL=0
 
-echo "🔎 Listing ESP root:"
+echo "☠ Listing ESP root:"
 mdir -i "$IMG" ::/ || true
-echo "🔎 Listing EFI/BOOT:"
+echo "☠ Listing EFI/BOOT:"
 mdir -i "$IMG" ::/EFI/BOOT || true
-echo "🔎 Listing EFI/PhoenixGuard:"
+echo "☠ Listing EFI/PhoenixGuard:"
 mdir -i "$IMG" ::/EFI/PhoenixGuard || true
 
 for f in "/EFI/BOOT/BOOTX64.EFI" "/EFI/PhoenixGuard/NuclearBootEdk2.sha256"; do
     if mtype -i "$IMG" ::$f >/dev/null 2>&1; then
-        echo "✅ Present: $f"
+        echo "☠ Present: $f"
     else
-        echo "❌ Missing: $f"
+        echo "☠ Missing: $f"
         FAIL=1
     fi
 done

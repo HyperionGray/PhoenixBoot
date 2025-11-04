@@ -10,13 +10,13 @@ SETUP_MARKER="/opt/phoenixguard/.setup_complete"
 TOOLS_DIR="/opt/phoenixguard/tools"
 REPORTS_DIR="/opt/phoenixguard/reports"
 
-echo "🦀🔥 PhoenixGuard Enhanced Recovery Environment 🔥🦀"
+echo "☠☠ PhoenixGuard Enhanced Recovery Environment ☠☠"
 echo "================================================"
 
 # Check if already set up
 if [[ -f "$SETUP_MARKER" ]]; then
-    echo "✅ PhoenixGuard recovery environment already configured"
-    echo "🎯 Available tools:"
+    echo "☠ PhoenixGuard recovery environment already configured"
+    echo "☠ Available tools:"
     echo "  • bootkit-scan     - Comprehensive bootkit scanner"
     echo "  • flashrom         - SPI flash analysis and recovery"
     echo "  • chipsec          - Hardware security analysis"
@@ -31,69 +31,69 @@ if [[ -f "$SETUP_MARKER" ]]; then
     exit 0
 fi
 
-echo "🔧 Setting up comprehensive toolset (first boot)..."
+echo "☠ Setting up comprehensive toolset (first boot)..."
 echo "This may take a few minutes..."
 
 # Create directories
 mkdir -p "$TOOLS_DIR" "$REPORTS_DIR"
 
 # Update packages
-echo "📦 Updating package manager..."
+echo "☠ Updating package manager..."
 apt-get update -qq
 
 # Install Python and essential libraries
-echo "🐍 Installing Python and essential libraries..."
+echo "☠ Installing Python and essential libraries..."
 apt-get install -y python3 python3-pip python3-venv python3-dev
 pip3 install --break-system-packages requests cryptography pyserial psutil
 
 # Install hardware analysis tools
-echo "🔧 Installing hardware analysis tools..."
+echo "☠ Installing hardware analysis tools..."
 apt-get install -y flashrom firmware-tools
 apt-get install -y hexdump binutils objdump readelf
 apt-get install -y strace ltrace gdb
 
 # Install system analysis tools  
-echo "💻 Installing system analysis tools..."
+echo "☠ Installing system analysis tools..."
 apt-get install -y lshw dmidecode pciutils usbutils
 apt-get install -y smartmontools hdparm nvme-cli
 apt-get install -y ethtool wireless-tools
 
 # Install forensics and reverse engineering tools
-echo "🔍 Installing forensics and reverse engineering tools..."
+echo "☠ Installing forensics and reverse engineering tools..."
 apt-get install -y binwalk foremost sleuthkit
 apt-get install -y radare2 
 apt-get install -y yara
 
 # Install virtualization and container tools
-echo "🚀 Installing virtualization tools..."
+echo "☠ Installing virtualization tools..."
 apt-get install -y qemu-kvm qemu-utils libvirt-clients
 
 # Install network analysis tools
-echo "🌐 Installing network analysis tools..."
+echo "☠ Installing network analysis tools..."
 apt-get install -y tshark nmap
 apt-get install -y tcpdump netcat-openbsd socat
 
 # Install development tools for analysis
-echo "⚡ Installing development tools..."
+echo "☠ Installing development tools..."
 apt-get install -y build-essential cmake ninja-build
 apt-get install -y git curl wget
 
 # Install text processing and utilities
-echo "📝 Installing utilities..."
+echo "☠ Installing utilities..."
 apt-get install -y jq tree htop iotop
 apt-get install -y vim nano less
 
 # Try to install chipsec from pip if not available in packages
-echo "🔒 Installing chipsec..."
-pip3 install --break-system-packages chipsec || echo "⚠️  chipsec installation failed - will be missing"
+echo "☠ Installing chipsec..."
+pip3 install --break-system-packages chipsec || echo "☠  chipsec installation failed - will be missing"
 
 # Clean up package cache to save space
-echo "🧹 Cleaning up..."
+echo "☠ Cleaning up..."
 apt-get clean
 apt-get autoremove -y
 
 # Create PhoenixGuard bootkit scanner
-echo "🛡️ Installing PhoenixGuard bootkit scanner..."
+echo "☠ Installing PhoenixGuard bootkit scanner..."
 
 cat > "$TOOLS_DIR/phoenix_bootkit_scanner.py" << 'PYTHON_SCRIPT'
 #!/usr/bin/env python3
@@ -126,7 +126,7 @@ class PhoenixGuardScanner:
     def log(self, message, level="INFO"):
         """Log with timestamp and level"""
         timestamp = datetime.now().strftime("%H:%M:%S")
-        icon = {"INFO": "ℹ️", "PASS": "✅", "FAIL": "❌", "WARN": "⚠️"}[level]
+        icon = {"INFO": "ℹ☠", "PASS": "☠", "FAIL": "☠", "WARN": "☠"}[level]
         print(f"[{timestamp}] {icon} {message}")
         
     def run_command(self, cmd, description=""):
@@ -142,7 +142,7 @@ class PhoenixGuardScanner:
             
     def scan_esp_integrity(self):
         """Comprehensive ESP analysis with hardware focus"""
-        self.log("🔍 Scanning ESP integrity...", "INFO")
+        self.log("☠ Scanning ESP integrity...", "INFO")
         
         # Find ESP mount points
         esp_candidates = ["/boot/efi", "/mnt/esp", "/esp", "/media/esp"]
@@ -240,7 +240,7 @@ class PhoenixGuardScanner:
         
     def scan_firmware_access(self):
         """Test comprehensive firmware access capabilities"""
-        self.log("🔍 Testing firmware access capabilities...", "INFO")
+        self.log("☠ Testing firmware access capabilities...", "INFO")
         
         tests = []
         
@@ -318,7 +318,7 @@ class PhoenixGuardScanner:
 
     def run_comprehensive_scan(self):
         """Run all scanning modules with enhanced reporting"""
-        self.log("🦀🔥 Starting PhoenixGuard Hardware Bootkit Analysis 🔥🦀", "INFO")
+        self.log("☠☠ Starting PhoenixGuard Hardware Bootkit Analysis ☠☠", "INFO")
         self.log("=" * 65, "INFO")
         
         # Run all scan modules
@@ -331,7 +331,7 @@ class PhoenixGuardScanner:
         total_tests = len(tests)
         
         for test_name, test_func in tests:
-            self.log(f"🧪 Running {test_name} analysis...", "INFO")
+            self.log(f"☠ Running {test_name} analysis...", "INFO")
             try:
                 if test_func():
                     passed_tests += 1
@@ -345,7 +345,7 @@ class PhoenixGuardScanner:
         # Determine overall status with clear messaging
         if passed_tests == total_tests:
             self.results["overall_status"] = "CLEAN"
-            overall_icon = "✅"
+            overall_icon = "☠"
             overall_msg = "CLEAN - No bootkit indicators found"
             recommendations = [
                 "System appears clean",
@@ -354,7 +354,7 @@ class PhoenixGuardScanner:
             ]
         elif passed_tests >= total_tests * 0.5:
             self.results["overall_status"] = "SUSPICIOUS" 
-            overall_icon = "⚠️"
+            overall_icon = "☠"
             overall_msg = "SUSPICIOUS - Some indicators detected"
             recommendations = [
                 "Manual investigation recommended",
@@ -363,7 +363,7 @@ class PhoenixGuardScanner:
             ]
         else:
             self.results["overall_status"] = "INFECTED"
-            overall_icon = "❌"
+            overall_icon = "☠"
             overall_msg = "INFECTED - Multiple threats detected"
             recommendations = [
                 "IMMEDIATE ACTION REQUIRED",
@@ -375,11 +375,11 @@ class PhoenixGuardScanner:
         self.results["recommendations"].extend(recommendations)
         
         self.log("=" * 65, "INFO")
-        self.log(f"📊 SCAN RESULTS ({passed_tests}/{total_tests} tests passed)", "INFO")
+        self.log(f"☠ SCAN RESULTS ({passed_tests}/{total_tests} tests passed)", "INFO")
         self.log(f"{overall_icon} OVERALL STATUS: {overall_msg}", "INFO" if self.results["overall_status"] == "CLEAN" else "FAIL")
         
         if self.results["recommendations"]:
-            self.log("🎯 RECOMMENDATIONS:", "INFO")
+            self.log("☠ RECOMMENDATIONS:", "INFO")
             for rec in self.results["recommendations"]:
                 self.log(f"  • {rec}", "INFO")
         
@@ -391,7 +391,7 @@ class PhoenixGuardScanner:
         with open('/tmp/bootkit_scan_results.json', 'w') as f:
             json.dump(self.results, f, indent=2)
         
-        self.log(f"📊 Detailed results saved: {results_file}", "INFO")
+        self.log(f"☠ Detailed results saved: {results_file}", "INFO")
         
         return self.results["overall_status"] == "CLEAN"
 
@@ -425,9 +425,9 @@ def setup_environment():
         f.write(f"PhoenixGuard setup completed at {datetime.now().isoformat()}\n")
     
     print()
-    print("✅ PhoenixGuard Enhanced Recovery Environment Ready!")
+    print("☠ PhoenixGuard Enhanced Recovery Environment Ready!")
     print("================================================")
-    print("🎯 Available commands:")
+    print("☠ Available commands:")
     print("  • bootkit-scan     - Run comprehensive bootkit analysis")
     print("  • phoenix-scan     - Same as bootkit-scan")
     print("  • flashrom         - SPI flash reading/writing/analysis")
@@ -436,7 +436,7 @@ def setup_environment():
     print("  • lshw, dmidecode  - Hardware inventory")
     print("  • lspci, lsusb     - Device enumeration")
     print()
-    print("🚀 Quick start:")
+    print("☠ Quick start:")
     print("  sudo bootkit-scan                                    # Full bootkit scan")
     print("  sudo flashrom -p internal --read backup.bin         # Backup firmware")
     print("  binwalk backup.bin                                  # Analyze firmware")
@@ -449,7 +449,7 @@ def main():
         setup_environment()
         return 0
     except Exception as e:
-        print(f"❌ Setup failed: {e}")
+        print(f"☠ Setup failed: {e}")
         return 1
 
 if __name__ == "__main__":
@@ -460,10 +460,10 @@ if __name__ == "__main__":
             clean = scanner.run_comprehensive_scan()
             sys.exit(0 if clean else 1)
         except KeyboardInterrupt:
-            print("\n🚫 Scan cancelled by user")
+            print("\n☠ Scan cancelled by user")
             sys.exit(130)
         except Exception as e:
-            print(f"\n❌ Scan failed: {e}")
+            print(f"\n☠ Scan failed: {e}")
             sys.exit(1)
     else:
         # Run setup mode
@@ -478,7 +478,7 @@ ln -sf "$TOOLS_DIR/phoenix_bootkit_scanner.py" /usr/local/bin/phoenix-scan
 
 # Create startup message
 cat > /etc/motd << 'MOTD'
-🦀🔥 PhoenixGuard Recovery Environment 🔥🦀
+☠☠ PhoenixGuard Recovery Environment ☠☠
 ==========================================
 
 This is a comprehensive bootkit analysis and recovery environment.
@@ -504,5 +504,5 @@ MOTD
 # Mark setup complete
 touch "$SETUP_MARKER"
 
-echo "✅ PhoenixGuard Enhanced Recovery Environment setup complete!"
-echo "🎯 Tools installed and ready for comprehensive bootkit analysis"
+echo "☠ PhoenixGuard Enhanced Recovery Environment setup complete!"
+echo "☠ Tools installed and ready for comprehensive bootkit analysis"

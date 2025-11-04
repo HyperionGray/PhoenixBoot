@@ -2,7 +2,7 @@
 
 A comprehensive suite of tools for secure kernel module signing and verification using PhoenixGuard SecureBoot certificates.
 
-## 🚀 Overview
+## ☠ Overview
 
 The PhoenixGuard system provides:
 
@@ -11,7 +11,7 @@ The PhoenixGuard system provides:
 - **Module Verification**: High-performance C library for verifying kernel module signatures
 - **Integration Testing**: Comprehensive test suite ensuring all components work together
 
-## 📁 Components
+## ☠ Components
 
 ### Core Tools
 
@@ -38,7 +38,7 @@ The PhoenixGuard system provides:
 | `test_integration.py` | Comprehensive integration test suite |
 | `test_efi_parser.py` | EFI variable parser testing |
 
-## 🔧 Build Instructions
+## ☠ Build Instructions
 
 ### Prerequisites
 
@@ -62,7 +62,7 @@ make libpgmodverify.so     # Shared library
 make pgmodverify_test      # Test program
 ```
 
-## 📖 Usage Guide
+## ☠ Usage Guide
 
 ### 1. Certificate Inventory
 
@@ -171,7 +171,7 @@ gcc -o myprogram myprogram.c -L. -lpgmodverify -lssl -lcrypto
 LD_LIBRARY_PATH=. ./myprogram
 ```
 
-## 🧪 Testing
+## ☠ Testing
 
 ### Run Integration Tests
 
@@ -181,11 +181,11 @@ LD_LIBRARY_PATH=. ./myprogram
 ```
 
 **Test Coverage:**
-- ✅ Certificate inventory functionality
-- ✅ C library basic operations
-- ✅ Module signing simulation
-- ✅ System integration checks
-- ✅ Error handling and edge cases
+- ☠ Certificate inventory functionality
+- ☠ C library basic operations
+- ☠ Module signing simulation
+- ☠ System integration checks
+- ☠ Error handling and edge cases
 
 ### Manual Testing
 
@@ -200,7 +200,7 @@ LD_LIBRARY_PATH=. ./myprogram
 ./test_efi_parser.py
 ```
 
-## 🏗️ Architecture
+## ☠ Architecture
 
 ### Certificate Management Flow
 
@@ -227,38 +227,38 @@ Signed Module → [C Library] → Verification Result
 ### Integration Architecture
 
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Certificate   │    │   Module Signing │    │   Verification  │
-│   Inventory     │───▶│   (pgmodsign.py) │───▶│   (C Library)   │
-│(cert_inventory) │    │                  │    │  (pgmodverify)  │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
+☠    ☠    ☠
+☠   Certificate   ☠    ☠   Module Signing ☠    ☠   Verification  ☠
+☠   Inventory     ☠   (pgmodsign.py) ☠   (C Library)   ☠
+☠(cert_inventory) ☠    ☠                  ☠    ☠  (pgmodverify)  ☠
+☠    ☠    ☠
          ↑                        ↑                        ↑
-         │                        │                        │
-    ┌─────────┐             ┌─────────┐             ┌─────────┐
-    │ OpenSSL │             │sign-file│             │ OpenSSL │
-    │ Tools   │             │ Kernel  │             │ Library │
-    └─────────┘             └─────────┘             └─────────┘
+         ☠                        ☠                        ☠
+    ☠             ☠             ☠
+    ☠ OpenSSL ☠             ☠sign-file☠             ☠ OpenSSL ☠
+    ☠ Tools   ☠             ☠ Kernel  ☠             ☠ Library ☠
+    ☠             ☠             ☠
 ```
 
-## ⚙️ Configuration
+## ☠ Configuration
 
 ### Directory Structure
 
 ```
 PhoenixGuard/
-├── utils/                  # Main tools directory
-│   ├── cert_inventory.py   # Certificate management
-│   ├── pgmodsign.py        # Module signing
-│   ├── pgmodverify.c       # Verification library
-│   ├── pgmodverify.h       # Library header
-│   ├── Makefile            # Build system
-│   └── test_integration.py # Test suite
-├── secureboot_certs/       # Certificate storage
-│   ├── user_secureboot.crt # Certificate file
-│   ├── user_secureboot.key # Private key file
-│   ├── user_secureboot.pem # PEM format
-│   └── user_secureboot.der # DER format
-└── README.md               # This file
+☠ utils/                  # Main tools directory
+☠   ☠ cert_inventory.py   # Certificate management
+☠   ☠ pgmodsign.py        # Module signing
+☠   ☠ pgmodverify.c       # Verification library
+☠   ☠ pgmodverify.h       # Library header
+☠   ☠ Makefile            # Build system
+☠   ☠ test_integration.py # Test suite
+☠ secureboot_certs/       # Certificate storage
+☠   ☠ user_secureboot.crt # Certificate file
+☠   ☠ user_secureboot.key # Private key file
+☠   ☠ user_secureboot.pem # PEM format
+☠   ☠ user_secureboot.der # DER format
+☠ README.md               # This file
 ```
 
 ### Environment Variables
@@ -272,7 +272,7 @@ export PHOENIXGUARD_HASH_ALGO=sha256
 export PHOENIXGUARD_LOG_LEVEL=INFO
 ```
 
-## 🔒 Security Features
+## ☠ Security Features
 
 ### Certificate Validation
 - Automatic certificate format detection and conversion
@@ -292,7 +292,7 @@ export PHOENIXGUARD_LOG_LEVEL=INFO
 - Hash algorithm verification
 - Memory-safe C implementation
 
-## 🚨 Troubleshooting
+## ☠ Troubleshooting
 
 ### Common Issues
 
@@ -332,7 +332,7 @@ ls /usr/src/linux-headers-$(uname -r)/scripts/sign-file
 export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 ```
 
-## 📊 Performance
+## ☠ Performance
 
 ### C Library Benchmarks
 - Certificate loading: ~1ms per certificate
@@ -344,7 +344,7 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 - Certificate inventory: ~100ms for typical certificate directory
 - Module signing: ~500ms per module (depends on sign-file)
 
-## 🔄 Development
+## ☠ Development
 
 ### Adding New Features
 
@@ -368,18 +368,18 @@ pydoc3 pgmodsign > pgmodsign_docs.html
 doxygen Doxyfile
 ```
 
-## 📄 License
+## ☠ License
 
 This project is part of the edk2-bootkit-defense suite. See the main project repository for licensing information.
 
-## 🤝 Contributing
+## ☠ Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Add comprehensive tests
 4. Submit a pull request
 
-## 📞 Support
+## ☠ Support
 
 - **Issues**: Report bugs and feature requests via the project issue tracker
 - **Documentation**: Check the main edk2-bootkit-defense repository
@@ -387,4 +387,4 @@ This project is part of the edk2-bootkit-defense suite. See the main project rep
 
 ---
 
-**Status**: ✅ **Production Ready** - All integration tests passing, comprehensive feature set complete.
+**Status**: ☠ **Production Ready** - All integration tests passing, comprehensive feature set complete.

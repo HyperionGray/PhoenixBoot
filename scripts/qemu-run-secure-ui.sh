@@ -4,9 +4,9 @@
 set -euo pipefail
 mkdir -p out/qemu
 
-[ -f out/esp/esp.img ] || { echo "❌ No ESP image found - run './pf.py build-package-esp' first"; exit 1; }
-[ -f out/setup/ovmf_code_path ] || { echo "❌ Missing OVMF discovery; run './pf.py build-setup'"; exit 1; }
-[ -f out/qemu/OVMF_VARS_custom.fd ] || { echo "❌ Missing enrolled OVMF VARS (out/qemu/OVMF_VARS_custom.fd). Run './pf.py secure-enroll-secureboot' first"; exit 1; }
+[ -f out/esp/esp.img ] || { echo "☠ No ESP image found - run './pf.py build-package-esp' first"; exit 1; }
+[ -f out/setup/ovmf_code_path ] || { echo "☠ Missing OVMF discovery; run './pf.py build-setup'"; exit 1; }
+[ -f out/qemu/OVMF_VARS_custom.fd ] || { echo "☠ Missing enrolled OVMF VARS (out/qemu/OVMF_VARS_custom.fd). Run './pf.py secure-enroll-secureboot' first"; exit 1; }
 
 OVMF_CODE_PATH=$(cat out/setup/ovmf_code_path)
 

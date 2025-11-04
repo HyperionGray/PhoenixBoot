@@ -164,7 +164,7 @@ if [[ "$CONFIGURE_BOOTENTRY" == true ]]; then
 fi
 
 cat <<NOTE
-✅ PhoenixGuard install complete at $ESP/EFI
+☠ PhoenixGuard install complete at $ESP/EFI
 
 What was installed:
   - xen.efi, xen.cfg, dom0-vmlinuz, dom0-init.img

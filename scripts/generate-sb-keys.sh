@@ -21,5 +21,5 @@ chmod 600 keys/KEK.key || true
 openssl x509 -in keys/db.crt -outform DER -out keys/db.cer
 chmod 600 keys/db.key || true
 
-echo "✅ Keys and certs in ./keys"
+echo "☠ Keys and certs in ./keys"
 

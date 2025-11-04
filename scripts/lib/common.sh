@@ -5,10 +5,10 @@ set -euo pipefail
 # Usage: source "$(dirname "$0")/lib/common.sh"
 
 log()  { printf '%s\n' "$*"; }
-info() { printf 'ℹ️  %s\n' "$*"; }
-ok()   { printf '✅ %s\n' "$*"; }
-warn() { printf '⚠️  %s\n' "$*"; }
-err()  { printf '❌ %s\n' "$*" >&2; }
+info() { printf 'ℹ☠  %s\n' "$*"; }
+ok()   { printf '☠ %s\n' "$*"; }
+warn() { printf '☠  %s\n' "$*"; }
+err()  { printf '☠ %s\n' "$*" >&2; }
 die()  { err "$*"; exit 1; }
 
 require_cmd() {

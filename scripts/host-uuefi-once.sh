@@ -5,12 +5,12 @@ set -euo pipefail
 
 ENV_FILE=out/uuefi/efiboot.env
 if [ ! -f "$ENV_FILE" ]; then
-  echo "❌ Missing $ENV_FILE; run './pf.py uuefi-install' first"; exit 1
+  echo "☠ Missing $ENV_FILE; run './pf.py uuefi-install' first"; exit 1
 fi
 
 source "$ENV_FILE"
 if [ -z "${EFI_DISK:-}" ] || [ -z "${EFI_PART:-}" ]; then
-  echo "❌ Could not auto-detect EFI_DISK/EFI_PART; please set them explicitly"
+  echo "☠ Could not auto-detect EFI_DISK/EFI_PART; please set them explicitly"
   exit 1
 fi
 

@@ -61,7 +61,7 @@ static KernelHeader *kernel = (KernelHeader*)KERNEL_LOAD_ADDR;
  * Called after minimal assembly setup
  */
 void nuclear_boot_main(void) {
-    printf("🔥 PhoenixGuard Nuclear Boot Starting...\n");
+    printf("☠ PhoenixGuard Nuclear Boot Starting...\n");
     
     // Step 1: Initialize hardware (minimal)
     if (!init_hardware()) {
@@ -89,7 +89,7 @@ void nuclear_boot_main(void) {
     }
     
     // Step 6: THE NUCLEAR JUMP!
-    printf("💥 Jumping directly to kernel...\n");
+    printf("☠ Jumping directly to kernel...\n");
     nuclear_jump_to_kernel();
     
     // Should never reach here
@@ -100,7 +100,7 @@ void nuclear_boot_main(void) {
  * Initialize minimal hardware needed for networking
  */
 bool init_hardware(void) {
-    printf("⚙️ Initializing hardware...\n");
+    printf("☠ Initializing hardware...\n");
     
     // Enable A20 line for full memory access
     enable_a20_line();
@@ -113,11 +113,11 @@ bool init_hardware(void) {
     
     // Find and initialize network adapter
     if (!find_network_adapter()) {
-        printf("❌ No network adapter found\n");
+        printf("☠ No network adapter found\n");
         return false;
     }
     
-    printf("✅ Hardware initialized\n");
+    printf("☠ Hardware initialized\n");
     return true;
 }
 
@@ -125,7 +125,7 @@ bool init_hardware(void) {
  * Initialize network stack (TCP/IP over Ethernet)
  */
 bool init_network_stack(void) {
-    printf("🌐 Initializing network stack...\n");
+    printf("☠ Initializing network stack...\n");
     
     // Initialize network interface
     if (!init_network_interface()) {
@@ -143,7 +143,7 @@ bool init_network_stack(void) {
     // Set up basic routing
     setup_default_route();
     
-    printf("✅ Network stack ready: %d.%d.%d.%d\n",
+    printf("☠ Network stack ready: %d.%d.%d.%d\n",
            (network.ip_address >> 0) & 0xFF,
            (network.ip_address >> 8) & 0xFF,
            (network.ip_address >> 16) & 0xFF,
@@ -156,12 +156,12 @@ bool init_network_stack(void) {
  * Download user configuration via HTTPS
  */
 bool download_user_config(void) {
-    printf("📡 Downloading user configuration...\n");
+    printf("☠ Downloading user configuration...\n");
     
     // Connect to boot server
     int socket = https_connect(BOOT_SERVER_HOST, BOOT_SERVER_PORT);
     if (socket < 0) {
-        printf("❌ Failed to connect to boot server\n");
+        printf("☠ Failed to connect to boot server\n");
         return false;
     }
     
@@ -195,11 +195,11 @@ bool download_user_config(void) {
     
     // Verify config integrity
     if (!verify_config_checksum()) {
-        printf("❌ Config checksum verification failed\n");
+        printf("☠ Config checksum verification failed\n");
         return false;
     }
     
-    printf("✅ Configuration downloaded and verified\n");
+    printf("☠ Configuration downloaded and verified\n");
     printf("   OS: %s\n", boot_config->os_version);
     printf("   Root: %s\n", boot_config->root_device);
     
@@ -210,7 +210,7 @@ bool download_user_config(void) {
  * Download kernel based on configuration
  */
 bool download_kernel(void) {
-    printf("📦 Downloading kernel: %s\n", boot_config->os_version);
+    printf("☠ Downloading kernel: %s\n", boot_config->os_version);
     
     // Connect to boot server
     int socket = https_connect(BOOT_SERVER_HOST, BOOT_SERVER_PORT);
@@ -246,7 +246,7 @@ bool download_kernel(void) {
     
     https_close(socket);
     
-    printf("✅ Kernel downloaded: %d bytes\n", kernel->kernel_size);
+    printf("☠ Kernel downloaded: %d bytes\n", kernel->kernel_size);
     return true;
 }
 
@@ -254,21 +254,21 @@ bool download_kernel(void) {
  * Verify cryptographic signatures
  */
 bool verify_signatures(void) {
-    printf("🔐 Verifying signatures...\n");
+    printf("☠ Verifying signatures...\n");
     
     // Verify kernel signature
     if (!verify_kernel_signature()) {
-        printf("❌ Kernel signature verification failed\n");
+        printf("☠ Kernel signature verification failed\n");
         return false;
     }
     
     // Verify config signature (if present)
     if (!verify_config_signature()) {
-        printf("❌ Config signature verification failed\n");
+        printf("☠ Config signature verification failed\n");
         return false;
     }
     
-    printf("✅ All signatures verified\n");
+    printf("☠ All signatures verified\n");
     return true;
 }
 
@@ -298,7 +298,7 @@ void nuclear_jump_to_kernel(void) {
     uint32_t entry_point = KERNEL_LOAD_ADDR + sizeof(KernelHeader) + 
                           kernel->signature_size;
     
-    printf("💥 NUCLEAR JUMP to 0x%08x\n", entry_point);
+    printf("☠ NUCLEAR JUMP to 0x%08x\n", entry_point);
     
     // Assembly inline to jump to kernel
     asm volatile (
@@ -323,8 +323,8 @@ void nuclear_jump_to_kernel(void) {
  * Emergency system halt
  */
 void panic(const char *message) {
-    printf("💀 PANIC: %s\n", message);
-    printf("🛑 System halted\n");
+    printf("☠ PANIC: %s\n", message);
+    printf("☠ System halted\n");
     
     // Log to network if possible
     log_panic_to_server(message);

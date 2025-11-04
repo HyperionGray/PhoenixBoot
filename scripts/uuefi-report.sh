@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/lib/common.sh
 
-info "🔐 UUEFI report (read-only)"
+info "☠ UUEFI report (read-only)"
 
 # SB state
 if command -v mokutil >/dev/null 2>&1; then
@@ -38,7 +38,7 @@ SCRAPER_DIR="nuclear-cd-build/iso/recovery/scripts"
 SCRAPER_PY="$SCRAPER_DIR/universal_hardware_scraper.py"
 if [ -f "$SCRAPER_PY" ]; then
   if [ -x "/home/punk/.venv/bin/python3" ]; then PY="/home/punk/.venv/bin/python3"; else PY="python3"; fi
-  info "📋 Collecting UEFI variable summary and hardware profile via scraper"
+  info "☠ Collecting UEFI variable summary and hardware profile via scraper"
   "$PY" - <<'PY'
 import sys, json, os
 from pathlib import Path

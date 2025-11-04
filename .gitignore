@@ -42,3 +42,9 @@ examples_and_samples/demo/**/*.tar.gz
 nohup.out
 nohup.out*
 nohup*.out
+
+# Editor backup files
+*~
+*.bak
+*.swp
+*.swo

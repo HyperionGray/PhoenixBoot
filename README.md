@@ -348,6 +348,19 @@ For issues, questions, or support:
 
 **Workaround**: Build UUEFI from source or use NuclearBoot with proper attestation files.
 
+## Alex notes
+
+As the project currently stands, two of the things stand out here as very practical for everyday use and setup of a computer. First is, you can generate secure boot certs very easily (check the pf tasks, there's one to create a new set of keys and put them in EFI, from there you can easily enroll them). For me I use this everyday to spin up new machines with a write-only USB (hardware protected). Barring that I do recommend an actual CD burner that connects via USB, they're super cheap and the medium is immutable once burned, so burn it, check the image hash, and you know you're good to go. If you use PhoenixBoot's image burner you just point it at an ISO, it'll generate all necessary artifacts for secureboot, and you can enroll on first boot. It should also enroll the CD through a shimx64.efi or BOOTX64.efi. Though that's not strictly necessary (I skip that, because secure boot can be touchy with ISOs depending on the drivers you load at boot), but after initial install of the OS boot up to BIOS, enroll those custom keys, takes about 2 minutes, and you're well on your way. In other words, right now it's great as a convenience tool for new boots, or for changing keys on secure boot. 
+
+So SecureBoot is nice but it's also kind of a pain in the ass. Specifically  kernel modules have to be signed, and there's a few fairly key ones that I use in ubuntu that come with no signature (lookin' at you apfs.ko). SecureBoot has a signing tool, it'll use you MOK.crt to sign it for your OS, and pop you into a screen to enter a password. Then reboot, at reboot the MOK manager should show up. Enter that password and you've got a PhoenixBoot signed kernel mod. 
+
+Another useful feature right now is, if you don't have an immutable medium available, or even if you just don't feel like getting up and using a USB stick, it creates a new partition with an image burned into it in the ESP. That means you can boot from your boot partition as if there were a USB stick in there. Basically it's a fake little cd, a little trickery there. This can be used for two things (and they're two separate operations on PB) - first is new install of an OS, though again I do recommend an immutable medium, but it's also used as a recovery environment. Currently I'd use the KVM recovery env. KVM/QEMU are there in a minimal recovery environment that has flashrom and a handful of other tools to manage, analyze, and mess with your boot. If you're new to messing with boot stuff (I was when I started this project), a good first start is to totally wipe your BIOS and reinstall it. You can use flashrom from this recovery environment to do that. All of the permissions are set for it, so it shouldn't fail. 
+
+The other modes and other stuff - they need a good amount of testing before they're ready for prime time. By all means feel free to test around and see some of the other utility scripts and workflows we implement - i've been pretty careful not to have anything that might hurt your computer. At worst you'll mess up your boot, which can be flashed again. That said every warning out there tells me there's a possibility of bricking your computer with these things. I've never experienced that, but it sounds like less than fun, so still be careful!
+
+
+
+
 ## 🗺️ Roadmap
 
 - [x] Nuclear Boot implementation

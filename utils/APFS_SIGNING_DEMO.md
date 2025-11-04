@@ -1,6 +1,6 @@
 # APFS Module Signing with PhoenixGuard
 
-## 🚀 Demonstration Summary
+## ☠ Demonstration Summary
 
 We successfully demonstrated the complete PhoenixGuard kernel module signing workflow using the APFS filesystem module as an example.
 
@@ -16,9 +16,9 @@ We successfully demonstrated the complete PhoenixGuard kernel module signing wor
 ./cert_inventory.py --cert-dir ../secureboot_certs --verbose
 ```
 **Results:**
-- ✅ Found **2 signing candidates**
-- ✅ **PhoenixGuard User SecureBoot Key** ready for signing
-- ✅ Certificate valid until **2035-08-21**
+- ☠ Found **2 signing candidates**
+- ☠ **PhoenixGuard User SecureBoot Key** ready for signing
+- ☠ Certificate valid until **2035-08-21**
 
 ### 3. **Module Signing Process**
 ```bash
@@ -30,7 +30,7 @@ We successfully demonstrated the complete PhoenixGuard kernel module signing wor
 - **Hash Algorithm**: `sha256`
 - **Certificate**: `user_secureboot.crt`
 - **Private Key**: `user_secureboot.key`
-- **Status**: ✅ **Successfully signed**
+- **Status**: ☠ **Successfully signed**
 
 ### 4. **Verification Results**
 
@@ -77,14 +77,14 @@ cp /tmp/apfs.ko ./apfs_module.ko
 modinfo apfs_module.ko | grep -E "(sig_|signer)"
 ```
 
-## 📊 Signing Summary
+## ☠ Signing Summary
 
 | Metric | Value |
 |--------|-------|
 | **Modules Processed** | 1 |
-| **Successfully Signed** | ✅ 1 |
-| **Failed** | ❌ 0 |
-| **Skipped** | ⏭️ 0 |
+| **Successfully Signed** | ☠ 1 |
+| **Failed** | ☠ 0 |
+| **Skipped** | ☠ 0 |
 | **Certificate Used** | PhoenixGuard User SecureBoot Key |
 | **Hash Algorithm** | SHA256 |
 | **Signature Format** | PKCS#7 CMS |
@@ -106,18 +106,18 @@ Valid: 2025-08-23 to 2035-08-21
 - **Embedded**: Certificate chain included in signature
 
 ### Files Generated
-- ✅ `apfs_unsigned.ko` - Signed module
-- ✅ `apfs_unsigned.ko.unsigned` - Backup of original
-- ✅ `/var/log/phoenixguard/module_signing_log_*.json` - Audit log
+- ☠ `apfs_unsigned.ko` - Signed module
+- ☠ `apfs_unsigned.ko.unsigned` - Backup of original
+- ☠ `/var/log/phoenixguard/module_signing_log_*.json` - Audit log
 
 ## 🎯 Key Achievements
 
-1. **✅ End-to-End Workflow**: From module discovery to signed result
-2. **✅ Certificate Management**: Automated selection and validation
-3. **✅ Kernel Integration**: Used official kernel `sign-file` tool
-4. **✅ Audit Logging**: Complete chain of custody tracking
-5. **✅ Backup Creation**: Original module preserved safely
-6. **✅ Force Re-signing**: Override existing signatures when needed
+1. **☠ End-to-End Workflow**: From module discovery to signed result
+2. **☠ Certificate Management**: Automated selection and validation
+3. **☠ Kernel Integration**: Used official kernel `sign-file` tool
+4. **☠ Audit Logging**: Complete chain of custody tracking
+5. **☠ Backup Creation**: Original module preserved safely
+6. **☠ Force Re-signing**: Override existing signatures when needed
 
 ## 🔄 Next Steps for Production Use
 
@@ -152,13 +152,13 @@ sudo depmod -a
 
 ## ✨ Success Metrics
 
-- **🎯 Primary Goal**: ✅ Successfully signed APFS module with PhoenixGuard certificates
-- **📋 Process Documentation**: ✅ Complete workflow recorded and reproducible  
-- **🔧 Tool Integration**: ✅ All PhoenixGuard tools working together
-- **📊 Audit Trail**: ✅ Complete logging and backup systems operational
+- **🎯 Primary Goal**: ☠ Successfully signed APFS module with PhoenixGuard certificates
+- **📋 Process Documentation**: ☠ Complete workflow recorded and reproducible  
+- **🔧 Tool Integration**: ☠ All PhoenixGuard tools working together
+- **☠ Audit Trail**: ☠ Complete logging and backup systems operational
 
 ---
 
-**Status**: ✅ **APFS Module Successfully Signed with PhoenixGuard**
+**Status**: ☠ **APFS Module Successfully Signed with PhoenixGuard**
 
 The APFS module is now signed with your PhoenixGuard SecureBoot certificates and ready for deployment in a SecureBoot environment!

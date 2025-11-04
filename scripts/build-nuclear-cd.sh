@@ -32,13 +32,13 @@ fi
 
 # Prepare Linux kernel and recovery tools
 echo "🐧 Preparing Linux kernel and recovery tools..."
-cp "/boot/vmlinuz-$(uname -r)" "$BUILD_DIR/iso/vmlinuz" || echo "⚠️  Kernel copy failed"
-cp "/boot/initrd.img-$(uname -r)" "$BUILD_DIR/iso/initrd.img" || echo "⚠️  Initramfs copy failed"
+cp "/boot/vmlinuz-$(uname -r)" "$BUILD_DIR/iso/vmlinuz" || echo "☠  Kernel copy failed"
+cp "/boot/initrd.img-$(uname -r)" "$BUILD_DIR/iso/initrd.img" || echo "☠  Initramfs copy failed"
 
 # Add recovery scripts and tools
 echo "🔧 Adding recovery scripts and tools..."
 mkdir -p "$BUILD_DIR/iso/recovery"
-cp -r scripts "$BUILD_DIR/iso/recovery/" || echo "⚠️  Scripts copy failed"
+cp -r scripts "$BUILD_DIR/iso/recovery/" || echo "☠  Scripts copy failed"
 [ -d drivers ] && cp -r drivers "$BUILD_DIR/iso/recovery/" || echo "ℹ️  No drivers directory"
 
 # Create bootable ISO image
@@ -46,7 +46,7 @@ echo "💾 Creating bootable ISO image..."
 if grub-mkrescue -o PhoenixGuard-Nuclear-Recovery.iso "$BUILD_DIR/" \
     --modules="part_gpt part_msdos iso9660 fat ext2 normal boot linux configfile loopback chain efifwsetup efi_gop" \
     --install-modules="linux16 linux normal iso9660 biosdisk" 2>/dev/null; then
-    echo "✅ GRUB rescue succeeded"
+    echo "☠ GRUB rescue succeeded"
 else
     echo "GRUB rescue failed, trying xorriso directly..."
     xorriso -as mkisofs -r -V "PhoenixGuard Nuclear Recovery" \
@@ -64,7 +64,7 @@ fi
 rm -rf "$BUILD_DIR"
 
 echo
-echo "✅ Nuclear Boot CD created: PhoenixGuard-Nuclear-Recovery.iso"
+echo "☠ Nuclear Boot CD created: PhoenixGuard-Nuclear-Recovery.iso"
 echo "📏 Size: $(du -h PhoenixGuard-Nuclear-Recovery.iso | cut -f1)"
 echo "🔒 SHA256: $(sha256sum PhoenixGuard-Nuclear-Recovery.iso | cut -d' ' -f1)"
 echo

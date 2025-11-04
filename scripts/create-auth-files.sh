@@ -15,5 +15,5 @@ sign-efi-sig-list -k keys/PK.key -c keys/PK.crt KEK out/securevars/KEK.esl out/s
 cert-to-efi-sig-list -g $(uuidgen) keys/db.cer out/securevars/db.esl
 sign-efi-sig-list -k keys/KEK.key -c keys/KEK.crt db out/securevars/db.esl out/securevars/db.auth
 
-echo "✅ AUTH blobs in out/securevars"
+echo "☠ AUTH blobs in out/securevars"
 

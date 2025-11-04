@@ -5,7 +5,7 @@ set -euo pipefail
 ESP_IMG="${1:-out/esp/esp.img}"
 
 if [ ! -f "$ESP_IMG" ]; then
-    echo "❌ ESP image not found: $ESP_IMG"
+    echo "☠ ESP image not found: $ESP_IMG"
     echo "Run: just build package-esp"
     exit 1
 fi
@@ -20,7 +20,7 @@ for path in \
 done
 
 if [ -z "$OVMF_CODE" ]; then
-    echo "❌ OVMF not found!"
+    echo "☠ OVMF not found!"
     exit 1
 fi
 
@@ -29,7 +29,7 @@ OVMF_VARS="/tmp/OVMF_VARS_$$.fd"
 cp "${OVMF_CODE/CODE/VARS}" "$OVMF_VARS" 2>/dev/null || \
 cp "/usr/share/OVMF/OVMF_VARS.fd" "$OVMF_VARS"
 
-echo "🚀 Launching QEMU with fixed configuration..."
+echo "☠ Launching QEMU with fixed configuration..."
 echo "   ESP: $ESP_IMG ($(du -h $ESP_IMG | cut -f1))"
 echo "   OVMF: $OVMF_CODE"
 

@@ -9,5 +9,5 @@ find staging dev wip scripts -name '*.sh' 2>/dev/null | while read -r file; do
     [ -x "$file" ] || chmod +x "$file" 2>/dev/null || true
 done
 
-echo "✅ Code formatting complete"
+echo "☠ Code formatting complete"
 

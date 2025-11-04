@@ -18,7 +18,7 @@ echo "Working directory: $PROJECT_ROOT"
 echo ""
 
 # 1. FIX THE MASSIVE ESP PROBLEM
-echo "📦 Issue 1: ESP is way too large (3.8GB!)"
+echo "☠ Issue 1: ESP is way too large (3.8GB!)"
 echo "   Cause: Including full Ubuntu ISO inside ESP"
 echo "   Fix: Creating minimal ESP without embedded ISOs"
 
@@ -39,7 +39,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/lib/common.sh
 
-info "📦 Creating MINIMAL bootable ESP image (no ISOs)..."
+info "☠ Creating MINIMAL bootable ESP image (no ISOs)..."
 require_cmd dd
 require_cmd mkfs.fat
 
@@ -90,7 +90,7 @@ echo "$BUILD_UUID" | sudo tee out/esp/mount/EFI/PhoenixGuard/BUILD_UUID.txt > /d
 sudo umount out/esp/mount
 rmdir out/esp/mount
 
-ok "✅ Minimal ESP created: out/esp/esp.img (${ESP_MB}MB)"
+ok "☠ Minimal ESP created: out/esp/esp.img (${ESP_MB}MB)"
 ESPMIN
 
 chmod +x scripts/esp-package-minimal.sh
@@ -208,7 +208,7 @@ for mod in "${MODULES_ORDER[@]}"; do
         if modprobe "$mod" 2>/dev/null; then
             echo "✓"
         else
-            echo "⚠ (not available)"
+            echo "☠ (not available)"
         fi
     else
         echo "  Module $mod already loaded ✓"
@@ -235,13 +235,13 @@ if [ -f "Justfile" ] && [ -d "scripts" ]; then
 elif [ -f "$HOME/Projects/edk2-bootkit-defense/PhoenixGuard/Justfile" ]; then
     PHOENIX_ROOT="$HOME/Projects/edk2-bootkit-defense/PhoenixGuard"
 else
-    echo "❌ Cannot find PhoenixGuard installation!"
+    echo "☠ Cannot find PhoenixGuard installation!"
     echo "Please run from PhoenixGuard directory or set PHOENIX_ROOT"
     exit 1
 fi
 
 cd "$PHOENIX_ROOT"
-echo "🔥 PhoenixGuard Boot System"
+echo "☠ PhoenixGuard Boot System"
 echo "Working from: $PHOENIX_ROOT"
 echo ""
 
@@ -259,11 +259,11 @@ case "${1:-help}" in
             exit 1
         fi
         echo "📝 Writing to USB: $2"
-        echo "⚠️  This will ERASE $2! Press Ctrl+C to cancel, Enter to continue"
+        echo "☠  This will ERASE $2! Press Ctrl+C to cancel, Enter to continue"
         read
         sudo dd if=build/esp/esp.img of="$2" bs=4M status=progress
         sync
-        echo "✅ USB ready!"
+        echo "☠ USB ready!"
         ;;
     
     test)
@@ -277,7 +277,7 @@ case "${1:-help}" in
         ;;
     
     status)
-        echo "📊 System Status:"
+        echo "☠ System Status:"
         echo -n "  ESP Image: "
         if [ -f "build/esp/esp.img" ]; then
             du -h build/esp/esp.img | cut -f1
@@ -318,7 +318,7 @@ set -euo pipefail
 ESP_IMG="${1:-out/esp/esp.img}"
 
 if [ ! -f "$ESP_IMG" ]; then
-    echo "❌ ESP image not found: $ESP_IMG"
+    echo "☠ ESP image not found: $ESP_IMG"
     echo "Run: just build package-esp"
     exit 1
 fi
@@ -333,7 +333,7 @@ for path in \
 done
 
 if [ -z "$OVMF_CODE" ]; then
-    echo "❌ OVMF not found!"
+    echo "☠ OVMF not found!"
     exit 1
 fi
 
@@ -342,7 +342,7 @@ OVMF_VARS="/tmp/OVMF_VARS_$$.fd"
 cp "${OVMF_CODE/CODE/VARS}" "$OVMF_VARS" 2>/dev/null || \
 cp "/usr/share/OVMF/OVMF_VARS.fd" "$OVMF_VARS"
 
-echo "🚀 Launching QEMU with fixed configuration..."
+echo "☠ Launching QEMU with fixed configuration..."
 echo "   ESP: $ESP_IMG ($(du -h $ESP_IMG | cut -f1))"
 echo "   OVMF: $OVMF_CODE"
 
@@ -363,7 +363,7 @@ chmod +x scripts/test-qemu-fixed.sh
 
 # 6. APPLY ALL FIXES
 echo ""
-echo "🚀 Applying fixes..."
+echo "☠ Applying fixes..."
 
 # Clean up old bloated images
 if [ -f "build/esp/esp.img" ]; then
@@ -406,7 +406,7 @@ export PATH="$PHOENIX_ROOT:$PHOENIX_ROOT/scripts:$PATH"
 ENVFILE
 
 echo ""
-echo "✅ ALL FIXES APPLIED!"
+echo "☠ ALL FIXES APPLIED!"
 echo ""
 echo "📋 Summary of changes:"
 echo "  1. ESP size reduced from 3.8GB to 128MB"

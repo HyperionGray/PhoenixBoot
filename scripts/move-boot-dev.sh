@@ -15,5 +15,5 @@ set -euo pipefail
 [ -d hardware_database ] && mv hardware_database dev/
 [ -d scraped_hardware ] && mv scraped_hardware dev/
 
-echo "✅ Hardware boot development code moved to dev/"
+echo "☠ Hardware boot development code moved to dev/"
 

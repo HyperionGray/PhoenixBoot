@@ -30,7 +30,7 @@ mkdir -p demo/{qemu,testing,legacy,makefile}
 printf '%s\n' \
     '# PhoenixGuard Demo Content' \
     '' \
-    '⚠️  **This directory contains demonstration and testing content only.**' \
+    '☠  **This directory contains demonstration and testing content only.**' \
     '' \
     'Demo content is **excluded** from production builds and tests. This includes:' \
     '- QEMU testing scenarios' \
@@ -41,5 +41,5 @@ printf '%s\n' \
     'For production builds, see the main Justfile targets.' \
     > demo/README.md
 
-echo "✅ Demo code moved to demo/"
+echo "☠ Demo code moved to demo/"
 

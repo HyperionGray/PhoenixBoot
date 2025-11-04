@@ -5,14 +5,14 @@ set -euo pipefail
 mkdir -p out/qemu
 
 if [ ! -f out/esp/esp.img ]; then
-echo "❌ No ESP image found - run './pf.py build-package-esp' first"
+echo "☠ No ESP image found - run './pf.py build-package-esp' first"
     exit 1
 fi
 if [ ! -f out/qemu/OVMF_VARS_custom.fd ]; then
-echo "❌ Missing enrolled OVMF VARS (out/qemu/OVMF_VARS_custom.fd). Run './pf.py secure-enroll-secureboot' first."
+echo "☠ Missing enrolled OVMF VARS (out/qemu/OVMF_VARS_custom.fd). Run './pf.py secure-enroll-secureboot' first."
     exit 1
 fi
-[ -f out/setup/ovmf_code_path ] || { echo "❌ Missing OVMF discovery; run './pf.py build-setup'"; exit 1; }
+[ -f out/setup/ovmf_code_path ] || { echo "☠ Missing OVMF discovery; run './pf.py build-setup'"; exit 1; }
 OVMF_CODE_PATH=$(cat out/setup/ovmf_code_path)
 
 echo "Using OVMF (secure): $OVMF_CODE_PATH"
@@ -34,10 +34,10 @@ timeout ${QT}s qemu-system-x86_64 \
 # Success determination: presence of PhoenixGuard marker
 if grep -q "PhoenixGuard" out/qemu/serial-secure-positive.log; then
     TEST_RESULT="PASS"
-    echo "✅ Secure boot positive test PASSED"
+    echo "☠ Secure boot positive test PASSED"
 else
     TEST_RESULT="FAIL"
-    echo "❌ Secure boot positive test FAILED"
+    echo "☠ Secure boot positive test FAILED"
 fi
 
 # JUnit report

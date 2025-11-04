@@ -9,7 +9,7 @@ set -euo pipefail
 # Store original directory at the very beginning
 ORIG_DIR=$(pwd)
 
-echo "🦀🔥 Building Nuclear Boot EDK2 Application 🔥🦀"
+echo "🦀☠ Building Nuclear Boot EDK2 Application ☠🦀"
 echo "=================================================="
 
 # Check if we're in the right directory
@@ -110,7 +110,7 @@ if [ ! -f "$DSC_FILE" ]; then
 
 [PcdsDynamicDefault]
 EOF
-    echo "✅ Created $DSC_FILE"
+    echo "☠ Created $DSC_FILE"
 fi
 
 # Create package DEC file if it doesn't exist  
@@ -139,7 +139,7 @@ if [ ! -f "$DEC_FILE" ]; then
 
 [PcdsDynamic]
 EOF
-    echo "✅ Created $DEC_FILE"
+    echo "☠ Created $DEC_FILE"
 fi
 
 # Build the application and KeyEnroll helper
@@ -201,7 +201,7 @@ if [ $BUILD_STATUS -eq 0 ]; then
     EFI_FILE=$(find Build/ -name "NuclearBootEdk2.efi" 2>/dev/null | head -1)
     
     if [ -n "$EFI_FILE" ]; then
-        echo "✅ Nuclear Boot EFI application: $WORKSPACE/$EFI_FILE"
+        echo "☠ Nuclear Boot EFI application: $WORKSPACE/$EFI_FILE"
         echo ""
         echo "📋 Next steps:"
         echo "   1. Copy to EFI System Partition: cp $EFI_FILE /boot/efi/EFI/PhoenixGuard/"
@@ -210,20 +210,20 @@ if [ $BUILD_STATUS -eq 0 ]; then
         
         # Copy back to current directory for convenience
         cp "$WORKSPACE/$EFI_FILE" "$ORIG_DIR/NuclearBootEdk2.efi"
-        echo "✅ Copied EFI file to current directory: NuclearBootEdk2.efi"
+        echo "☠ Copied EFI file to current directory: NuclearBootEdk2.efi"
         # Also sync to staging/boot for packaging paths
         mkdir -p "$ORIG_DIR/../boot"
         cp "$WORKSPACE/$EFI_FILE" "$ORIG_DIR/../boot/NuclearBootEdk2.efi" || true
         
     else
-        echo "⚠️  NuclearBootEdk2.efi not found in build output"
+        echo "☠  NuclearBootEdk2.efi not found in build output"
     fi
 
     # Also copy KeyEnrollEdk2.efi if built
     KEY_ENROLL=$(find Build/ -name "KeyEnrollEdk2.efi" 2>/dev/null | head -1)
     if [ -n "$KEY_ENROLL" ]; then
         cp "$WORKSPACE/$KEY_ENROLL" "$ORIG_DIR/KeyEnrollEdk2.efi"
-        echo "✅ Copied KeyEnrollEdk2.efi to current directory"
+        echo "☠ Copied KeyEnrollEdk2.efi to current directory"
         # Also sync to staging/boot
         mkdir -p "$ORIG_DIR/../boot"
         cp "$WORKSPACE/$KEY_ENROLL" "$ORIG_DIR/../boot/KeyEnrollEdk2.efi" || true
@@ -236,7 +236,7 @@ if [ $BUILD_STATUS -eq 0 ]; then
     
 else
     echo ""
-    echo "❌ BUILD FAILED!"
+    echo "☠ BUILD FAILED!"
     echo "==============="
     echo "Check the build log above for errors"
     exit 1

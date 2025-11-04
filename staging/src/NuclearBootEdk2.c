@@ -162,7 +162,7 @@ UefiMain (
 // Display Nuclear Boot banner
   //
   Print(L"\n");
-  Print(L"🦀🔥 PhoenixGuard Nuclear Boot %s 🔥🦀\n", NUCLEAR_BOOT_VERSION);
+  Print(L"🦀☠ PhoenixGuard Nuclear Boot %s ☠🦀\n", NUCLEAR_BOOT_VERSION);
   Print(L"===============================================\n");
   Print(L"Memory-safe, network-based bootkit defense\n");
   Print(L"NO TFTP! NO PXE! NO COMPROMISE!\n");
@@ -330,7 +330,7 @@ UefiMain (
     Print(L"ERROR: Failed to initialize Nuclear Boot: %r\n", Status);
     return Status;
   }
-  Print(L"✅ Nuclear Boot subsystems ready\n");
+  Print(L"☠ Nuclear Boot subsystems ready\n");
 
   //
   // Download boot configuration via HTTPS
@@ -341,7 +341,7 @@ UefiMain (
     Print(L"ERROR: Failed to download configuration: %r\n", Status);
     return Status;
   }
-  Print(L"✅ Configuration downloaded: %s\n", BootConfig.OsVersion);
+  Print(L"☠ Configuration downloaded: %s\n", BootConfig.OsVersion);
 
   //
   // Download kernel image via HTTPS  
@@ -352,7 +352,7 @@ UefiMain (
     Print(L"ERROR: Failed to download kernel: %r\n", Status);
     return Status;
   }
-  Print(L"✅ Kernel downloaded: %d bytes\n", KernelSize);
+  Print(L"☠ Kernel downloaded: %d bytes\n", KernelSize);
 
   //
   // Verify cryptographic signatures
@@ -366,13 +366,13 @@ UefiMain (
     FreePool(KernelData);
     return EFI_SECURITY_VIOLATION;
   }
-  Print(L"✅ Signatures verified\n");
+  Print(L"☠ Signatures verified\n");
 
   //
   // Execute Nuclear Wipe (if enabled)
   //
   if (BootConfig.NuclearWipeEnabled) {
-    Print(L"\n[5/6] 💀🔥 EXECUTING NUCLEAR WIPE 🔥💀\n");
+    Print(L"\n[5/6] ☠☠ EXECUTING NUCLEAR WIPE ☠☠\n");
     Print(L"WARNING: This will sanitize memory and caches!\n");
     
     WipeConfig.WipeMemory = TRUE;
@@ -386,7 +386,7 @@ UefiMain (
       Print(L"WARNING: Nuclear wipe failed: %r\n", Status);
       // Continue anyway - wipe is optional
     } else {
-      Print(L"💥 Nuclear wipe completed successfully\n");
+      Print(L"☠ Nuclear wipe completed successfully\n");
     }
   } else {
     Print(L"\n[5/6] Nuclear wipe disabled - skipping\n");
@@ -395,7 +395,7 @@ UefiMain (
   //
   // Execute Nuclear Jump to kernel
   //
-  Print(L"\n[6/6] 🚀 NUCLEAR JUMP TO KERNEL 🚀\n");
+  Print(L"\n[6/6] ☠ NUCLEAR JUMP TO KERNEL ☠\n");
   Print(L"Transferring control to downloaded kernel...\n");
   
   Status = ExecuteNuclearJump(KernelData, KernelSize, &BootConfig);
@@ -591,8 +591,8 @@ DownloadBootConfiguration (
   // TODO: Implement actual HTTPS download
   // For now, use mock configuration
   //
-  Print(L"📡 Connecting to %s...\n", DEFAULT_BOOT_SERVER);
-  Print(L"📡 Requesting %s...\n", DEFAULT_CONFIG_PATH);
+  Print(L"☠ Connecting to %s...\n", DEFAULT_BOOT_SERVER);
+  Print(L"☠ Requesting %s...\n", DEFAULT_CONFIG_PATH);
   
   //
   // Mock delay to simulate network activity
@@ -654,8 +654,8 @@ DownloadKernel (
   UINT8 *KernelPtr;
   UINTN Index;
   
-  Print(L"📦 Downloading kernel: %s...\n", Config->OsVersion);
-  Print(L"📦 URL: %s%s\n", Config->ServerUrl, Config->KernelPath);
+  Print(L"☠ Downloading kernel: %s...\n", Config->OsVersion);
+  Print(L"☠ URL: %s%s\n", Config->ServerUrl, Config->KernelPath);
   
   //
   // Mock delay to simulate large download
@@ -723,8 +723,8 @@ VerifyKernelSignature (
 {
   UINT32 *Header;
   
-  Print(L"🔐 Verifying RSA-4096 signature...\n");
-  Print(L"🔐 Checking kernel integrity...\n");
+  Print(L"☠ Verifying RSA-4096 signature...\n");
+  Print(L"☠ Checking kernel integrity...\n");
   
   //
   // Mock delay to simulate crypto operations
@@ -772,7 +772,7 @@ VerifyKernelSignature (
     return EFI_SECURITY_VIOLATION;
   }
   
-  Print(L"✅ Signature verification passed\n");
+  Print(L"☠ Signature verification passed\n");
   return EFI_SUCCESS;
 }
 
@@ -790,8 +790,8 @@ ExecuteNuclearWipe (
 {
   UINTN Index;
   
-  Print(L"💀 INITIATING NUCLEAR WIPE SEQUENCE 💀\n");
-  Print(L"⚠️  WARNING: SYSTEM SANITIZATION IN PROGRESS ⚠️\n");
+  Print(L"☠ INITIATING NUCLEAR WIPE SEQUENCE ☠\n");
+  Print(L"☠  WARNING: SYSTEM SANITIZATION IN PROGRESS ☠\n");
   
   if (WipeConfig->WipeMemory) {
     Print(L"🧹 Phase 1: Memory sanitization...\n");
@@ -825,9 +825,9 @@ ExecuteNuclearWipe (
         
         // Verify the wipe completed correctly
         if (CompareHashes(RegionHash, ExpectedHash)) {
-          Print(L"   ✅ Pass %d verification: Hash match confirmed\n", Index + 1);
+          Print(L"   ☠ Pass %d verification: Hash match confirmed\n", Index + 1);
         } else {
-          Print(L"   ❌ Pass %d verification: Hash mismatch - WIPE FAILURE!\n", Index + 1);
+          Print(L"   ☠ Pass %d verification: Hash mismatch - WIPE FAILURE!\n", Index + 1);
           Print(L"   🚨 SECURITY CRITICAL: Memory wipe verification failed!\n");
           if (TestRegion) FreePool(TestRegion);
           return EFI_SECURITY_VIOLATION;
@@ -844,9 +844,9 @@ ExecuteNuclearWipe (
       GeneratePatternHash(0x00, TestSize, ExpectedHash);
       
       if (CompareHashes(RegionHash, ExpectedHash)) {
-        Print(L"   ✅ Final zero verification: Memory successfully sanitized\n");
+        Print(L"   ☠ Final zero verification: Memory successfully sanitized\n");
       } else {
-        Print(L"   ❌ Final zero verification: CRITICAL SECURITY FAILURE!\n");
+        Print(L"   ☠ Final zero verification: CRITICAL SECURITY FAILURE!\n");
         FreePool(TestRegion);
         return EFI_SECURITY_VIOLATION;
       }
@@ -854,21 +854,21 @@ ExecuteNuclearWipe (
       FreePool(TestRegion);
     }
     
-    Print(L"✅ Memory wipe complete with cryptographic verification\n");
+    Print(L"☠ Memory wipe complete with cryptographic verification\n");
   }
   
   if (WipeConfig->WipeCaches) {
     Print(L"🧹 Phase 2: CPU cache flush...\n");
     // TODO: Implement actual cache flush
     gBS->Stall(1000000); // 1 second
-    Print(L"✅ Cache flush complete\n");
+    Print(L"☠ Cache flush complete\n");
   }
   
   if (WipeConfig->WipeFlash) {
     Print(L"🧹 Phase 3: SPI flash sanitization...\n");
-    Print(L"⚠️  CRITICAL DANGER: This WILL OVERWRITE SPI flash and could BRICK your system!\n");
-    Print(L"⚠️  Only proceed if you have emergency recovery tools and procedures ready.\n");
-    Print(L"⚠️  Press 'Y' to confirm flash wipe, any other key to skip: ");
+    Print(L"☠  CRITICAL DANGER: This WILL OVERWRITE SPI flash and could BRICK your system!\n");
+    Print(L"☠  Only proceed if you have emergency recovery tools and procedures ready.\n");
+    Print(L"☠  Press 'Y' to confirm flash wipe, any other key to skip: ");
     
     EFI_INPUT_KEY FlashKey;
     gST->ConIn->Reset(gST->ConIn, FALSE);
@@ -883,26 +883,26 @@ ExecuteNuclearWipe (
       }
       
       if (FlashKey.UnicodeChar == L'Y' || FlashKey.UnicodeChar == L'y') {
-        Print(L"\n💀 EXECUTING SPI FLASH WIPE - NO TURNING BACK! 💀\n");
+        Print(L"\n☠ EXECUTING SPI FLASH WIPE - NO TURNING BACK! ☠\n");
         // TODO: Implement actual SPI flash operations with flashrom/chipsec integration
         // This would include: chipset detection, flash backup, multi-pass wipe, verification
         for (UINTN Pass = 0; Pass < 3; Pass++) {
           Print(L"   Flash wipe pass %d/3...\n", Pass + 1);
           gBS->Stall(2000000); // 2 seconds per pass
         }
-        Print(L"✅ SPI flash wipe complete - SYSTEM PERMANENTLY MODIFIED\n");
+        Print(L"☠ SPI flash wipe complete - SYSTEM PERMANENTLY MODIFIED\n");
       } else {
-        Print(L"\n❌ Flash wipe cancelled by user (second confirmation)\n");
+        Print(L"\n☠ Flash wipe cancelled by user (second confirmation)\n");
       }
     } else {
-      Print(L"\n❌ Flash wipe cancelled by user (first confirmation)\n");
+      Print(L"\n☠ Flash wipe cancelled by user (first confirmation)\n");
     }
   }
   
   if (WipeConfig->WipeMicrocode) {
     Print(L"🧹 Phase 4: CPU microcode reset...\n");
-    Print(L"⚠️  DANGER: This could destabilize the CPU and cause system instability!\n");
-    Print(L"⚠️  Press 'Y' to confirm microcode reset, any other key to skip: ");
+    Print(L"☠  DANGER: This could destabilize the CPU and cause system instability!\n");
+    Print(L"☠  Press 'Y' to confirm microcode reset, any other key to skip: ");
     
     EFI_INPUT_KEY MicrocodeKey;
     gST->ConIn->Reset(gST->ConIn, FALSE);
@@ -918,13 +918,13 @@ ExecuteNuclearWipe (
         Print(L"   Resetting microcode on core %d...\n", Core);
         gBS->Stall(1000000); // 1 second per core
       }
-      Print(L"✅ Microcode reset complete - CPU state modified\n");
+      Print(L"☠ Microcode reset complete - CPU state modified\n");
     } else {
-      Print(L"\n❌ Microcode reset cancelled by user\n");
+      Print(L"\n☠ Microcode reset cancelled by user\n");
     }
   }
   
-  Print(L"💥 NUCLEAR WIPE SEQUENCE COMPLETE 💥\n");
+  Print(L"☠ NUCLEAR WIPE SEQUENCE COMPLETE ☠\n");
   return EFI_SUCCESS;
 }
 
@@ -951,7 +951,7 @@ ExecuteNuclearJump (
   Header = (UINT32*)KernelData;
   EntryPoint = Header[2];
   
-  Print(L"🚀 NUCLEAR JUMP INITIATED 🚀\n");
+  Print(L"☠ NUCLEAR JUMP INITIATED ☠\n");
   Print(L"Target Entry Point: 0x%08X\n", EntryPoint);
   Print(L"Kernel Args: %s\n", Config->KernelArgs);
   
@@ -963,9 +963,9 @@ ExecuteNuclearJump (
     gBS->Stall(1000000); // 1 second
   }
   
-  Print(L"\n💥 NUCLEAR JUMP EXECUTED! 💥\n");
+  Print(L"\n☠ NUCLEAR JUMP EXECUTED! ☠\n");
   Print(L"🎯 Control transferred to kernel\n");
-  Print(L"🔥 Boot process continues in downloaded OS\n");
+  Print(L"☠ Boot process continues in downloaded OS\n");
   
   //
   // PRODUCTION: Implement actual kernel jump using Linux boot protocol
@@ -1012,7 +1012,7 @@ ExecuteNuclearJump (
     return Status;
   }
   
-  Print(L"✅ Boot services exited - transitioning to kernel\n");
+  Print(L"☠ Boot services exited - transitioning to kernel\n");
   
   //
   // CRITICAL: Direct kernel jump with Linux boot protocol
@@ -1026,7 +1026,7 @@ ExecuteNuclearJump (
   // Cast entry point and jump
   void (*KernelEntry)(void) = (void(*)(void))(UINTN)EntryPoint;
   
-  Print(L"💥 NUCLEAR JUMP: Transferring control to 0x%08X\n", EntryPoint);
+  Print(L"☠ NUCLEAR JUMP: Transferring control to 0x%08X\n", EntryPoint);
   
   // This should never return
   KernelEntry();

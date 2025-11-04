@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/lib/common.sh
 
-info "🔐 UUEFI report (read-only)"
+info "☠ UUEFI report (read-only)"
 
 # SB state
 if command -v mokutil >/dev/null 2>&1; then

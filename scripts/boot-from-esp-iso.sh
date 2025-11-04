@@ -4,12 +4,12 @@
 
 set -e
 
-echo "🚀 PhoenixGuard Nuclear Boot Recovery - Immediate Access"
+echo "☠ PhoenixGuard Nuclear Boot Recovery - Immediate Access"
 echo "========================================================"
 
 # Check if we're already in the recovery environment
 if [ -f "/recovery_environment" ] || [ -f "/live/recovery_environment" ]; then
-    echo "✅ Already in PhoenixGuard recovery environment!"
+    echo "☠ Already in PhoenixGuard recovery environment!"
     echo "🎯 Recovery tools available:"
     echo "   • bootkit-scan         - Comprehensive bootkit detection"
     echo "   • flashrom             - Hardware firmware access"
@@ -29,7 +29,7 @@ if [[ -z "$ESP" ]]; then
 fi
 
 if [[ ! -d "$ESP/EFI" ]]; then
-    echo "❌ No ESP found at $ESP"
+    echo "☠ No ESP found at $ESP"
     exit 1
 fi
 
@@ -42,7 +42,7 @@ elif [[ -f "$ESP/recovery/PhoenixGuard-Nuclear-Recovery.iso" ]]; then
     ISO_FILE="$ESP/recovery/PhoenixGuard-Nuclear-Recovery.iso"
     echo "📀 Found standard recovery ISO"
 else
-    echo "❌ No PhoenixGuard recovery ISO found in ESP!"
+    echo "☠ No PhoenixGuard recovery ISO found in ESP!"
     echo "   Deploy first with: sudo make deploy-esp-iso"
     exit 1
 fi
@@ -60,12 +60,12 @@ sudo mount -o loop,ro "$ISO_FILE" "$TEMP_MOUNT"
 
 # Check if it's a live ISO with squashfs
 if [[ -f "$TEMP_MOUNT/live/filesystem.squashfs" ]]; then
-    echo "✅ Live ISO detected - extracting recovery environment..."
+    echo "☠ Live ISO detected - extracting recovery environment..."
     SQUASH_MOUNT="/tmp/phoenixguard_squash_mount"
     sudo mkdir -p "$SQUASH_MOUNT"
     sudo mount -o loop,ro "$TEMP_MOUNT/live/filesystem.squashfs" "$SQUASH_MOUNT"
     
-    echo "🚀 Entering PhoenixGuard recovery environment..."
+    echo "☠ Entering PhoenixGuard recovery environment..."
     echo "   Root filesystem: $SQUASH_MOUNT"
     echo "   Network access: Available"
     echo "   Hardware access: Full"
@@ -95,7 +95,7 @@ if [[ -f "$TEMP_MOUNT/live/filesystem.squashfs" ]]; then
             sudo chroot "$SQUASH_MOUNT" /bin/bash -c "bootkit-scan -v --output /tmp/host_bootkit_scan.json" || true
             if [[ -f "/tmp/host_bootkit_scan.json" ]]; then
                 sudo cp "/tmp/host_bootkit_scan.json" "./bootkit_scan_results.json"
-                echo "✅ Scan results saved to ./bootkit_scan_results.json"
+                echo "☠ Scan results saved to ./bootkit_scan_results.json"
             fi
             ;;
         2)
@@ -107,7 +107,7 @@ if [[ -f "$TEMP_MOUNT/live/filesystem.squashfs" ]]; then
             echo "💾 Mounting host filesystem for repair..."
             sudo mkdir -p "$SQUASH_MOUNT/host"
             sudo mount --bind / "$SQUASH_MOUNT/host"
-            echo "✅ Host filesystem available at /host inside recovery environment"
+            echo "☠ Host filesystem available at /host inside recovery environment"
             echo "🚪 Entering recovery shell with host access..."
             sudo chroot "$SQUASH_MOUNT" /bin/bash || true
             sudo umount "$SQUASH_MOUNT/host" || true
@@ -123,7 +123,7 @@ if [[ -f "$TEMP_MOUNT/live/filesystem.squashfs" ]]; then
     
 elif [[ -f "$TEMP_MOUNT/vmlinuz" && -f "$TEMP_MOUNT/initrd.img" ]]; then
     echo "🔧 Standard bootable ISO detected"
-    echo "⚠️  This ISO requires a reboot to use effectively."
+    echo "☠  This ISO requires a reboot to use effectively."
     echo "   The kernel and initrd are:"
     echo "   • Kernel: $TEMP_MOUNT/vmlinuz"
     echo "   • Initrd: $TEMP_MOUNT/initrd.img"
@@ -142,4 +142,4 @@ echo "🧹 Cleaning up mounts..."
 sudo umount "$TEMP_MOUNT" 2>/dev/null || true
 sudo rmdir "$TEMP_MOUNT" 2>/dev/null || true
 
-echo "✅ Recovery environment access completed"
+echo "☠ Recovery environment access completed"

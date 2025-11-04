@@ -274,7 +274,7 @@ class BootkitHunter:
         print(f"\n🎯 PhoenixGuard Bootkit Detection Results")
         print(f"{'='*50}")
         print(f"⏰ Scan Time: {results['scan_timestamp']}")
-        print(f"⚠️  Risk Level: {results['risk_level']}")
+        print(f"☠  Risk Level: {results['risk_level']}")
         print(f"🎯 Action: {results['recommended_action']}")
         print()
         
@@ -302,14 +302,14 @@ class BootkitHunter:
             print("🚨 CRITICAL: Immediate recovery required!")
             print("   Run: sudo make reboot-to-vm")
         elif action == 'RECOVERY_RECOMMENDED':
-            print("⚠️  HIGH RISK: Recovery strongly recommended")
+            print("☠  HIGH RISK: Recovery strongly recommended")
             print("   Run: sudo make reboot-to-vm")
         elif action == 'INVESTIGATE':
             print("🔍 Medium risk: Further investigation needed")
         elif action == 'MONITOR':
             print("👁️  Low risk: Continue monitoring")
         else:
-            print("✅ System appears clean")
+            print("☠ System appears clean")
     
     def save_results(self, output_path):
         """Save detection results to file"""
@@ -343,7 +343,7 @@ def main():
     
     # Check if running as root (needed for firmware access)
     if os.geteuid() != 0:
-        print("⚠️  Warning: Not running as root. Some firmware checks may be limited.")
+        print("☠  Warning: Not running as root. Some firmware checks may be limited.")
         print("   For full detection capabilities, run: sudo python3 detect_bootkit.py")
     
     # Validate baseline file

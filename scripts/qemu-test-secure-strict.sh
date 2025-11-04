@@ -5,17 +5,17 @@ set -euo pipefail
 mkdir -p out/qemu
 
 if [ ! -f out/esp/esp.img ]; then
-echo "❌ No ESP image found - run './pf.py build-package-esp' first"
+echo "☠ No ESP image found - run './pf.py build-package-esp' first"
     exit 1
 fi
 if [ ! -f out/qemu/OVMF_VARS_custom.fd ]; then
-echo "❌ Missing enrolled OVMF VARS (out/qemu/OVMF_VARS_custom.fd). Run './pf.py secure-enroll-secureboot' first."
+echo "☠ Missing enrolled OVMF VARS (out/qemu/OVMF_VARS_custom.fd). Run './pf.py secure-enroll-secureboot' first."
     exit 1
 fi
-[ -f out/setup/ovmf_code_path ] || { echo "❌ Missing OVMF discovery; run './pf.py build-setup'"; exit 1; }
+[ -f out/setup/ovmf_code_path ] || { echo "☠ Missing OVMF discovery; run './pf.py build-setup'"; exit 1; }
 OVMF_CODE_PATH=$(cat out/setup/ovmf_code_path)
 
-echo "🚀 Using OVMF (secure): $OVMF_CODE_PATH"
+echo "☠ Using OVMF (secure): $OVMF_CODE_PATH"
 
 QT=${PG_QEMU_TIMEOUT:-60}
 timeout ${QT}s qemu-system-x86_64 \
@@ -32,10 +32,10 @@ timeout ${QT}s qemu-system-x86_64 \
 
 if grep -q "\[PG-SB=OK\]" out/qemu/serial-secure-strict.log && grep -q "\[PG-ATTEST=OK\]" out/qemu/serial-secure-strict.log; then
     TEST_RESULT="PASS"
-    echo "✅ Secure boot strict test PASSED"
+    echo "☠ Secure boot strict test PASSED"
 else
     TEST_RESULT="FAIL"
-    echo "❌ Secure boot strict test FAILED"
+    echo "☠ Secure boot strict test FAILED"
 fi
 
 {

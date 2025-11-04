@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/lib/common.sh
 
-info "🔐 Secure Boot verification report"
+info "☠ Secure Boot verification report"
 
 # 1) Secure Boot state (firmware)
 if command -v mokutil >/dev/null 2>&1; then

@@ -76,7 +76,7 @@ MAIN_TEMPLATE = '''
 <!DOCTYPE html>
 <html>
 <head>
-    <title>🔥 PhoenixGuard Hardware Database</title>
+    <title>☠ PhoenixGuard Hardware Database</title>
     <style>
         body { 
             font-family: monospace; 
@@ -117,7 +117,7 @@ MAIN_TEMPLATE = '''
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔥 PhoenixGuard Hardware Database</h1>
+            <h1>☠ PhoenixGuard Hardware Database</h1>
             <p>Open-Source Hardware Configuration Repository</p>
             <p><strong>MISSION:</strong> Break vendor lock-in by mapping ALL hardware configurations!</p>
         </div>
@@ -182,7 +182,7 @@ MAIN_TEMPLATE = '''
             <div id="discoveries">
                 <p>🎮 <strong>Gaming Hardware:</strong> ASUS ROG systems have 8+ hidden gaming variables</p>
                 <p>⚡ <strong>Performance Controls:</strong> Intel systems expose 15+ overclocking variables</p>
-                <p>🔐 <strong>Security Features:</strong> Most modern systems have 20+ security variables</p>
+                <p>☠ <strong>Security Features:</strong> Most modern systems have 20+ security variables</p>
                 <p>🕵️ <strong>Vendor Secrets:</strong> 70%+ of UEFI variables are vendor-specific and hidden</p>
             </div>
         </div>
@@ -560,10 +560,10 @@ def api_stats():
     })
 
 if __name__ == '__main__':
-    print("🔥 STARTING PHOENIXGUARD HARDWARE DATABASE SERVER")
+    print("☠ STARTING PHOENIXGUARD HARDWARE DATABASE SERVER")
     print("=" * 60)
-    print("🌐 Web Interface: http://localhost:5000")
-    print("📡 API Endpoints:")
+    print("☠ Web Interface: http://localhost:5000")
+    print("☠ API Endpoints:")
     print("   POST /api/submit - Submit hardware profile")
     print("   GET /api/search?q=<query> - Search hardware")
     print("   GET /api/download/<hardware_id> - Download config")

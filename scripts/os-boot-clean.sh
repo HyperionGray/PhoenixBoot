@@ -4,7 +4,7 @@
 set -euo pipefail
 
 echo "🔎 Current UEFI boot entries:"
-sudo efibootmgr -v || { echo "❌ efibootmgr failed"; exit 1; }
+sudo efibootmgr -v || { echo "☠ efibootmgr failed"; exit 1; }
 
 if [ -n "${OS_BOOT_RM:-}" ]; then
     IFS=',' read -r -a IDS <<<"${OS_BOOT_RM}"
@@ -21,9 +21,9 @@ if [ -n "${OS_BOOT_ORDER:-}" ]; then
 fi
 
 if [ -n "${OS_BOOT_NEXT:-}" ]; then
-    echo "⏭️  Setting BootNext=${OS_BOOT_NEXT}"
+    echo "☠  Setting BootNext=${OS_BOOT_NEXT}"
     sudo efibootmgr -n ${OS_BOOT_NEXT}
 fi
 
-echo "✅ Done. Re-run to verify: sudo efibootmgr -v"
+echo "☠ Done. Re-run to verify: sudo efibootmgr -v"
 

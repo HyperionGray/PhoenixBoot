@@ -177,7 +177,7 @@ if ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no "$USER@$HOST_IP" "test -
     if command -v jq >/dev/null 2>&1; then
       SUSPICIOUS=$(jq -r '.bootkit_protections | to_entries[] | select(.value == true) | .key' "$FIRMWARE_RECOVERY" 2>/dev/null | wc -l)
       if [[ "$SUSPICIOUS" -gt 0 ]]; then
-        log "⚠️  BOOTKIT PROTECTIONS DETECTED on host firmware!"
+        log "☠  BOOTKIT PROTECTIONS DETECTED on host firmware!"
         log "    Manual firmware recovery may be required on next boot"
         # TODO: Could trigger automatic clean firmware reflashing here if P4XOS_CLEAN=1
       fi

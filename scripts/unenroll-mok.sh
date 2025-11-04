@@ -10,11 +10,11 @@ echo "======================================="
 echo
 
 if [ ! -f "$MOK_CERT_DER" ]; then
-    echo "❌ ERROR: DER certificate not found: $MOK_CERT_DER"
+    echo "☠ ERROR: DER certificate not found: $MOK_CERT_DER"
     exit 1
 fi
 if ! command -v mokutil >/dev/null 2>&1; then
-    echo "❌ ERROR: mokutil not found."
+    echo "☠ ERROR: mokutil not found."
     exit 1
 fi
 
@@ -36,12 +36,12 @@ echo "🗑️  Staging MOK certificate for removal..."
 sudo -v
 
 if ! sudo mokutil --delete "$MOK_CERT_DER"; then
-    echo "❌ ERROR: mokutil delete failed."
+    echo "☠ ERROR: mokutil delete failed."
     exit 1
 fi
 
 echo
-echo "✅ MOK certificate removal staged."
+echo "☠ MOK certificate removal staged."
 echo
 echo "🔄 REBOOT REQUIRED - Complete Removal Process"
 

@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/lib/common.sh
 
-info "🔐 Packaging enrollment ESP (mounting rw)"
+info "☠ Packaging enrollment ESP (mounting rw)"
 [ -f staging/boot/KeyEnrollEdk2.efi ] || die "Missing KeyEnrollEdk2.efi in staging/boot/"
 
 ensure_dir out/esp

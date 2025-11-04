@@ -29,7 +29,7 @@ try:
     import cert_inventory
     import pgmodsign
 except ImportError as e:
-    print(f"❌ Failed to import PhoenixGuard modules: {e}")
+    print(f"☠ Failed to import PhoenixGuard modules: {e}")
     sys.exit(1)
 
 class PGVerifyResult(Structure):
@@ -70,9 +70,9 @@ class PhoenixGuardIntegrationTest:
                 self.setup_c_functions()
                 print("📚 Loaded C verification library")
             except Exception as e:
-                print(f"⚠️  Failed to load C library: {e}")
+                print(f"☠  Failed to load C library: {e}")
         else:
-            print("⚠️  C library not found, skipping C verification tests")
+            print("☠  C library not found, skipping C verification tests")
 
     def setup_c_functions(self):
         """Configure C function signatures"""
@@ -108,19 +108,19 @@ class PhoenixGuardIntegrationTest:
         try:
             result = test_func()
             if result:
-                print(f"✅ {test_name}: PASSED")
+                print(f"☠ {test_name}: PASSED")
                 self.test_results.append((test_name, True, None))
             else:
-                print(f"❌ {test_name}: FAILED")
+                print(f"☠ {test_name}: FAILED")
                 self.test_results.append((test_name, False, "Test returned False"))
         except Exception as e:
-            print(f"💥 {test_name}: ERROR - {e}")
+            print(f"☠ {test_name}: ERROR - {e}")
             self.test_results.append((test_name, False, str(e)))
 
     def test_certificate_inventory(self):
         """Test certificate inventory functionality"""
         if not self.cert_dir.exists():
-            print("⚠️  Certificate directory not found")
+            print("☠  Certificate directory not found")
             return False
             
         # Test certificate loading and inventory
@@ -128,7 +128,7 @@ class PhoenixGuardIntegrationTest:
         inventory = inventory_tool.inventory_all_certificates()
         
         if not inventory or not inventory.get('certificate_details'):
-            print("❌ No certificates found in inventory")
+            print("☠ No certificates found in inventory")
             return False
         
         cert_details = inventory['certificate_details']
@@ -143,7 +143,7 @@ class PhoenixGuardIntegrationTest:
     def test_c_library_basic(self):
         """Test basic C library functionality"""
         if not self.lib_handle:
-            print("⚠️  C library not available, skipping test")
+            print("☠  C library not available, skipping test")
             return True  # Skip rather than fail
             
         # Load certificates
@@ -152,7 +152,7 @@ class PhoenixGuardIntegrationTest:
         )
         
         if cert_count == 0:
-            print("❌ No certificates loaded by C library")
+            print("☠ No certificates loaded by C library")
             return False
             
         print(f"📚 C library loaded {cert_count} certificates")
@@ -180,7 +180,7 @@ class PhoenixGuardIntegrationTest:
             )
             
             if not result_ptr:
-                print("❌ C verification returned NULL")
+                print("☠ C verification returned NULL")
                 continue
                 
             result = result_ptr.contents
@@ -195,7 +195,7 @@ class PhoenixGuardIntegrationTest:
             # For unsigned modules, we expect has_signature=False
             return True  # Test passed if we got here without crashing
         
-        print("⚠️  No test modules found")
+        print("☠  No test modules found")
         return True
 
     def test_module_signing_simulation(self):
@@ -215,7 +215,7 @@ class PhoenixGuardIntegrationTest:
             cert_details = inventory.get('certificate_details', [])
             
             if not cert_details:
-                print("⚠️  No certificates available for signing test")
+                print("☠  No certificates available for signing test")
                 return True
             
             print(f"📝 Would sign module with certificate: {cert_details[0].get('subject', 'Unknown')}")
@@ -226,7 +226,7 @@ class PhoenixGuardIntegrationTest:
             return True
             
         except Exception as e:
-            print(f"❌ Module signing test failed: {e}")
+            print(f"☠ Module signing test failed: {e}")
             return False
 
     def test_system_integration(self):
@@ -242,12 +242,12 @@ class PhoenixGuardIntegrationTest:
         for tool, (cmd, description) in tools.items():
             try:
                 subprocess.run(cmd, capture_output=True, check=True)
-                print(f"✅ Found {tool}: {description}")
+                print(f"☠ Found {tool}: {description}")
             except (subprocess.CalledProcessError, FileNotFoundError):
                 missing_tools.append(f"{tool} ({description})")
         
         if missing_tools:
-            print(f"❌ Missing required tools: {', '.join(missing_tools)}")
+            print(f"☠ Missing required tools: {', '.join(missing_tools)}")
             return False
         
         # Check library files
@@ -264,12 +264,12 @@ class PhoenixGuardIntegrationTest:
         for filename in expected_files:
             filepath = self.utils_dir / filename
             if filepath.exists():
-                print(f"✅ Found {filename}")
+                print(f"☠ Found {filename}")
             else:
                 missing_files.append(filename)
         
         if missing_files:
-            print(f"❌ Missing files: {', '.join(missing_files)}")
+            print(f"☠ Missing files: {', '.join(missing_files)}")
             return False
             
         return True
@@ -284,9 +284,9 @@ class PhoenixGuardIntegrationTest:
             b'/nonexistent/directory'
         )
         if cert_count != 0:
-            print("❌ Should return 0 certificates for non-existent directory")
+            print("☠ Should return 0 certificates for non-existent directory")
             return False
-        print("✅ Correctly handled non-existent certificate directory")
+        print("☠ Correctly handled non-existent certificate directory")
         
         # Test with non-existent module file
         result_ptr = self.lib_handle.pg_verify_module_signature(
@@ -296,17 +296,17 @@ class PhoenixGuardIntegrationTest:
             result = result_ptr.contents
             if result.error_message:
                 error_msg = result.error_message.decode('utf-8')
-                print(f"✅ Correctly handled non-existent module: {error_msg}")
+                print(f"☠ Correctly handled non-existent module: {error_msg}")
             self.lib_handle.pg_free_verify_result(result_ptr)
         else:
-            print("❌ Should return result structure even for errors")
+            print("☠ Should return result structure even for errors")
             return False
         
         return True
 
     def run_all_tests(self):
         """Run all integration tests"""
-        print("🚀 Starting PhoenixGuard Integration Test Suite")
+        print("☠ Starting PhoenixGuard Integration Test Suite")
         print("=" * 60)
         
         self.setup_temp_environment()
@@ -328,14 +328,14 @@ class PhoenixGuardIntegrationTest:
         
         # Print summary
         print("\n" + "=" * 60)
-        print("📊 TEST RESULTS SUMMARY")
+        print("☠ TEST RESULTS SUMMARY")
         print("=" * 60)
         
         passed = sum(1 for _, success, _ in self.test_results if success)
         total = len(self.test_results)
         
         for test_name, success, error in self.test_results:
-            status = "✅ PASS" if success else "❌ FAIL"
+            status = "☠ PASS" if success else "☠ FAIL"
             print(f"{status:<8} {test_name}")
             if error and not success:
                 print(f"         Error: {error}")
@@ -346,7 +346,7 @@ class PhoenixGuardIntegrationTest:
             print("🎉 All tests passed! PhoenixGuard system is ready.")
             return True
         else:
-            print(f"⚠️  {total - passed} test(s) failed. Review the output above.")
+            print(f"☠  {total - passed} test(s) failed. Review the output above.")
             return False
 
 def main():

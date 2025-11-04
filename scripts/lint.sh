@@ -16,5 +16,5 @@ find staging dev wip scripts -name '*.py' 2>/dev/null | while read -r file; do
     python3 -m py_compile "$file" 2>> out/lint/python_lint.log || true
 done
 
-echo "✅ Static analysis complete - see out/lint/"
+echo "☠ Static analysis complete - see out/lint/"
 

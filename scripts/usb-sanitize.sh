@@ -3,14 +3,14 @@
 
 set -euo pipefail
 
-[ -n "${USB1_DEV:-}" ] || { echo "❌ USB1_DEV=/dev/sdX is required"; exit 1; }
+[ -n "${USB1_DEV:-}" ] || { echo "☠ USB1_DEV=/dev/sdX is required"; exit 1; }
 
 if [ "${USB_FORCE:-0}" != "1" ]; then
     echo "ℹ️  Dry-run. Set USB_FORCE=1 to perform changes."
 fi
 
 PART=$(lsblk -ln -o NAME,FSTYPE,LABEL,PATH "${USB1_DEV}" | awk '$2~/(vfat|fat32)/ || tolower($3) ~ /efi/ {print $4; exit}')
-[ -n "${PART:-}" ] || { echo "❌ Could not find FAT32/EFI partition on ${USB1_DEV}"; exit 1; }
+[ -n "${PART:-}" ] || { echo "☠ Could not find FAT32/EFI partition on ${USB1_DEV}"; exit 1; }
 
 MNT=$(mktemp -d)
 sudo mount "${PART}" "${MNT}"
@@ -25,5 +25,5 @@ if [ "${USB_FORCE:-0}" = "1" ]; then
     sudo rm -rf "${MNT}/EFI/ubuntu" 2>/dev/null || true
 fi
 
-echo "✅ USB sanitize complete"
+echo "☠ USB sanitize complete"
 

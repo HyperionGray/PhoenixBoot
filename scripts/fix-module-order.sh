@@ -19,7 +19,7 @@ for mod in "${MODULES_ORDER[@]}"; do
         if modprobe "$mod" 2>/dev/null; then
             echo "✓"
         else
-            echo "⚠ (not available)"
+            echo "☠ (not available)"
         fi
     else
         echo "  Module $mod already loaded ✓"

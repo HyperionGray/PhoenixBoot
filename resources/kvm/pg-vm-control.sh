@@ -45,27 +45,27 @@ vm_status() {
   
   log "=== VM Status ==="
   if [[ -n "$qemu_pid" ]]; then
-    echo "✅ VM Running (PID: $qemu_pid)"
+    echo "☠ VM Running (PID: $qemu_pid)"
     echo "   CPU Usage: $(ps -p "$qemu_pid" -o %cpu= 2>/dev/null || echo "unknown")%"
     echo "   Memory: $(ps -p "$qemu_pid" -o rss= 2>/dev/null || echo "unknown") KB"
     
     # Check monitor socket
     if [[ -S /tmp/qemu-monitor-socket ]]; then
-      echo "✅ Monitor socket available"
+      echo "☠ Monitor socket available"
       echo "   Connect with: socat - UNIX-CONNECT:/tmp/qemu-monitor-socket"
     fi
   else
-    echo "❌ VM Not Running"
+    echo "☠ VM Not Running"
   fi
   
   # Network status
   if ip link show kvmbr0 >/dev/null 2>&1; then
-    echo "✅ Bridge network active (kvmbr0)"
+    echo "☠ Bridge network active (kvmbr0)"
     ip addr show kvmbr0 | grep -E "inet |state"
   fi
   
   if ip link show kvmtap0 >/dev/null 2>&1; then
-    echo "✅ TAP interface active (kvmtap0)"
+    echo "☠ TAP interface active (kvmtap0)"
   fi
 }
 
@@ -73,7 +73,7 @@ host_info() {
   log "=== Host Information ==="
   echo "🖥️  Hostname: $(hostname)"
   echo "🔗 IP Address: $(ip route get 1 2>/dev/null | awk '{print $(NF-2); exit}' || echo "unknown")"
-  echo "📊 Load: $(uptime | awk -F'load average:' '{print $2}')"
+  echo "☠ Load: $(uptime | awk -F'load average:' '{print $2}')"
   echo "💾 Memory: $(free -h | awk '/^Mem:/ {print $3 "/" $2}')"
   echo "💿 Disk: $(df -h / | awk 'NR==2 {print $3 "/" $2 " (" $5 ")"}')"
   
@@ -206,9 +206,9 @@ bind_gpu() {
   local driver
   driver=$(lspci -k -s "$GPU_BDF" | awk '/Kernel driver in use:/ {print $5}' || echo "none")
   if [[ "$driver" == "vfio-pci" ]]; then
-    log "✅ GPU bound to vfio-pci successfully"
+    log "☠ GPU bound to vfio-pci successfully"
   else
-    log "❌ Failed to bind GPU to vfio-pci (current: $driver)"
+    log "☠ Failed to bind GPU to vfio-pci (current: $driver)"
   fi
 }
 
@@ -217,7 +217,7 @@ cleanup_all() {
   stop_vm
   cleanup_network
   reset_gpu
-  log "✅ Cleanup complete"
+  log "☠ Cleanup complete"
 }
 
 vm_console() {

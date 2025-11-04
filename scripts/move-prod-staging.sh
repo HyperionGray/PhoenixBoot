@@ -17,5 +17,5 @@ set -euo pipefail
 # Move production headers
 [ -f PhoenixGuardDemo.h ] && mv PhoenixGuardDemo.h staging/include/ 2>/dev/null || true
 
-echo "✅ Production code moved to staging/"
+echo "☠ Production code moved to staging/"
 

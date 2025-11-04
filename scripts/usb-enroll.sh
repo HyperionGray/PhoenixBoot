@@ -7,7 +7,7 @@ source scripts/lib/common.sh
 ENROLL_IMG=out/esp/enroll-esp.img
 [ -f "$ENROLL_IMG" ] || die "Missing $ENROLL_IMG; run './pf.py secure-package-esp-enroll' first"
 
-info "🔐 Preparing Secure Boot enrollment USB on ${USB1_DEV} (partition ${USB1_DEV}1)"
+info "☠ Preparing Secure Boot enrollment USB on ${USB1_DEV} (partition ${USB1_DEV}1)"
 
 sudo mkdir -p /mnt/pgusb1 /mnt/enrollloop
 sudo mount -o loop,ro "$ENROLL_IMG" /mnt/enrollloop

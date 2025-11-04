@@ -93,7 +93,7 @@ if [[ -f "/usr/share/OVMF/OVMF_CODE_4M.secboot.fd" ]]; then
     mkdir -p /var/lib/qemu
     # Use Microsoft keys template for Secure Boot compatibility
     install -D -m 0644 "$TEMPLATE_VARS" "$OVMF_VARS" || true
-    log "🔐 Created Secure Boot enabled OVMF varstore"
+    log "☠ Created Secure Boot enabled OVMF varstore"
   fi
   
 elif [[ -f "/usr/share/OVMF/OVMF_CODE.secboot.fd" ]]; then
@@ -119,7 +119,7 @@ if [[ -n "$OVMF_CODE" && -f "$OVMF_CODE" ]]; then
     -global ICH9-LPC.disable_s3=1  # Disable S3 for stability
     -global ICH9-LPC.disable_s4=1  # Disable S4 for stability
   )
-  log "🔐 Using Secure Boot OVMF: $(basename "$OVMF_CODE")"
+  log "☠ Using Secure Boot OVMF: $(basename "$OVMF_CODE")"
 else
   UEFI_ARGS=()
   log "WARNING: Booting without UEFI/Secure Boot"
@@ -138,7 +138,7 @@ if [[ "${PASSTHROUGH_USB:-}" == "yes" ]]; then
   USB_ARGS+=("-usb" "-device" "usb-host,hostbus=1,hostaddr=2" "-device" "usb-host,hostbus=1,hostaddr=3")
 fi
 
-log "🚀 Launching QEMU with enhanced networking..."
+log "☠ Launching QEMU with enhanced networking..."
 log "   VM will be accessible at 192.168.100.x"
 log "   Host SSH: ssh $(whoami)@$HOST_IP"
 log "   Press Ctrl+Alt+G to release cursor in VNC"

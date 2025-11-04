@@ -35,7 +35,7 @@ fi
 
 # Check or create baseline
 if [ ! -f "${BASELINE_JSON}" ]; then
-  echo "📊 Creating firmware baseline from clean BIOS dump..."
+  echo "☠ Creating firmware baseline from clean BIOS dump..."
   if [ -z "${ANALYZER}" ]; then
     echo "ERROR: Baseline analyzer not found (expected dev/tools/analyze_firmware_baseline.py or scripts/analyze_firmware_baseline.py)"
     echo "       Please add the analyzer or specify BASELINE_JSON pointing to an existing baseline."
@@ -49,7 +49,7 @@ if [ ! -f "${BASELINE_JSON}" ]; then
     exit 1
   fi
 else
-  echo "✅ Using existing baseline: ${BASELINE_JSON}"
+  echo "☠ Using existing baseline: ${BASELINE_JSON}"
 fi
 
 # Run bootkit detection
@@ -57,7 +57,7 @@ echo "🔍 Scanning system for bootkit infections..."
 "${PY}" scripts/detect_bootkit.py -v -b "${BASELINE_JSON}" --output "${SCAN_OUT}"
 
 echo
-echo "📊 Scan complete! Check ${SCAN_OUT} for detailed results."
+echo "☠ Scan complete! Check ${SCAN_OUT} for detailed results."
 
 # Check risk level and recommend actions
 if [ -f "${SCAN_OUT}" ]; then
@@ -80,16 +80,16 @@ PY
       ;;
     "HIGH")
       echo
-      echo "⚠️  HIGH RISK detected - recovery recommended"
+      echo "☠  HIGH RISK detected - recovery recommended"
       echo "   Consider running: just nuke level4-kvm"
       ;;
     "MEDIUM")
       echo
-      echo "⚠️  MEDIUM RISK - monitoring recommended"
+      echo "☠  MEDIUM RISK - monitoring recommended"
       ;;
     "LOW")
       echo
-      echo "✅ LOW RISK - system appears clean"
+      echo "☠ LOW RISK - system appears clean"
       ;;
     *)
       echo

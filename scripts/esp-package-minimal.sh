@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/lib/common.sh
 
-info "📦 Creating MINIMAL bootable ESP image (no ISOs)..."
+info "☠ Creating MINIMAL bootable ESP image (no ISOs)..."
 require_cmd dd
 require_cmd mkfs.fat
 
@@ -54,4 +54,4 @@ echo "$BUILD_UUID" | sudo tee out/esp/mount/EFI/PhoenixGuard/BUILD_UUID.txt > /d
 sudo umount out/esp/mount
 rmdir out/esp/mount
 
-ok "✅ Minimal ESP created: out/esp/esp.img (${ESP_MB}MB)"
+ok "☠ Minimal ESP created: out/esp/esp.img (${ESP_MB}MB)"

@@ -5,13 +5,13 @@ set -euo pipefail
 mkdir -p out/qemu
 
 if [ ! -f out/esp/esp.img ]; then
-    echo "❌ No ESP image found - run './pf.py build-package-esp' first"
+    echo "☠ No ESP image found - run './pf.py build-package-esp' first"
     exit 1
 fi
 
 # Get discovered OVMF paths from ESP packaging stage
 if [ ! -f out/esp/ovmf_paths.txt ]; then
-    echo "❌ OVMF paths not found - run './pf.py build-package-esp' first"
+    echo "☠ OVMF paths not found - run './pf.py build-package-esp' first"
     exit 1
 fi
 
@@ -19,7 +19,7 @@ OVMF_CODE_PATH=$(sed -n '1p' out/esp/ovmf_paths.txt)
 OVMF_VARS_PATH=$(sed -n '2p' out/esp/ovmf_paths.txt)
 
 if [ ! -f "$OVMF_CODE_PATH" ] || [ ! -f "$OVMF_VARS_PATH" ]; then
-    echo "❌ OVMF files not found at discovered paths:"
+    echo "☠ OVMF files not found at discovered paths:"
     echo "   CODE: $OVMF_CODE_PATH"
     echo "   VARS: $OVMF_VARS_PATH"
     exit 1
@@ -47,10 +47,10 @@ timeout ${QT}s qemu-system-x86_64 \
 # Check for success marker in serial output
 if grep -q "PhoenixGuard" out/qemu/serial.log; then
     TEST_RESULT="PASS"
-    echo "✅ QEMU boot test PASSED"
+    echo "☠ QEMU boot test PASSED"
 else
     TEST_RESULT="FAIL"
-    echo "❌ QEMU boot test FAILED"
+    echo "☠ QEMU boot test FAILED"
 fi
 
 # Generate JUnit-style report

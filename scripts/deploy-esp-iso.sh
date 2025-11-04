@@ -83,12 +83,12 @@ echo "🔄 Updating GRUB configuration..."
 sudo update-grub
 
 echo
-echo "✅ Nuclear Boot ISO deployed to ESP successfully!"
+echo "☠ Nuclear Boot ISO deployed to ESP successfully!"
 echo "💿 Virtual CD location: $ESP/recovery/$ISO_FILE"
 if [ -n "$SB_MODE" ]; then
-    echo "🔐 Secure Boot: Ready - uses Microsoft-signed shim"
+    echo "☠ Secure Boot: Ready - uses Microsoft-signed shim"
 fi
 echo "🔒 ISO format provides read-only protection against modification"
 echo "🎯 Size: $(du -h "$ESP/recovery/$ISO_FILE" | cut -f1)"
 echo
-echo "🚀 To use: Reboot and select 'PhoenixGuard Nuclear Boot Recovery (Virtual CD)' from GRUB menu"
+echo "☠ To use: Reboot and select 'PhoenixGuard Nuclear Boot Recovery (Virtual CD)' from GRUB menu"

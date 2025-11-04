@@ -5,7 +5,7 @@ set -euo pipefail
 # =================================
 # Quick test setup for KVM recovery with auto-detected parameters
 
-echo "🦀🔥 PhoenixGuard KVM Test Installation 🔥🦀"
+echo "🦀☠ PhoenixGuard KVM Test Installation ☠🦀"
 echo "============================================"
 
 # Auto-detect system parameters
@@ -24,24 +24,24 @@ echo "  VM Image: $QCOW2"
 # Check prerequisites
 MISSING=0
 if [[ ! -f "$VMLINUZ" ]]; then
-    echo "❌ Kernel not found: $VMLINUZ"
+    echo "☠ Kernel not found: $VMLINUZ"
     MISSING=1
 fi
 if [[ ! -f "$INITRD" ]]; then
-    echo "❌ Initrd not found: $INITRD"
+    echo "☠ Initrd not found: $INITRD"
     MISSING=1
 fi
 if [[ ! -f "$QCOW2" ]]; then
-    echo "❌ VM image not found: $QCOW2"
+    echo "☠ VM image not found: $QCOW2"
     MISSING=1
 fi
 
 if [[ $MISSING -gt 0 ]]; then
-    echo "❌ Prerequisites missing - cannot install KVM recovery"
+    echo "☠ Prerequisites missing - cannot install KVM recovery"
     exit 1
 fi
 
-echo "✅ Prerequisites found"
+echo "☠ Prerequisites found"
 echo
 
 # Auto-detect GPU
@@ -54,7 +54,7 @@ if [[ -n "$GPU_INFO" ]]; then
     echo "  IDs: $GPU_IDS"
     echo "  Info: $GPU_INFO"
 else
-    echo "⚠️  No discrete GPU found - using Intel integrated"
+    echo "☠  No discrete GPU found - using Intel integrated"
     GPU_BDF="00:02.0"
     GPU_IDS="8086:7d67"
 fi
@@ -74,7 +74,7 @@ sudo ./scripts/install_kvm_snapshot_jump.sh \
     --gpu-ids "$GPU_IDS"
 
 echo
-echo "✅ KVM Test Installation Complete!"
+echo "☠ KVM Test Installation Complete!"
 echo "=================================="
 echo
 echo "🎯 Next steps:"

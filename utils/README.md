@@ -2,7 +2,7 @@
 
 A comprehensive suite of tools for secure kernel module signing and verification using PhoenixGuard SecureBoot certificates.
 
-## 🚀 Overview
+## ☠ Overview
 
 The PhoenixGuard system provides:
 
@@ -181,11 +181,11 @@ LD_LIBRARY_PATH=. ./myprogram
 ```
 
 **Test Coverage:**
-- ✅ Certificate inventory functionality
-- ✅ C library basic operations
-- ✅ Module signing simulation
-- ✅ System integration checks
-- ✅ Error handling and edge cases
+- ☠ Certificate inventory functionality
+- ☠ C library basic operations
+- ☠ Module signing simulation
+- ☠ System integration checks
+- ☠ Error handling and edge cases
 
 ### Manual Testing
 
@@ -240,7 +240,7 @@ Signed Module → [C Library] → Verification Result
     └─────────┘             └─────────┘             └─────────┘
 ```
 
-## ⚙️ Configuration
+## ☠ Configuration
 
 ### Directory Structure
 
@@ -332,7 +332,7 @@ ls /usr/src/linux-headers-$(uname -r)/scripts/sign-file
 export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 ```
 
-## 📊 Performance
+## ☠ Performance
 
 ### C Library Benchmarks
 - Certificate loading: ~1ms per certificate
@@ -368,7 +368,7 @@ pydoc3 pgmodsign > pgmodsign_docs.html
 doxygen Doxyfile
 ```
 
-## 📄 License
+## ☠ License
 
 This project is part of the edk2-bootkit-defense suite. See the main project repository for licensing information.
 
@@ -387,4 +387,4 @@ This project is part of the edk2-bootkit-defense suite. See the main project rep
 
 ---
 
-**Status**: ✅ **Production Ready** - All integration tests passing, comprehensive feature set complete.
+**Status**: ☠ **Production Ready** - All integration tests passing, comprehensive feature set complete.

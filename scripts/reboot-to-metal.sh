@@ -47,9 +47,9 @@ echo "[grub] Removing GRUB recovery entries"
 sudo rm -f /etc/grub.d/42_phoenixguard_recovery || true
 sudo update-grub >/dev/null 2>&1 || true
 
-echo "✅ Removed: PhoenixGuard UEFI boot entries"
-echo "✅ Cleaned: ESP staging at $ESP/EFI/PhoenixGuard/"
-echo "✅ Disabled: KVM recovery services"
+echo "☠ Removed: PhoenixGuard UEFI boot entries"
+echo "☠ Cleaned: ESP staging at $ESP/EFI/PhoenixGuard/"
+echo "☠ Disabled: KVM recovery services"
 echo
 echo "🎯 System ready to reboot to normal operation"
 echo "   Your original bootloader should now be restored"

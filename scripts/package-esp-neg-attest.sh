@@ -5,7 +5,7 @@ set -euo pipefail
 SRC=out/esp/esp.img
 DST=out/esp/esp-neg-attest.img
 
-[ -f "$SRC" ] || { echo "❌ Missing $SRC; run './pf.py build-package-esp' first"; exit 1; }
+[ -f "$SRC" ] || { echo "☠ Missing $SRC; run './pf.py build-package-esp' first"; exit 1; }
 cp "$SRC" "$DST"
 
 # Preflight: clear any previous mount state
@@ -24,5 +24,5 @@ sudo umount out/esp/mount
 rmdir out/esp/mount
 sha256sum "$DST" > "$DST.sha256"
 
-echo "✅ Negative attestation ESP at $DST"
+echo "☠ Negative attestation ESP at $DST"
 

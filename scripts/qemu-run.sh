@@ -7,18 +7,18 @@ set -euo pipefail
 mkdir -p out/qemu
 
 if [ ! -f out/esp/esp.img ]; then
-echo "❌ No ESP image found - run './pf.py build-package-esp' first"
+echo "☠ No ESP image found - run './pf.py build-package-esp' first"
   exit 1
 fi
 if [ ! -f out/esp/ovmf_paths.txt ]; then
-echo "❌ OVMF paths not found - run './pf.py build-package-esp' first"
+echo "☠ OVMF paths not found - run './pf.py build-package-esp' first"
   exit 1
 fi
 
 OVMF_CODE_PATH=$(sed -n '1p' out/esp/ovmf_paths.txt)
 OVMF_VARS_PATH=$(sed -n '2p' out/esp/ovmf_paths.txt)
 if [ ! -f "$OVMF_CODE_PATH" ] || [ ! -f "$OVMF_VARS_PATH" ]; then
-  echo "❌ OVMF files not found at discovered paths:"
+  echo "☠ OVMF files not found at discovered paths:"
   echo "   CODE: $OVMF_CODE_PATH"
   echo "   VARS: $OVMF_VARS_PATH"
   exit 1

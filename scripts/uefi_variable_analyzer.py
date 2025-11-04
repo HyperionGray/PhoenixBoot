@@ -29,7 +29,7 @@ class UEFIVariableAnalyzer:
                 return None
             return raw_data[4:]  # Skip EFI variable attributes
         except Exception as e:
-            print(f"⚠️  Cannot read {var_name}: {e}")
+            print(f"☠  Cannot read {var_name}: {e}")
             return None
     
     def analyze_asus_variables(self):
@@ -64,7 +64,7 @@ class UEFIVariableAnalyzer:
                 self.analysis_results[var_name] = analysis
                 self.print_analysis(var_name, data, analysis)
             else:
-                print(f"❌ Could not read variable data")
+                print(f"☠ Could not read variable data")
     
     def decode_variable_data(self, var_name: str, data: bytes) -> Dict:
         """Decode variable data based on variable name and data patterns"""
@@ -188,7 +188,7 @@ class UEFIVariableAnalyzer:
     
     def print_analysis(self, var_name: str, data: bytes, analysis: Dict):
         """Print variable analysis in a readable format"""
-        print(f"📊 Size: {analysis['size']} bytes")
+        print(f"☠ Size: {analysis['size']} bytes")
         print(f"🔧 Type: {analysis['interpretation']}")
         print(f"📱 Raw: {analysis['hex_data']}")
         
@@ -199,7 +199,7 @@ class UEFIVariableAnalyzer:
     
     def generate_config_recommendations(self):
         """Generate configuration recommendations based on analysis"""
-        print("\n🚀 UNIVERSAL BIOS CONFIG RECOMMENDATIONS")
+        print("\n☠ UNIVERSAL BIOS CONFIG RECOMMENDATIONS")
         print("=" * 60)
         
         recommendations = {
@@ -253,11 +253,11 @@ class UEFIVariableAnalyzer:
         with open(output_file, 'w') as f:
             json.dump(results, f, indent=2)
         
-        print(f"\n✅ Detailed analysis saved to: {output_file}")
+        print(f"\n☠ Detailed analysis saved to: {output_file}")
         return output_file
 
 def main():
-    print("🔥 PHOENIXGUARD ADVANCED UEFI VARIABLE ANALYZER")
+    print("☠ PHOENIXGUARD ADVANCED UEFI VARIABLE ANALYZER")
     print("=" * 60)
     print("Reading and decoding ASUS variable VALUES...")
     print()
@@ -275,7 +275,7 @@ def main():
     
     print(f"\n🎯 ANALYSIS COMPLETE!")
     print("This data is GOLD for building universal BIOS support!")
-    print("We now know how to configure ROG hardware properly! 🚀")
+    print("We now know how to configure ROG hardware properly! ☠")
 
 if __name__ == "__main__":
     main()

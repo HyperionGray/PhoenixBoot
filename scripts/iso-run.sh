@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-[ -n "${ISO_PATH:-}" ] || { echo "❌ ISO_PATH=/path.iso is required"; exit 1; }
+[ -n "${ISO_PATH:-}" ] || { echo "☠ ISO_PATH=/path.iso is required"; exit 1; }
 
 # Setup toolchain and build artifacts
 ./pf.py build-setup build-build
@@ -18,5 +18,5 @@ ISO_PATH="${ISO_PATH}" ./pf.py build-package-esp-iso
 ./pf.py verify-esp-robust
 ./pf.py test-qemu
 
-echo "✅ ISO run completed"
+echo "☠ ISO run completed"
 

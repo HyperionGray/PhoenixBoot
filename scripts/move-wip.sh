@@ -26,5 +26,5 @@ printf '%s\n' \
     'Universal hardware support for PhoenixGuard deployment across diverse firmware environments.' \
     > wip/universal-bios/README.md
 
-echo "✅ WIP implementations moved to wip/"
+echo "☠ WIP implementations moved to wip/"
 

@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/lib/common.sh
 
-info "📦 Creating bootable ESP image..."
+info "☠ Creating bootable ESP image..."
 require_cmd dd
 require_cmd mkfs.fat
 require_cmd sbsign

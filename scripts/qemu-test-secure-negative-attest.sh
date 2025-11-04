@@ -5,9 +5,9 @@ set -euo pipefail
 mkdir -p out/qemu
 
 NEG=out/esp/esp-neg-attest.img
-[ -f "$NEG" ] || { echo "❌ Missing $NEG; run './pf.py build-package-esp-neg-attest'"; exit 1; }
-[ -f out/qemu/OVMF_VARS_custom.fd ] || { echo "❌ Missing enrolled OVMF VARS; run './pf.py secure-enroll-secureboot'"; exit 1; }
-[ -f out/setup/ovmf_code_path ] || { echo "❌ Missing OVMF discovery; run './pf.py build-setup'"; exit 1; }
+[ -f "$NEG" ] || { echo "☠ Missing $NEG; run './pf.py build-package-esp-neg-attest'"; exit 1; }
+[ -f out/qemu/OVMF_VARS_custom.fd ] || { echo "☠ Missing enrolled OVMF VARS; run './pf.py secure-enroll-secureboot'"; exit 1; }
+[ -f out/setup/ovmf_code_path ] || { echo "☠ Missing OVMF discovery; run './pf.py build-setup'"; exit 1; }
 OVMF_CODE_PATH=$(cat out/setup/ovmf_code_path)
 
 QT=${PG_QEMU_TIMEOUT:-60}
@@ -26,10 +26,10 @@ timeout ${QT}s qemu-system-x86_64 \
 # Expect attestation failure markers
 if grep -q "\[PG-ATTEST=FAIL\]" out/qemu/serial-secure-neg-attest.log && grep -q "\[PG-BOOT=FAIL\]" out/qemu/serial-secure-neg-attest.log; then
     TEST_RESULT="PASS"
-    echo "✅ Negative attestation test PASSED (fail-closed)"
+    echo "☠ Negative attestation test PASSED (fail-closed)"
 else
     TEST_RESULT="FAIL"
-    echo "❌ Negative attestation test FAILED (expected fail-closed markers)"
+    echo "☠ Negative attestation test FAILED (expected fail-closed markers)"
 fi
 
 {

@@ -11,7 +11,7 @@ echo "=============================="
 echo
 
 if [ ! -f "$MOK_CERT_PEM" ]; then
-    echo "❌ MOK PEM certificate not found: $MOK_CERT_PEM"
+    echo "☠ MOK PEM certificate not found: $MOK_CERT_PEM"
     exit 1
 fi
 
@@ -31,9 +31,9 @@ if [ -f "$MOK_CERT_DER" ]; then
     DER_SHA1=$(openssl x509 -inform DER -in "$MOK_CERT_DER" -noout -fingerprint -sha1 | sed 's/^SHA1 Fingerprint=//')
     
     if [ "$PEM_SHA1" = "$DER_SHA1" ]; then
-        echo "✅ PEM and DER certificates match (SHA1: $PEM_SHA1)"
+        echo "☠ PEM and DER certificates match (SHA1: $PEM_SHA1)"
     else
-        echo "❌ PEM and DER certificates differ!"
+        echo "☠ PEM and DER certificates differ!"
         echo "   PEM SHA1: $PEM_SHA1"
         echo "   DER SHA1: $DER_SHA1"
     fi

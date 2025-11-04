@@ -4,13 +4,13 @@
 set -euo pipefail
 mkdir -p out/qemu
 
-[ -f out/setup/ovmf_code_path ] || { echo "❌ Missing OVMF discovery; run './pf.py build-setup'"; exit 1; }
+[ -f out/setup/ovmf_code_path ] || { echo "☠ Missing OVMF discovery; run './pf.py build-setup'"; exit 1; }
 OVMF_CODE_PATH=$(cat out/setup/ovmf_code_path)
 OVMF_VARS_PATH=$(cat out/setup/ovmf_vars_path)
 
 cp "$OVMF_VARS_PATH" out/qemu/OVMF_VARS_enroll.fd
 
-echo "🚀 Enrolling keys into OVMF using $OVMF_CODE_PATH"
+echo "☠ Enrolling keys into OVMF using $OVMF_CODE_PATH"
 QT=${PG_QEMU_TIMEOUT:-120}
 timeout -k 5 ${QT}s qemu-system-x86_64 \
     -machine q35 -cpu host -enable-kvm -m 512 \
@@ -20,6 +20,6 @@ timeout -k 5 ${QT}s qemu-system-x86_64 \
     -serial file:out/qemu/enroll.log -display none -no-reboot || true
 
 cp out/qemu/OVMF_VARS_enroll.fd out/qemu/OVMF_VARS_custom.fd
-echo "✅ Persisted OVMF VARS at out/qemu/OVMF_VARS_custom.fd"
+echo "☠ Persisted OVMF VARS at out/qemu/OVMF_VARS_custom.fd"
 echo "ℹ️  If secure tests fail, re-run './pf.py secure-enroll-secureboot' (consider longer timeout)"
 

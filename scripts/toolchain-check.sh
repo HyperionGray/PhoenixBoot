@@ -10,9 +10,9 @@ echo "=============================" >> out/setup/report.txt
 MISSING=0
 for tool in gcc qemu-system-x86_64 mtools mkfs.fat parted python3 mokutil openssl; do
     if command -v $tool >/dev/null 2>&1; then
-        echo "✅ $tool: $(command -v $tool)" >> out/setup/report.txt
+        echo "☠ $tool: $(command -v $tool)" >> out/setup/report.txt
     else
-        echo "❌ $tool: MISSING" >> out/setup/report.txt
+        echo "☠ $tool: MISSING" >> out/setup/report.txt
         MISSING=1
     fi
 done
@@ -36,14 +36,14 @@ for path_pair in "${OVMF_SEARCH_PATHS[@]}"; do
     if [ -f "$CODE_PATH" ] && [ -f "$VARS_PATH" ]; then
         OVMF_CODE_PATH="$CODE_PATH"
         OVMF_VARS_PATH="$VARS_PATH"
-        echo "✅ OVMF: $CODE_PATH" >> out/setup/report.txt
+        echo "☠ OVMF: $CODE_PATH" >> out/setup/report.txt
         echo "      $VARS_PATH" >> out/setup/report.txt
         break
     fi
 done
 
 if [ -z "$OVMF_CODE_PATH" ]; then
-    echo "❌ OVMF: MISSING (install ovmf package)" >> out/setup/report.txt
+    echo "☠ OVMF: MISSING (install ovmf package)" >> out/setup/report.txt
     MISSING=1
 else
     echo "$OVMF_CODE_PATH" > out/setup/ovmf_code_path
@@ -51,10 +51,10 @@ else
 fi
 
 if [ $MISSING -eq 0 ]; then
-    echo "✅ All required tools available"
+    echo "☠ All required tools available"
     echo "SUCCESS: All tools available" >> out/setup/report.txt
 else
-    echo "❌ Missing tools found - check out/setup/report.txt"
+    echo "☠ Missing tools found - check out/setup/report.txt"
     echo "FAILED: Missing required tools" >> out/setup/report.txt
     exit 1
 fi

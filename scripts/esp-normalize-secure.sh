@@ -18,7 +18,7 @@ LOG_FILE="$LOG_DIR/esp-normalize-secure.log"
 # Append both stdout/stderr to log while preserving console output
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-info "🔧 Normalizing ESP for Secure Boot: $IMG"
+info "☠ Normalizing ESP for Secure Boot: $IMG"
 
 # Timeouts (seconds) for mtools operations to avoid hangs
 MTOOLS_TIMEOUT=${PG_MTOOLS_TIMEOUT:-30}

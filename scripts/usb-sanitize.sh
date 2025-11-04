@@ -6,7 +6,7 @@ set -euo pipefail
 [ -n "${USB1_DEV:-}" ] || { echo "☠ USB1_DEV=/dev/sdX is required"; exit 1; }
 
 if [ "${USB_FORCE:-0}" != "1" ]; then
-    echo "ℹ️  Dry-run. Set USB_FORCE=1 to perform changes."
+    echo "ℹ☠  Dry-run. Set USB_FORCE=1 to perform changes."
 fi
 
 PART=$(lsblk -ln -o NAME,FSTYPE,LABEL,PATH "${USB1_DEV}" | awk '$2~/(vfat|fat32)/ || tolower($3) ~ /efi/ {print $4; exit}')
@@ -16,7 +16,7 @@ MNT=$(mktemp -d)
 sudo mount "${PART}" "${MNT}"
 trap 'sudo umount "${MNT}"; rmdir "${MNT}"' EXIT
 
-echo "🔧 Sanitizing ${PART} mounted at ${MNT}"
+echo "☠ Sanitizing ${PART} mounted at ${MNT}"
 find "${MNT}" -maxdepth 2 -type f -name '*.pfs' -print
 
 if [ "${USB_FORCE:-0}" = "1" ]; then

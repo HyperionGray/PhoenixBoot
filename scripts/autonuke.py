@@ -8,9 +8,9 @@ recovery methods from safest software-only approaches to extreme hardware
 recovery using external programmers.
 
 Recovery Escalation Levels:
-1. 🔍 SCAN: Bootkit detection and analysis
-2. 💿 SOFT: ESP-based Nuclear Boot ISO recovery  
-3. ⚡ HARD: Direct hardware firmware recovery
+1. ☠ SCAN: Bootkit detection and analysis
+2. ☠ SOFT: ESP-based Nuclear Boot ISO recovery  
+3. ☠ HARD: Direct hardware firmware recovery
 4. ☠ NUKE: External CH341A hardware programmer recovery
 
 Author: PhoenixGuard Framework
@@ -72,22 +72,22 @@ class AutoNuke:
         """Display AUTONUKE banner"""
         banner = f"""
 {Colors.RED}{Colors.BOLD}
-    ╔═══════════════════════════════════════════════╗
-    ║                  AUTONUKE                     ║
-    ║            ☠ BOOTKIT OBLITERATOR ☠          ║
-    ║                                               ║
-    ║    Progressive Recovery Escalation System     ║
-    ╚═══════════════════════════════════════════════╝
+    ☠
+    ☠                  AUTONUKE                     ☠
+    ☠            ☠ BOOTKIT OBLITERATOR ☠          ☠
+    ☠                                               ☠
+    ☠    Progressive Recovery Escalation System     ☠
+    ☠
 {Colors.END}
 
 {Colors.YELLOW}☠  WARNING: This tool will attempt progressive recovery methods
     from safe software scanning to potentially destructive hardware
     operations. Each step will ask for confirmation.{Colors.END}
 
-{Colors.CYAN}📋 Recovery Escalation Levels:{Colors.END}
-{Colors.GREEN}    1. 🔍 SCAN: Bootkit detection and analysis{Colors.END}
-{Colors.BLUE}    2. 💿 SOFT: ESP Nuclear Boot ISO recovery{Colors.END}
-{Colors.MAGENTA}    3. ⚡ HARD: Direct hardware firmware recovery{Colors.END}
+{Colors.CYAN}☠ Recovery Escalation Levels:{Colors.END}
+{Colors.GREEN}    1. ☠ SCAN: Bootkit detection and analysis{Colors.END}
+{Colors.BLUE}    2. ☠ SOFT: ESP Nuclear Boot ISO recovery{Colors.END}
+{Colors.MAGENTA}    3. ☠ HARD: Direct hardware firmware recovery{Colors.END}
 {Colors.RED}    4. ☠ NUKE: External CH341A programmer recovery{Colors.END}
 
 """
@@ -131,7 +131,7 @@ class AutoNuke:
     
     def check_prerequisites(self) -> bool:
         """Check if required tools and files are available"""
-        self.log("🔧 Checking prerequisites...")
+        self.log("☠ Checking prerequisites...")
         
         required_files = [
             "Makefile",
@@ -161,9 +161,9 @@ class AutoNuke:
     
     def level_1_scan(self) -> bool:
         """Level 1: Bootkit detection and analysis"""
-        self.log("🔍 LEVEL 1: Starting bootkit detection scan...")
+        self.log("☠ LEVEL 1: Starting bootkit detection scan...")
         
-        if not self.confirm_action("🔍 Run comprehensive bootkit scan?", "LOW"):
+        if not self.confirm_action("☠ Run comprehensive bootkit scan?", "LOW"):
             return False
             
         # Run bootkit scan
@@ -182,7 +182,7 @@ class AutoNuke:
                 if 'threats_detected' in results and results['threats_detected']:
                     threats_found = True
                     self.log("☠  THREATS DETECTED! Proceeding to next level recommended.", "WARNING")
-                    print(f"\n{Colors.RED}🚨 BOOTKIT THREATS DETECTED:{Colors.END}")
+                    print(f"\n{Colors.RED}☠ BOOTKIT THREATS DETECTED:{Colors.END}")
                     for threat in results.get('detected_threats', []):
                         print(f"  • {threat}")
                 else:
@@ -199,15 +199,15 @@ class AutoNuke:
     
     def level_2_soft_recovery(self) -> bool:
         """Level 2: ESP-based Nuclear Boot ISO recovery"""
-        self.log("💿 LEVEL 2: Preparing ESP Nuclear Boot ISO recovery...")
+        self.log("☠ LEVEL 2: Preparing ESP Nuclear Boot ISO recovery...")
         
-        if not self.confirm_action("💿 Deploy Nuclear Boot recovery ISO to ESP?", "MEDIUM"):
+        if not self.confirm_action("☠ Deploy Nuclear Boot recovery ISO to ESP?", "MEDIUM"):
             return False
         
         # Check if ISO exists, build if needed
         iso_path = self.project_root / "PhoenixGuard-Nuclear-Recovery.iso"
         if not iso_path.exists():
-            self.log("📀 Nuclear Boot ISO not found, building...")
+            self.log("☠ Nuclear Boot ISO not found, building...")
             code, stdout, stderr = self.run_command("make build-nuclear-cd")
             if code != 0:
                 self.log(f"☠ Failed to build Nuclear Boot ISO: {stderr}", "ERROR")
@@ -242,9 +242,9 @@ class AutoNuke:
     
     def level_3_hardware_recovery(self) -> bool:
         """Level 3: Direct hardware firmware recovery"""
-        self.log("⚡ LEVEL 3: Preparing hardware-level firmware recovery...")
+        self.log("☠ LEVEL 3: Preparing hardware-level firmware recovery...")
         
-        warning_msg = """⚡ HARDWARE FIRMWARE RECOVERY
+        warning_msg = """☠ HARDWARE FIRMWARE RECOVERY
         
 This will attempt to directly access your system's SPI flash chip
 to restore clean firmware, bypassing any bootkit protections.
@@ -267,15 +267,15 @@ SAFETY MEASURES:
         
         if code == 0:
             self.log("☠ Hardware firmware recovery completed successfully", "SUCCESS")
-            print(f"{Colors.GREEN}🎉 SYSTEM RECOVERED! Hardware firmware restoration successful.{Colors.END}")
-            print(f"{Colors.CYAN}📁 Recovery logs available in hardware_recovery_results.json{Colors.END}")
+            print(f"{Colors.GREEN}☠ SYSTEM RECOVERED! Hardware firmware restoration successful.{Colors.END}")
+            print(f"{Colors.CYAN}☠ Recovery logs available in hardware_recovery_results.json{Colors.END}")
             return True
         else:
             self.log(f"☠ Hardware recovery failed: {stderr}", "ERROR")
             
             if "FLOCKDN" in stderr or "protected" in stderr.lower():
                 self.log("☠  Firmware appears to be hardware-locked by bootkit", "WARNING")
-                print(f"{Colors.YELLOW}🔒 Firmware is hardware-protected. External programmer may be required.{Colors.END}")
+                print(f"{Colors.YELLOW}☠ Firmware is hardware-protected. External programmer may be required.{Colors.END}")
                 return False
             else:
                 self.log("☠ Hardware recovery failed for unknown reasons", "ERROR")
@@ -321,7 +321,7 @@ PROCEDURE:
         
         # Provide detailed instructions
         instructions = f"""
-{Colors.CYAN}🔧 CH341A RECOVERY INSTRUCTIONS:{Colors.END}
+{Colors.CYAN}☠ CH341A RECOVERY INSTRUCTIONS:{Colors.END}
 
 {Colors.YELLOW}1. POWER DOWN SYSTEM COMPLETELY{Colors.END}
    • Shut down system
@@ -358,8 +358,8 @@ PROCEDURE:
         print(instructions)
         
         if self.confirm_action("Have you successfully completed CH341A recovery?", "HIGH"):
-            self.log("🎉 Nuclear recovery completed by user", "SUCCESS")
-            print(f"{Colors.GREEN}🎉 NUCLEAR RECOVERY COMPLETE!{Colors.END}")
+            self.log("☠ Nuclear recovery completed by user", "SUCCESS")
+            print(f"{Colors.GREEN}☠ NUCLEAR RECOVERY COMPLETE!{Colors.END}")
             print(f"{Colors.CYAN}System should now boot with clean firmware.{Colors.END}")
             return True
         else:
@@ -378,9 +378,9 @@ PROCEDURE:
         
         # Recovery escalation ladder
         levels = [
-            ("🔍 SCAN", self.level_1_scan),
-            ("💿 SOFT", self.level_2_soft_recovery), 
-            ("⚡ HARD", self.level_3_hardware_recovery),
+            ("☠ SCAN", self.level_1_scan),
+            ("☠ SOFT", self.level_2_soft_recovery), 
+            ("☠ HARD", self.level_3_hardware_recovery),
             ("☠ NUKE", self.level_4_nuclear_option)
         ]
         
@@ -392,7 +392,7 @@ PROCEDURE:
             try:
                 if level_func():
                     # Success at this level
-                    print(f"\n{Colors.GREEN}🎉 RECOVERY SUCCESSFUL AT LEVEL: {level_name}{Colors.END}")
+                    print(f"\n{Colors.GREEN}☠ RECOVERY SUCCESSFUL AT LEVEL: {level_name}{Colors.END}")
                     self.log(f"Recovery completed successfully at level: {level_name}", "SUCCESS")
                     break
                 else:
@@ -432,9 +432,9 @@ AUTONUKE - PhoenixGuard Master Recovery Orchestrator
 Usage: python3 autonuke.py
 
 Progressive bootkit recovery system that escalates through:
-1. 🔍 SCAN: Software-level bootkit detection
-2. 💿 SOFT: ESP Nuclear Boot ISO recovery
-3. ⚡ HARD: Hardware firmware recovery
+1. ☠ SCAN: Software-level bootkit detection
+2. ☠ SOFT: ESP Nuclear Boot ISO recovery
+3. ☠ HARD: Hardware firmware recovery
 4. ☠ NUKE: External programmer recovery
 
 Each level will ask for confirmation before proceeding.

@@ -4,8 +4,8 @@
 
 set -e
 
-echo "⚡ PhoenixGuard BOOTKIT-PROOF Hardware-Level Firmware Recovery"
-echo "🚨 EXTREME DANGER: This will directly manipulate SPI flash hardware!"
+echo "☠ PhoenixGuard BOOTKIT-PROOF Hardware-Level Firmware Recovery"
+echo "☠ EXTREME DANGER: This will directly manipulate SPI flash hardware!"
 echo "   This bypasses ASUS EZ Flash and ALL software that bootkits could compromise."
 echo "   If this fails, you may need a hardware programmer to recover!"
 echo
@@ -74,7 +74,7 @@ if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
 fi
 
 echo
-echo "🔧 Starting BOOTKIT-PROOF hardware recovery..."
+echo "☠ Starting BOOTKIT-PROOF hardware recovery..."
 
 # Check if firmware image exists
 if [ -f "$FIRMWARE_IMAGE" ]; then

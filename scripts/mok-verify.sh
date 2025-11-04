@@ -6,7 +6,7 @@ set -euo pipefail
 MOK_CERT_PEM=$1
 MOK_CERT_DER=$2
 
-echo "🔍 MOK Certificate Verification"
+echo "☠ MOK Certificate Verification"
 echo "=============================="
 echo
 
@@ -38,7 +38,7 @@ if [ -f "$MOK_CERT_DER" ]; then
         echo "   DER SHA1: $DER_SHA1"
     fi
 else
-    echo "ℹ️  DER certificate not present at: $MOK_CERT_DER"
+    echo "ℹ☠  DER certificate not present at: $MOK_CERT_DER"
 fi
 echo
 

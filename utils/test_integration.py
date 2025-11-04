@@ -60,7 +60,7 @@ class PhoenixGuardIntegrationTest:
     def setup_temp_environment(self):
         """Set up temporary test environment"""
         self.temp_dir = Path(tempfile.mkdtemp(prefix="pg_test_"))
-        print(f"📁 Created temporary test directory: {self.temp_dir}")
+        print(f"☠ Created temporary test directory: {self.temp_dir}")
         
         # Load C library
         lib_path = self.utils_dir / "libpgmodverify.so"
@@ -68,7 +68,7 @@ class PhoenixGuardIntegrationTest:
             try:
                 self.lib_handle = ctypes.CDLL(str(lib_path))
                 self.setup_c_functions()
-                print("📚 Loaded C verification library")
+                print("☠ Loaded C verification library")
             except Exception as e:
                 print(f"☠  Failed to load C library: {e}")
         else:
@@ -96,15 +96,15 @@ class PhoenixGuardIntegrationTest:
         """Clean up temporary test environment"""
         if self.temp_dir and self.temp_dir.exists():
             shutil.rmtree(self.temp_dir)
-            print(f"🧹 Cleaned up temporary directory: {self.temp_dir}")
+            print(f"☠ Cleaned up temporary directory: {self.temp_dir}")
         
         if self.lib_handle:
             self.lib_handle.pg_cleanup()
-            print("🧹 Cleaned up C library resources")
+            print("☠ Cleaned up C library resources")
 
     def run_test(self, test_name, test_func):
         """Run a single test and record results"""
-        print(f"\n🧪 Running test: {test_name}")
+        print(f"\n☠ Running test: {test_name}")
         try:
             result = test_func()
             if result:
@@ -132,7 +132,7 @@ class PhoenixGuardIntegrationTest:
             return False
         
         cert_details = inventory['certificate_details']
-        print(f"📋 Found {len(cert_details)} certificates in inventory:")
+        print(f"☠ Found {len(cert_details)} certificates in inventory:")
         for cert_info in cert_details:
             print(f"   - {cert_info.get('subject', 'Unknown')}")
             print(f"     Format: {cert_info.get('format', 'Unknown')}")
@@ -155,7 +155,7 @@ class PhoenixGuardIntegrationTest:
             print("☠ No certificates loaded by C library")
             return False
             
-        print(f"📚 C library loaded {cert_count} certificates")
+        print(f"☠ C library loaded {cert_count} certificates")
         
         # Test with a known kernel module (unsigned)
         test_modules = [
@@ -172,7 +172,7 @@ class PhoenixGuardIntegrationTest:
             if not Path(expanded_path).exists():
                 continue
                 
-            print(f"🔍 Testing module: {expanded_path}")
+            print(f"☠ Testing module: {expanded_path}")
             
             # Verify module
             result_ptr = self.lib_handle.pg_verify_module_signature(
@@ -218,7 +218,7 @@ class PhoenixGuardIntegrationTest:
                 print("☠  No certificates available for signing test")
                 return True
             
-            print(f"📝 Would sign module with certificate: {cert_details[0].get('subject', 'Unknown')}")
+            print(f"☠ Would sign module with certificate: {cert_details[0].get('subject', 'Unknown')}")
             print(f"   Module size: {test_module.stat().st_size} bytes")
             
             # We can't actually sign without the kernel sign-file tool,

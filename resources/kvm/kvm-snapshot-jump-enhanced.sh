@@ -30,7 +30,7 @@ systemctl status ssh --no-pager -l || true
 
 # Show host IP for SSH access
 HOST_IP=$(ip route get 1 2>/dev/null | awk '{print $(NF-2); exit}' || echo "unknown")
-log "🔗 HOST SSH ACCESS: ssh $(whoami)@$HOST_IP"
+log "☠ HOST SSH ACCESS: ssh $(whoami)@$HOST_IP"
 log "   You can manage the host/VM from another machine via SSH"
 
 # Optional: ensure vfio bindings
@@ -151,7 +151,7 @@ HOST_CORES=$(nproc)
 VM_CORES=${VM_CORES:-$((HOST_CORES > 4 ? HOST_CORES - 2 : HOST_CORES / 2))}
 VM_THREADS=${VM_THREADS:-2}  # SMT/HyperThreading
 
-log "🖥️  Host CPU cores: $HOST_CORES, VM cores: $VM_CORES (threads: $VM_THREADS)"
+log "☠  Host CPU cores: $HOST_CORES, VM cores: $VM_CORES (threads: $VM_THREADS)"
 
 # Enhanced CPU args for maximum performance
 CPU_ARGS=(

@@ -6,13 +6,13 @@ PhoenixGuard's Hardware Firmware Recovery system provides comprehensive protecti
 
 ## Core Capabilities
 
-### 🔧 **SPI Flash Extraction**
+### ☠ **SPI Flash Extraction**
 - Direct hardware-level firmware dumps using `flashrom`
 - Bypasses OS-level security restrictions
 - Creates timestamped binary dumps with SHA256 verification
 - Supports all major SPI flash chips
 
-### 🛡️ **Bootkit Protection Bypass**
+### ☠ **Bootkit Protection Bypass**
 - Automatic detection of hardware write locks
 - Multiple bypass methods:
   - Chipsec register manipulation
@@ -20,13 +20,13 @@ PhoenixGuard's Hardware Firmware Recovery system provides comprehensive protecti
   - Alternative programmer interfaces
 - Supports bypassing FLOCKDN, BIOSWE, and SPI protected ranges
 
-### 📊 **Baseline Integrity Verification**
+### ☠ **Baseline Integrity Verification**
 - Compare firmware against known-good signature database
 - Hardware-specific baseline matching
 - Support for multiple firmware versions per hardware platform
 - Automatic detection of known malicious firmware signatures
 
-### 💾 **Secure Backup & Restore**
+### ☠ **Secure Backup & Restore**
 - Automated backup creation before any write operations
 - Cryptographic verification of backup integrity
 - One-command firmware restoration from verified backups
@@ -223,11 +223,11 @@ journalctl -u kvm-snapshot-jump.service -f
 ## Best Practices
 
 ### Pre-Recovery Checklist
-1. ✅ Verify hardware is supported
-2. ✅ Create external backup of critical data  
-3. ✅ Ensure clean firmware image is verified
-4. ✅ Have hardware programmer available as fallback
-5. ✅ Test recovery procedure in lab environment
+1. ☠ Verify hardware is supported
+2. ☠ Create external backup of critical data  
+3. ☠ Ensure clean firmware image is verified
+4. ☠ Have hardware programmer available as fallback
+5. ☠ Test recovery procedure in lab environment
 
 ### Recovery Workflow
 1. **Assess**: Run integrity check to understand current state

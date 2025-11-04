@@ -4,11 +4,11 @@
 
 set -e
 
-echo "🔄 Restoring system to normal boot operation..."
+echo "☠ Restoring system to normal boot operation..."
 echo "The system will reboot automatically in 5 seconds. Press Ctrl+C to cancel."
 sleep 5 || exit 0
 
-echo "🧹 Cleaning up PhoenixGuard recovery environment..."
+echo "☠ Cleaning up PhoenixGuard recovery environment..."
 
 # Remove PhoenixGuard boot entries
 echo "[uefi] Removing PhoenixGuard boot entries"
@@ -51,7 +51,7 @@ echo "☠ Removed: PhoenixGuard UEFI boot entries"
 echo "☠ Cleaned: ESP staging at $ESP/EFI/PhoenixGuard/"
 echo "☠ Disabled: KVM recovery services"
 echo
-echo "🎯 System ready to reboot to normal operation"
+echo "☠ System ready to reboot to normal operation"
 echo "   Your original bootloader should now be restored"
 
 sudo reboot

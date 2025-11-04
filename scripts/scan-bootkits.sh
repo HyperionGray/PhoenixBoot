@@ -12,7 +12,7 @@ else
   PY="python3"
 fi
 
-echo "🎯 PhoenixGuard Bootkit Detection Engine"
+echo "☠ PhoenixGuard Bootkit Detection Engine"
 echo "Hunting for firmware-level malware..."
 echo
 
@@ -53,7 +53,7 @@ else
 fi
 
 # Run bootkit detection
-echo "🔍 Scanning system for bootkit infections..."
+echo "☠ Scanning system for bootkit infections..."
 "${PY}" scripts/detect_bootkit.py -v -b "${BASELINE_JSON}" --output "${SCAN_OUT}"
 
 echo
@@ -75,7 +75,7 @@ PY
   case "$RISK" in
     "CRITICAL")
       echo
-      echo "🚨 CRITICAL THREAT DETECTED!"
+      echo "☠ CRITICAL THREAT DETECTED!"
       echo "   Consider running: just nuke level4-kvm"
       ;;
     "HIGH")
@@ -93,7 +93,7 @@ PY
       ;;
     *)
       echo
-      echo "ℹ️  Risk assessment: $RISK"
+      echo "ℹ☠  Risk assessment: $RISK"
       ;;
   esac
 fi

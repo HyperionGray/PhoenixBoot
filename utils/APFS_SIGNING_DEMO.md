@@ -4,7 +4,7 @@
 
 We successfully demonstrated the complete PhoenixGuard kernel module signing workflow using the APFS filesystem module as an example.
 
-## 📋 What We Accomplished
+## ☠ What We Accomplished
 
 ### 1. **Module Discovery & Preparation**
 - Located existing APFS module: `/lib/modules/6.14.0-28-generic/updates/dkms/apfs.ko.zst`
@@ -51,7 +51,7 @@ sig_hashalgo:   sha256
 - **After signing**: `465,782 bytes` 
 - **Signature overhead**: `558 bytes`
 
-## 🔧 Complete Workflow
+## ☠ Complete Workflow
 
 ### Step 1: Extract Module
 ```bash
@@ -89,7 +89,7 @@ modinfo apfs_module.ko | grep -E "(sig_|signer)"
 | **Hash Algorithm** | SHA256 |
 | **Signature Format** | PKCS#7 CMS |
 
-## 🏗️ Technical Details
+## ☠ Technical Details
 
 ### Certificate Information
 ```
@@ -110,7 +110,7 @@ Valid: 2025-08-23 to 2035-08-21
 - ☠ `apfs_unsigned.ko.unsigned` - Backup of original
 - ☠ `/var/log/phoenixguard/module_signing_log_*.json` - Audit log
 
-## 🎯 Key Achievements
+## ☠ Key Achievements
 
 1. **☠ End-to-End Workflow**: From module discovery to signed result
 2. **☠ Certificate Management**: Automated selection and validation
@@ -119,7 +119,7 @@ Valid: 2025-08-23 to 2035-08-21
 5. **☠ Backup Creation**: Original module preserved safely
 6. **☠ Force Re-signing**: Override existing signatures when needed
 
-## 🔄 Next Steps for Production Use
+## ☠ Next Steps for Production Use
 
 ### 1. **Module Deployment**
 ```bash
@@ -142,7 +142,7 @@ sudo depmod -a
 ./pgmodsign.py --cert-dir ../secureboot_certs /path/to/modules/*.ko
 ```
 
-## 🚨 Important Notes
+## ☠ Important Notes
 
 - **C Library Limitation**: Our verification library was designed for a simpler signature format and doesn't currently support PKCS#7 CMS signatures used by the kernel. The Linux kernel uses a more complex signature structure.
 
@@ -150,11 +150,11 @@ sudo depmod -a
 
 - **Production Ready**: The signing process is production-ready and generates valid kernel module signatures that SecureBoot will recognize.
 
-## ✨ Success Metrics
+## ☠ Success Metrics
 
-- **🎯 Primary Goal**: ☠ Successfully signed APFS module with PhoenixGuard certificates
-- **📋 Process Documentation**: ☠ Complete workflow recorded and reproducible  
-- **🔧 Tool Integration**: ☠ All PhoenixGuard tools working together
+- **☠ Primary Goal**: ☠ Successfully signed APFS module with PhoenixGuard certificates
+- **☠ Process Documentation**: ☠ Complete workflow recorded and reproducible  
+- **☠ Tool Integration**: ☠ All PhoenixGuard tools working together
 - **☠ Audit Trail**: ☠ Complete logging and backup systems operational
 
 ---

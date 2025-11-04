@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/lib/common.sh
 
-info "✍️  Kernel module auto-sign (non-interactive)"
+info "☠  Kernel module auto-sign (non-interactive)"
 
 # Configuration (env-overridable)
 KMOD_KEY=${KMOD_KEY:-out/keys/mok/PGMOK.key}

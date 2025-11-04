@@ -5,7 +5,7 @@ set -euo pipefail
 
 MOK_CERT_DER=$1
 
-echo "🗑️  PhoenixGuard MOK Certificate Removal"
+echo "☠  PhoenixGuard MOK Certificate Removal"
 echo "======================================="
 echo
 
@@ -21,7 +21,7 @@ fi
 CERT_SHA1=$(openssl x509 -inform DER -in "$MOK_CERT_DER" -noout -fingerprint -sha1 | sed 's/^SHA1 Fingerprint=//')
 
 if ! sudo mokutil --list-enrolled 2>/dev/null | grep -q "$CERT_SHA1"; then
-    echo "ℹ️  Certificate is not currently enrolled."
+    echo "ℹ☠  Certificate is not currently enrolled."
     exit 0
 fi
 
@@ -32,7 +32,7 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 fi
 
 echo
-echo "🗑️  Staging MOK certificate for removal..."
+echo "☠  Staging MOK certificate for removal..."
 sudo -v
 
 if ! sudo mokutil --delete "$MOK_CERT_DER"; then
@@ -43,5 +43,5 @@ fi
 echo
 echo "☠ MOK certificate removal staged."
 echo
-echo "🔄 REBOOT REQUIRED - Complete Removal Process"
+echo "☠ REBOOT REQUIRED - Complete Removal Process"
 

@@ -162,7 +162,7 @@ UefiMain (
 // Display Nuclear Boot banner
   //
   Print(L"\n");
-  Print(L"🦀☠ PhoenixGuard Nuclear Boot %s ☠🦀\n", NUCLEAR_BOOT_VERSION);
+  Print(L"☠☠ PhoenixGuard Nuclear Boot %s ☠☠\n", NUCLEAR_BOOT_VERSION);
   Print(L"===============================================\n");
   Print(L"Memory-safe, network-based bootkit defense\n");
   Print(L"NO TFTP! NO PXE! NO COMPROMISE!\n");
@@ -280,7 +280,7 @@ UefiMain (
 
   if (GotKey) {
     if (Key.UnicodeChar == L'G' || Key.UnicodeChar == L'g') {
-      Print(L"\n➡️  Clean GRUB Boot selected.\n");
+      Print(L"\n☠  Clean GRUB Boot selected.\n");
       // Attempt shim first, then grub
       EFI_STATUS S2;
       // Reuse Xen function pattern to load a file; inline here for brevity
@@ -794,7 +794,7 @@ ExecuteNuclearWipe (
   Print(L"☠  WARNING: SYSTEM SANITIZATION IN PROGRESS ☠\n");
   
   if (WipeConfig->WipeMemory) {
-    Print(L"🧹 Phase 1: Memory sanitization...\n");
+    Print(L"☠ Phase 1: Memory sanitization...\n");
     
     // Define memory regions for secure wipe verification
     VOID *TestRegion = NULL;
@@ -828,7 +828,7 @@ ExecuteNuclearWipe (
           Print(L"   ☠ Pass %d verification: Hash match confirmed\n", Index + 1);
         } else {
           Print(L"   ☠ Pass %d verification: Hash mismatch - WIPE FAILURE!\n", Index + 1);
-          Print(L"   🚨 SECURITY CRITICAL: Memory wipe verification failed!\n");
+          Print(L"   ☠ SECURITY CRITICAL: Memory wipe verification failed!\n");
           if (TestRegion) FreePool(TestRegion);
           return EFI_SECURITY_VIOLATION;
         }
@@ -858,14 +858,14 @@ ExecuteNuclearWipe (
   }
   
   if (WipeConfig->WipeCaches) {
-    Print(L"🧹 Phase 2: CPU cache flush...\n");
+    Print(L"☠ Phase 2: CPU cache flush...\n");
     // TODO: Implement actual cache flush
     gBS->Stall(1000000); // 1 second
     Print(L"☠ Cache flush complete\n");
   }
   
   if (WipeConfig->WipeFlash) {
-    Print(L"🧹 Phase 3: SPI flash sanitization...\n");
+    Print(L"☠ Phase 3: SPI flash sanitization...\n");
     Print(L"☠  CRITICAL DANGER: This WILL OVERWRITE SPI flash and could BRICK your system!\n");
     Print(L"☠  Only proceed if you have emergency recovery tools and procedures ready.\n");
     Print(L"☠  Press 'Y' to confirm flash wipe, any other key to skip: ");
@@ -900,7 +900,7 @@ ExecuteNuclearWipe (
   }
   
   if (WipeConfig->WipeMicrocode) {
-    Print(L"🧹 Phase 4: CPU microcode reset...\n");
+    Print(L"☠ Phase 4: CPU microcode reset...\n");
     Print(L"☠  DANGER: This could destabilize the CPU and cause system instability!\n");
     Print(L"☠  Press 'Y' to confirm microcode reset, any other key to skip: ");
     
@@ -911,7 +911,7 @@ ExecuteNuclearWipe (
     }
     
     if (MicrocodeKey.UnicodeChar == L'Y' || MicrocodeKey.UnicodeChar == L'y') {
-      Print(L"\n🧮 EXECUTING MICROCODE RESET \n");
+      Print(L"\n☠ EXECUTING MICROCODE RESET \n");
       // TODO: Implement actual microcode reset operations
       // This would include: CPU model detection, microcode backup, reset procedures
       for (UINTN Core = 0; Core < 4; Core++) {
@@ -979,7 +979,7 @@ ExecuteNuclearJump (
   UINT32 DescriptorVersion = 0;
   EFI_STATUS Status;
   
-  Print(L"🔄 Exiting Boot Services...\n");
+  Print(L"☠ Exiting Boot Services...\n");
   
   // Get memory map size
   Status = gBS->GetMemoryMap(&MapSize, MemoryMap, &MapKey, &DescriptorSize, &DescriptorVersion);

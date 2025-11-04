@@ -10,7 +10,7 @@ cp "$SRC" "$DST"
 
 # Preflight: clear any previous mount state
 if mountpoint -q out/esp/mount 2>/dev/null; then
-    echo "🔧 Unmounting previous out/esp/mount"
+    echo "☠ Unmounting previous out/esp/mount"
     sudo umount out/esp/mount || sudo umount -l out/esp/mount || true
 fi
 rmdir out/esp/mount 2>/dev/null || true

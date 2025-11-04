@@ -6,11 +6,11 @@ This implements the "Easy Button" approach - automatically tries each recovery
 method from least to most invasive until the system is clean and secure.
 
 Progressive Escalation Ladder:
-1. 🔍 DETECT: Software-based bootkit scanning and analysis (no changes)
-2. 💿 SOFT: ESP Nuclear Boot ISO deployment (software-only, no reboot)  
+1. ☠ DETECT: Software-based bootkit scanning and analysis (no changes)
+2. ☠ SOFT: ESP Nuclear Boot ISO deployment (software-only, no reboot)  
 3. ☠ SECURE: Double-kexec firmware access (temporary, auto-restore security)
 4. ☠ VM: Reboot to KVM recovery environment (user continues work in VM)
-5. ⚡ XEN: Reboot to Xen dom0 with hardware passthrough (ultimate isolation)
+5. ☠ XEN: Reboot to Xen dom0 with hardware passthrough (ultimate isolation)
 6. ☠ HARDWARE: Direct SPI flash recovery (bypass all software)
 
 Each level requires user confirmation and explains the escalation.
@@ -35,13 +35,13 @@ class PhoenixProgressiveRecovery:
         """Print the PhoenixGuard banner"""
         print("☠ PHOENIXGUARD - Progressive Bootkit Defense & Recovery")
         print("=" * 56)
-        print("🎯 Intelligent escalation from safest to most extreme recovery methods")
+        print("☠ Intelligent escalation from safest to most extreme recovery methods")
         print()
     
     def run_command(self, cmd, description="", check=True, capture_output=True):
         """Run a command with error handling"""
         if description:
-            print(f"🔧 {description}")
+            print(f"☠ {description}")
         
         try:
             if capture_output:
@@ -63,7 +63,7 @@ class PhoenixProgressiveRecovery:
 
     def level_1_detect(self):
         """Level 1: Software-based bootkit detection (safest)"""
-        print("🔍 LEVEL 1: DETECT - Software-based bootkit scanning")
+        print("☠ LEVEL 1: DETECT - Software-based bootkit scanning")
         print("=" * 50)
         print("This performs comprehensive bootkit detection with zero system changes.")
         print("☠ Safe: No modifications to system")
@@ -92,19 +92,19 @@ class PhoenixProgressiveRecovery:
         
         if self.risk_level in ["CLEAN", "LOW"]:
             print("☠ System appears clean! No further escalation needed.")
-            print("🎯 Recommendation: Continue normal operations with periodic scans.")
+            print("☠ Recommendation: Continue normal operations with periodic scans.")
             return True
         elif self.risk_level in ["MEDIUM", "HIGH"]:
             print("☠  Potential threats detected. Escalation to Level 2 recommended.")
         elif self.risk_level == "CRITICAL":
-            print("🚨 CRITICAL threats detected! Immediate escalation recommended.")
+            print("☠ CRITICAL threats detected! Immediate escalation recommended.")
         
         print()
         return False  # Continue to next level
         
     def level_2_soft(self):
         """Level 2: ESP Nuclear Boot ISO deployment (software-only)"""
-        print("💿 LEVEL 2: SOFT - ESP Nuclear Boot ISO deployment")
+        print("☠ LEVEL 2: SOFT - ESP Nuclear Boot ISO deployment")
         print("=" * 50)
         print("This deploys recovery tools directly to your ESP partition.")
         print("☠ Safe: No system reboots required")
@@ -129,7 +129,7 @@ class PhoenixProgressiveRecovery:
             
         print()
         print("☠ Nuclear Boot recovery deployed successfully!")
-        print("🎯 Next steps:")
+        print("☠ Next steps:")
         print("  1. Reboot and select 'PhoenixGuard Nuclear Boot Recovery (Virtual CD)' from GRUB menu")
         print("  2. Or run 'make boot-from-esp-iso' to access tools immediately")
         print()
@@ -146,8 +146,8 @@ class PhoenixProgressiveRecovery:
         print("☠ LEVEL 3: SECURE - Double-kexec firmware access")
         print("=" * 50)
         print("This provides secure firmware access via double-kexec:")
-        print("  1. 🔓 Temporarily unlock hardware access")
-        print("  2. 🔧 Perform firmware operations")  
+        print("  1. ☠ Temporarily unlock hardware access")
+        print("  2. ☠ Perform firmware operations")  
         print("  3. ☠ Automatically re-enable security")
         print()
         print("☠ Safe: Security automatically restored")
@@ -166,7 +166,7 @@ class PhoenixProgressiveRecovery:
             print("   This is required for secure firmware operations.")
             return False
             
-        print("🔧 Available secure firmware operations:")
+        print("☠ Available secure firmware operations:")
         print("  [1] Backup current firmware securely")
         print("  [2] Read firmware for analysis")
         print("  [3] Write clean firmware (DANGEROUS)")
@@ -183,7 +183,7 @@ class PhoenixProgressiveRecovery:
             self.run_command(cmd, "Reading firmware for analysis", capture_output=False)
             
         elif choice == "3":
-            print("🚨 WARNING: This will overwrite your firmware!")
+            print("☠ WARNING: This will overwrite your firmware!")
             if self.confirm_escalation("write clean firmware (DANGEROUS)"):
                 cmd = f"sudo make secure-firmware-access ARGS='--write {clean_firmware}'"
                 self.run_command(cmd, "Writing clean firmware", capture_output=False)
@@ -225,7 +225,7 @@ class PhoenixProgressiveRecovery:
         
         if not os.path.exists(recovery_image):
             if os.path.exists(base_image):
-                print("🔧 Enhanced recovery image not found - creating it...")
+                print("☠ Enhanced recovery image not found - creating it...")
                 stdout, stderr, rc = self.run_command("sudo scripts/enhance_kvm_recovery.sh")
                 if rc != 0:
                     print("☠ Failed to create enhanced recovery image")
@@ -241,7 +241,7 @@ class PhoenixProgressiveRecovery:
             print("   Run 'make build' first to prepare PhoenixGuard.")
             return False
             
-        print("🚨 FINAL WARNING: System will reboot automatically!")
+        print("☠ FINAL WARNING: System will reboot automatically!")
         print("   After reboot:")
         print("   1. PhoenixGuard menu will appear")
         print("   2. Select 'KVM Snapshot Jump' to launch enhanced recovery VM")
@@ -259,7 +259,7 @@ class PhoenixProgressiveRecovery:
         
     def level_5_xen(self):
         """Level 5: Xen dom0 with hardware passthrough (ultimate isolation)"""
-        print("⚡ LEVEL 5: XEN - Xen dom0 with hardware passthrough")
+        print("☠ LEVEL 5: XEN - Xen dom0 with hardware passthrough")
         print("=" * 50)
         print("This provides the ultimate isolation via Xen hypervisor:")
         print("  • Xen dom0 for complete hardware isolation")
@@ -293,7 +293,7 @@ class PhoenixProgressiveRecovery:
             return False
             
         print("☠ Xen recovery environment prepared!")
-        print("🎯 System will reboot to Xen hypervisor.")
+        print("☠ System will reboot to Xen hypervisor.")
         print("   After reboot:")
         print("   1. Xen will boot dom0 Linux")
         print("   2. Recovery tools will be available")
@@ -319,8 +319,8 @@ class PhoenixProgressiveRecovery:
         print()
         print("☠ Bootkit-proof: Bypasses all software")
         print("☠ Ultimate recovery: Can fix any software corruption")
-        print("🚨 DANGEROUS: Can brick system if it fails!")
-        print("🚨 EXTREME: Requires hardware programming knowledge")
+        print("☠ DANGEROUS: Can brick system if it fails!")
+        print("☠ EXTREME: Requires hardware programming knowledge")
         print()
         
         print("☠  This is the most dangerous recovery method!")
@@ -334,7 +334,7 @@ class PhoenixProgressiveRecovery:
             return False
             
         # Final safety check
-        print("🚨 FINAL SAFETY CHECK:")
+        print("☠ FINAL SAFETY CHECK:")
         print("   This operation can permanently brick your system!")
         print("   Do you have a hardware programmer available for recovery?")
         print("   Do you have the exact firmware dump for your hardware?")
@@ -351,25 +351,25 @@ class PhoenixProgressiveRecovery:
         
     def confirm_escalation(self, action):
         """Ask user to confirm escalation to next level"""
-        response = input(f"🎯 Proceed to {action}? [y/N]: ").strip().lower()
+        response = input(f"☠ Proceed to {action}? [y/N]: ").strip().lower()
         return response == 'y'
         
     def run_progressive_recovery(self):
         """Run the progressive recovery workflow"""
         self.print_banner()
         
-        print("🎯 PhoenixGuard will try each recovery method in order of safety:")
+        print("☠ PhoenixGuard will try each recovery method in order of safety:")
         print("   Each level requires your confirmation before proceeding.")
         print("   You can stop at any level or let it escalate to success.")
         print()
         
         # Define recovery levels
         levels = [
-            ("🔍 DETECT", "Software scanning (safest)", self.level_1_detect),
-            ("💿 SOFT", "ESP recovery deployment", self.level_2_soft),
+            ("☠ DETECT", "Software scanning (safest)", self.level_1_detect),
+            ("☠ SOFT", "ESP recovery deployment", self.level_2_soft),
             ("☠ SECURE", "Double-kexec firmware access", self.level_3_secure),
             ("☠ VM", "KVM recovery environment", self.level_4_vm),
-            ("⚡ XEN", "Xen hypervisor isolation", self.level_5_xen),
+            ("☠ XEN", "Xen hypervisor isolation", self.level_5_xen),
             ("☠ HARDWARE", "Direct SPI flash recovery", self.level_6_hardware),
         ]
         
@@ -382,10 +382,10 @@ class PhoenixProgressiveRecovery:
                 success = handler()
                 if success:
                     print(f"\n☠ Level {level_num} completed successfully!")
-                    print("🎯 PhoenixGuard recovery workflow complete.")
+                    print("☠ PhoenixGuard recovery workflow complete.")
                     
                     if level_num < 4:  # Software-only levels
-                        print("\n📋 Recommended next steps:")
+                        print("\n☠ Recommended next steps:")
                         print("  1. Verify system integrity with additional scans")
                         print("  2. Monitor system behavior for anomalies")
                         print("  3. Consider upgrading to hardware-based protection")
@@ -393,14 +393,14 @@ class PhoenixProgressiveRecovery:
                     return True
                     
             except KeyboardInterrupt:
-                print("\n\n🚫 Recovery cancelled by user.")
+                print("\n\n☠ Recovery cancelled by user.")
                 return False
             except Exception as e:
                 print(f"\n☠ Level {level_num} failed: {e}")
                 print("   Continuing to next escalation level...")
                 
         print("\n☠ All escalation levels attempted.")
-        print("🎯 If system is still infected, consider:")
+        print("☠ If system is still infected, consider:")
         print("  • Professional malware analysis service")
         print("  • Hardware replacement (motherboard)")
         print("  • Complete system rebuild from scratch")
@@ -418,7 +418,7 @@ def main():
         success = recovery.run_progressive_recovery()
         exit_code = 0 if success else 1
     except KeyboardInterrupt:
-        print("\n\n🚫 PhoenixGuard recovery cancelled.")
+        print("\n\n☠ PhoenixGuard recovery cancelled.")
         exit_code = 130
     except Exception as e:
         print(f"\n☠ Unexpected error in progressive recovery: {e}")

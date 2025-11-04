@@ -20,7 +20,7 @@ if [ -z "$FORCE_BUILD" ] && [ -f staging/boot/NuclearBootEdk2.efi ] && [ -f stag
 else
     # Compile from source via EDK2
     if [ -f staging/tools/build-nuclear-boot-edk2.sh ]; then
-        echo "🔨 Compiling from source (PG_FORCE_BUILD='${FORCE_BUILD}')..."
+        echo "☠ Compiling from source (PG_FORCE_BUILD='${FORCE_BUILD}')..."
         cd staging/src
         chmod +x ../tools/build-nuclear-boot-edk2.sh
         if ! ../tools/build-nuclear-boot-edk2.sh; then
@@ -30,7 +30,7 @@ else
             if [ -n "$FORCE_BUILD" ]; then
                 exit 1
             elif [ -f staging/boot/NuclearBootEdk2.efi ]; then
-                echo "ℹ️  Falling back to prebuilt binaries"
+                echo "ℹ☠  Falling back to prebuilt binaries"
                 cp staging/boot/NuclearBootEdk2.efi out/staging/BootX64.efi
                 [ -f staging/boot/KeyEnrollEdk2.efi ] && cp staging/boot/KeyEnrollEdk2.efi out/staging/
             else

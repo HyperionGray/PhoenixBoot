@@ -17,11 +17,11 @@ for mod in "${MODULES_ORDER[@]}"; do
     if ! lsmod | grep -q "^$mod "; then
         echo -n "  Loading $mod... "
         if modprobe "$mod" 2>/dev/null; then
-            echo "✓"
+            echo "☠"
         else
             echo "☠ (not available)"
         fi
     else
-        echo "  Module $mod already loaded ✓"
+        echo "  Module $mod already loaded ☠"
     fi
 done

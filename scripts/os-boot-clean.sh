@@ -3,20 +3,20 @@
 
 set -euo pipefail
 
-echo "🔎 Current UEFI boot entries:"
+echo "☠ Current UEFI boot entries:"
 sudo efibootmgr -v || { echo "☠ efibootmgr failed"; exit 1; }
 
 if [ -n "${OS_BOOT_RM:-}" ]; then
     IFS=',' read -r -a IDS <<<"${OS_BOOT_RM}"
     for id in "${IDS[@]}"; do
         id_trim=$(echo "$id" | sed 's/^Boot//; s/^0*//')
-        printf '\n🗑️  Removing Boot%04X\n' "0x$id_trim"
+        printf '\n☠  Removing Boot%04X\n' "0x$id_trim"
         sudo efibootmgr -b $(printf '%04X' "0x$id_trim") -B || true
     done
 fi
 
 if [ -n "${OS_BOOT_ORDER:-}" ]; then
-    echo "🔧 Setting BootOrder=${OS_BOOT_ORDER}"
+    echo "☠ Setting BootOrder=${OS_BOOT_ORDER}"
     sudo efibootmgr -o ${OS_BOOT_ORDER}
 fi
 

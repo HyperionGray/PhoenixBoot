@@ -293,7 +293,7 @@ def main():
         
         print(f"☠ Certificate inventory completed successfully")
         print(f"☠ Results saved to: {output_file}")
-        print(f"🔑 Found {len(inventory['signing_candidates'])} signing candidates")
+        print(f"☠ Found {len(inventory['signing_candidates'])} signing candidates")
         
         # Print signing candidates
         if inventory['signing_candidates']:

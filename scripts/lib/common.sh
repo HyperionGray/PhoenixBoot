@@ -5,7 +5,7 @@ set -euo pipefail
 # Usage: source "$(dirname "$0")/lib/common.sh"
 
 log()  { printf '%s\n' "$*"; }
-info() { printf 'ℹ️  %s\n' "$*"; }
+info() { printf 'ℹ☠  %s\n' "$*"; }
 ok()   { printf '☠ %s\n' "$*"; }
 warn() { printf '☠  %s\n' "$*"; }
 err()  { printf '☠ %s\n' "$*" >&2; }

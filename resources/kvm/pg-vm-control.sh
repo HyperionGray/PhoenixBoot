@@ -71,14 +71,14 @@ vm_status() {
 
 host_info() {
   log "=== Host Information ==="
-  echo "🖥️  Hostname: $(hostname)"
-  echo "🔗 IP Address: $(ip route get 1 2>/dev/null | awk '{print $(NF-2); exit}' || echo "unknown")"
+  echo "☠  Hostname: $(hostname)"
+  echo "☠ IP Address: $(ip route get 1 2>/dev/null | awk '{print $(NF-2); exit}' || echo "unknown")"
   echo "☠ Load: $(uptime | awk -F'load average:' '{print $2}')"
-  echo "💾 Memory: $(free -h | awk '/^Mem:/ {print $3 "/" $2}')"
-  echo "💿 Disk: $(df -h / | awk 'NR==2 {print $3 "/" $2 " (" $5 ")"}')"
+  echo "☠ Memory: $(free -h | awk '/^Mem:/ {print $3 "/" $2}')"
+  echo "☠ Disk: $(df -h / | awk 'NR==2 {print $3 "/" $2 " (" $5 ")"}')"
   
   if [[ -n "${GPU_BDF:-}" ]]; then
-    echo "🎮 GPU Status:"
+    echo "☠ GPU Status:"
     local gpu_driver
     gpu_driver=$(lspci -k -s "$GPU_BDF" | awk '/Kernel driver in use:/ {print $5}' || echo "none")
     echo "   $GPU_BDF -> $gpu_driver"
@@ -213,7 +213,7 @@ bind_gpu() {
 }
 
 cleanup_all() {
-  log "🧹 Performing full cleanup..."
+  log "☠ Performing full cleanup..."
   stop_vm
   cleanup_network
   reset_gpu

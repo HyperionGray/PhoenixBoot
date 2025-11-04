@@ -9,7 +9,7 @@ set -euo pipefail
 # Store original directory at the very beginning
 ORIG_DIR=$(pwd)
 
-echo "🦀☠ Building Nuclear Boot EDK2 Application ☠🦀"
+echo "☠☠ Building Nuclear Boot EDK2 Application ☠☠"
 echo "=================================================="
 
 # Check if we're in the right directory
@@ -144,7 +144,7 @@ fi
 
 # Build the application and KeyEnroll helper
 echo ""
-echo "🔨 Building Nuclear Boot application..."
+echo "☠ Building Nuclear Boot application..."
 echo "======================================="
 
 cd "$WORKSPACE"
@@ -194,7 +194,7 @@ BUILD_STATUS=$?
 
 if [ $BUILD_STATUS -eq 0 ]; then
     echo ""
-    echo "🎉 BUILD SUCCESSFUL! 🎉"
+    echo "☠ BUILD SUCCESSFUL! ☠"
     echo "======================="
     
     # Find the built EFI file
@@ -203,7 +203,7 @@ if [ $BUILD_STATUS -eq 0 ]; then
     if [ -n "$EFI_FILE" ]; then
         echo "☠ Nuclear Boot EFI application: $WORKSPACE/$EFI_FILE"
         echo ""
-        echo "📋 Next steps:"
+        echo "☠ Next steps:"
         echo "   1. Copy to EFI System Partition: cp $EFI_FILE /boot/efi/EFI/PhoenixGuard/"
         echo "   2. Or run in QEMU: qemu-system-x86_64 -bios OVMF.fd -drive format=raw,file=fat:rw:/path/to/efi/files"
         echo "   3. Or test with: ./test-nuclear-boot-edk2.sh"
@@ -228,11 +228,11 @@ if [ $BUILD_STATUS -eq 0 ]; then
         mkdir -p "$ORIG_DIR/../boot"
         cp "$WORKSPACE/$KEY_ENROLL" "$ORIG_DIR/../boot/KeyEnrollEdk2.efi" || true
     else
-        echo "ℹ️  KeyEnrollEdk2.efi not found (optional)"
+        echo "ℹ☠  KeyEnrollEdk2.efi not found (optional)"
     fi
     
     echo ""
-    echo "🦀 Nuclear Boot EDK2 build complete!"
+    echo "☠ Nuclear Boot EDK2 build complete!"
     
 else
     echo ""

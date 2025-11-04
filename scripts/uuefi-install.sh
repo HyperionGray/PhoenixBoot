@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/lib/common.sh
 
-info "🧩 Installing UUEFI.efi to system ESP"
+info "☠ Installing UUEFI.efi to system ESP"
 
 # Config
 EESP=${EESP:-/boot/efi}

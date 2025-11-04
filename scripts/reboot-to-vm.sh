@@ -4,14 +4,14 @@
 
 set -e
 
-echo "🚨 WARNING: This will REBOOT your system into PhoenixGuard recovery mode!"
+echo "☠ WARNING: This will REBOOT your system into PhoenixGuard recovery mode!"
 echo "The system will reboot automatically in 10 seconds. Press Ctrl+C to cancel."
 sleep 10 || exit 0
 
-echo "🔧 Initiating PhoenixGuard Recovery VM staging..."
+echo "☠ Initiating PhoenixGuard Recovery VM staging..."
 
 # Run bootkit detection scan first
-echo "🎯 Running bootkit detection scan first..."
+echo "☠ Running bootkit detection scan first..."
 if [ -f firmware_baseline.json ]; then
     python3 scripts/detect_bootkit.py --output bootkit_scan_prereboot.json || echo "☠  Bootkit scan failed, continuing..."
 else
@@ -97,7 +97,7 @@ echo "☠ Staged: ESP at $ESP/EFI/PhoenixGuard/"
 echo "☠ Configured: UEFI boot entry $NEWNUM (set as BootNext)"
 echo "☠ Recovery VM: $QCOW2 ready to launch"
 echo
-echo "🎯 After reboot:"
+echo "☠ After reboot:"
 echo "  1. PhoenixGuard menu will appear"
 echo "  2. Select 'KVM Snapshot Jump' to launch recovery VM"
 echo "  3. Use recovery VM to fix infected bootloaders safely"

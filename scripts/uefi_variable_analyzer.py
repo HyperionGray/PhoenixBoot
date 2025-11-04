@@ -34,7 +34,7 @@ class UEFIVariableAnalyzer:
     
     def analyze_asus_variables(self):
         """Analyze all ASUS-specific variables in detail"""
-        print("🎯 DEEP ANALYSIS OF ASUS VARIABLES")
+        print("☠ DEEP ANALYSIS OF ASUS VARIABLES")
         print("=" * 50)
         
         # Key ASUS variables to analyze
@@ -52,7 +52,7 @@ class UEFIVariableAnalyzer:
         ]
         
         for var_name, full_guid in asus_variables:
-            print(f"\n🔍 Analyzing: {var_name}")
+            print(f"\n☠ Analyzing: {var_name}")
             print("-" * 40)
             
             # Extract just the GUID part
@@ -189,11 +189,11 @@ class UEFIVariableAnalyzer:
     def print_analysis(self, var_name: str, data: bytes, analysis: Dict):
         """Print variable analysis in a readable format"""
         print(f"☠ Size: {analysis['size']} bytes")
-        print(f"🔧 Type: {analysis['interpretation']}")
-        print(f"📱 Raw: {analysis['hex_data']}")
+        print(f"☠ Type: {analysis['interpretation']}")
+        print(f"☠ Raw: {analysis['hex_data']}")
         
         if analysis['possible_values']:
-            print("🎯 Decoded Values:")
+            print("☠ Decoded Values:")
             for value in analysis['possible_values']:
                 print(f"   • {value}")
     
@@ -236,7 +236,7 @@ class UEFIVariableAnalyzer:
         
         for category, recs in recommendations.items():
             if recs:
-                print(f"\n🎯 {category.replace('_', ' ').title()}:")
+                print(f"\n☠ {category.replace('_', ' ').title()}:")
                 for rec in recs:
                     print(f"   • {rec['variable']}: {rec['recommendation']}")
                     print(f"     Optimal: {rec['optimal_value']}")
@@ -273,7 +273,7 @@ def main():
     # Save results
     analyzer.save_analysis_results()
     
-    print(f"\n🎯 ANALYSIS COMPLETE!")
+    print(f"\n☠ ANALYSIS COMPLETE!")
     print("This data is GOLD for building universal BIOS support!")
     print("We now know how to configure ROG hardware properly! ☠")
 

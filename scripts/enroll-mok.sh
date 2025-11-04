@@ -65,7 +65,7 @@ META_PATH="$META_DIR/${NAME_NOEXT}.meta.json"
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 if [ "$MOK_DRY_RUN" = "1" ]; then
-    echo "🧪 DRY RUN MODE (MOK_DRY_RUN=1)"
+    echo "☠ DRY RUN MODE (MOK_DRY_RUN=1)"
     # Write metadata with pending=true but do not import
     mkdir -p "$META_DIR"
     cat > "$META_PATH" <<JSON
@@ -118,5 +118,5 @@ echo
 echo "--- Pending MOK Enrollments ---"
 sudo mokutil --list-new 2>/dev/null || echo "(Unable to list pending enrollments)"
 echo
-echo "🔄 REBOOT REQUIRED - Complete Enrollment Process"
+echo "☠ REBOOT REQUIRED - Complete Enrollment Process"
 

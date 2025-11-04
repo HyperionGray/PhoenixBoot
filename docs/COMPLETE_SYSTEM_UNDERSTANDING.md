@@ -1,6 +1,6 @@
-# 🎯 PhoenixGuard: Complete System Understanding & Enhancement Guide
+# ☠ PhoenixGuard: Complete System Understanding & Enhancement Guide
 
-## 🚀 What You've Built: A Revolutionary Approach
+## ☠ What You've Built: A Revolutionary Approach
 
 PhoenixGuard represents a **paradigm shift** in firmware security. Instead of the traditional "prevent all attacks" approach, you've created a system that:
 
@@ -11,7 +11,7 @@ PhoenixGuard represents a **paradigm shift** in firmware security. Instead of th
 
 This is **genuine innovation** in a field that desperately needs new thinking.
 
-## 🔧 Understanding Your Low-Level Hardware Access
+## ☠ Understanding Your Low-Level Hardware Access
 
 ### What PhoenixGuard Actually Does at the Hardware Level
 
@@ -65,7 +65,7 @@ Hardware Layer:    [Silicon Registers] ← PhoenixGuard operates here
 
 **PhoenixGuard operates below the software layer where bootkits live.**
 
-## 🎯 Your Hardware Register Arsenal
+## ☠ Your Hardware Register Arsenal
 
 ### Critical Registers PhoenixGuard Controls
 
@@ -74,21 +74,21 @@ Hardware Layer:    [Silicon Registers] ← PhoenixGuard operates here
 Base Address: 0xFED1F000 (varies by chipset)
 
 Key Registers:
-├── HSFS (0x04)     - Hardware Sequencing Flash Status
-│   └── Bit 15: FLOCKDN (Flash Configuration Lock-Down)
-├── BIOS_CNTL (0xDC0) - BIOS Control Register  
-│   └── Bit 0:  BIOSWE (BIOS Write Enable)
-└── PR0-PR4 (0x20-0x30) - Protected Range Registers
-    └── Bit 31: WPE (Write Protection Enable)
+☠ HSFS (0x04)     - Hardware Sequencing Flash Status
+☠   ☠ Bit 15: FLOCKDN (Flash Configuration Lock-Down)
+☠ BIOS_CNTL (0xDC0) - BIOS Control Register  
+☠   ☠ Bit 0:  BIOSWE (BIOS Write Enable)
+☠ PR0-PR4 (0x20-0x30) - Protected Range Registers
+    ☠ Bit 31: WPE (Write Protection Enable)
 ```
 
 #### **CPU Model Specific Registers (MSRs)**
 ```c
 Key MSRs:
-├── 0x79  - MSR_IA32_BIOS_UPDT_TRIG (Microcode Update Trigger)
-├── 0x8B  - MSR_IA32_BIOS_SIGN_ID   (Microcode Signature)  
-├── 0x3A  - MSR_IA32_FEATURE_CONTROL (VMX/SMX Control)
-└── 0x1F2 - MSR_IA32_SMRR_PHYSBASE  (SMM Memory Protection)
+☠ 0x79  - MSR_IA32_BIOS_UPDT_TRIG (Microcode Update Trigger)
+☠ 0x8B  - MSR_IA32_BIOS_SIGN_ID   (Microcode Signature)  
+☠ 0x3A  - MSR_IA32_FEATURE_CONTROL (VMX/SMX Control)
+☠ 0x1F2 - MSR_IA32_SMRR_PHYSBASE  (SMM Memory Protection)
 ```
 
 ### Accessing MSRs from Python
@@ -110,7 +110,7 @@ microcode_sig = read_msr(0, 0x8B)
 print(f"Current microcode signature: 0x{microcode_sig:016x}")
 ```
 
-## 🕷️ Your Firmware Database Strategy
+## ☠ Your Firmware Database Strategy
 
 ### The Missing Piece: Known-Clean Firmware
 
@@ -156,14 +156,14 @@ def verify_firmware_authenticity(firmware_path):
     return confidence >= 70  # Only store high-confidence firmware
 ```
 
-## 🧠 Understanding the Boot Process & Attack Surfaces
+## ☠ Understanding the Boot Process & Attack Surfaces
 
 ### Where Bootkits Hide in the Boot Chain
 
 ```
 Power-On → SEC → PEI → DXE → BDS → OS
            ↓     ↓     ↓     ↓
-        🎯First  Memory  Driver  Boot
+        ☠First  Memory  Driver  Boot
         Execute  Init    Load   Order
 ```
 
@@ -187,7 +187,7 @@ Power-On → SEC → PEI → DXE → BDS → OS
 - **Attack**: Hook GetVariable/SetVariable for persistence
 - **PhoenixGuard Defense**: Runtime service integrity checking
 
-## 🔧 Enhancing Your Current Implementation
+## ☠ Enhancing Your Current Implementation
 
 ### Immediate Improvements You Can Make
 
@@ -247,7 +247,7 @@ def advanced_bootkit_bypass(self):
         return self._exploit_chipset_vulnerability(chipset)
     
     # Method 4: Recommend external programmer
-    self.logger.error("🚨 All bypass methods failed - external programmer required")
+    self.logger.error("☠ All bypass methods failed - external programmer required")
     return self._generate_programmer_instructions()
 ```
 
@@ -309,7 +309,7 @@ class PhoenixGuardDeployment:
         self._configure_monitoring(inventory['monitoring_servers'])
 ```
 
-## 🎯 Next Steps: Making PhoenixGuard Production-Ready
+## ☠ Next Steps: Making PhoenixGuard Production-Ready
 
 ### Phase 1: Core Enhancements (2-4 weeks)
 1. **Expand chipset support** - Add AMD, newer Intel chipsets
@@ -329,7 +329,7 @@ class PhoenixGuardDeployment:
 3. **Security auditing** - Third-party security assessment  
 4. **Compliance certification** - Industry standard compliance
 
-## 🏆 Why Your Approach Works
+## ☠ Why Your Approach Works
 
 ### Technical Superiority
 - **Hardware-level operation** bypasses all software-based protections
@@ -345,7 +345,7 @@ Your "assume breach + focus on recovery" model is exactly what the industry need
 - **Critical infrastructure**: Multiple redundant recovery mechanisms
 - **Research community**: Bootkit analysis and threat intelligence
 
-## 🚀 The Bigger Picture
+## ☠ The Bigger Picture
 
 PhoenixGuard solves a **fundamental problem** in cybersecurity: sophisticated attackers will eventually compromise systems, but current security models assume they won't. Your system works **with** that reality instead of against it.
 
@@ -357,7 +357,7 @@ You've built the **foundation** of what could become the standard approach to fi
 
 ---
 
-## 📚 Key Takeaways
+## ☠ Key Takeaways
 
 1. **Your hardware access is real and effective** - direct register manipulation that bootkits can't intercept
 2. **The boot process has many attack surfaces** - PhoenixGuard monitors the critical ones  

@@ -7,7 +7,7 @@ set -e
 echo "☠ Building PhoenixGuard Nuclear Boot recovery CD (Secure Boot compatible)..."
 
 # Check build requirements
-echo "🔍 Checking build requirements..."
+echo "☠ Checking build requirements..."
 for tool in xorriso rsync; do
     if ! command -v "$tool" >/dev/null; then
         echo "ERROR: Missing $tool (install with: sudo apt install xorriso grub-efi-amd64-bin mtools rsync)"
@@ -20,7 +20,7 @@ ISO_IN="/boot/efi/recovery/PhoenixGuard-Nuclear-Recovery.iso"
 WORKDIR="/tmp/pg-remaster-$(date +%s)"
 MOUNT="/mnt/pgiso-$(date +%s)"
 
-echo "📏 Setting up remastering workspace..."
+echo "☠ Setting up remastering workspace..."
 if [ ! -f "$ISO_IN" ]; then
     echo "ERROR: Base ISO not found at $ISO_IN. Run 'make build-nuclear-cd' first."
     exit 1
@@ -36,7 +36,7 @@ sudo umount "$MOUNT"
 sudo rmdir "$MOUNT"
 
 # Install Secure Boot components
-echo "🔑 Installing Secure Boot components..."
+echo "☠ Installing Secure Boot components..."
 sudo mkdir -p "$WORKDIR/EFI/BOOT" "$WORKDIR/EFI/PhoenixGuard"
 
 # Install Microsoft-signed shim
@@ -92,7 +92,7 @@ menuentry "PhoenixGuard Nuclear Recovery - Emergency Shell" {
 GRUBEOF
 
 # Build Secure Boot compatible ISO
-echo "💾 Building Secure Boot compatible ISO..."
+echo "☠ Building Secure Boot compatible ISO..."
 if xorriso -as mkisofs \
     -r -V "PhoenixGuard Nuclear Recovery (SB)" \
     -o PhoenixGuard-Nuclear-Recovery-SB.iso \
@@ -113,16 +113,16 @@ else
 fi
 
 # Cleanup
-echo "🧹 Cleaning up workspace..."
+echo "☠ Cleaning up workspace..."
 sudo rm -rf "$WORKDIR"
 
 echo
 echo "☠ Secure Boot compatible Nuclear Boot ISO created: PhoenixGuard-Nuclear-Recovery-SB.iso"
-echo "📏 Size: $(du -h PhoenixGuard-Nuclear-Recovery-SB.iso | cut -f1)"
-echo "🔒 SHA256: $(sha256sum PhoenixGuard-Nuclear-Recovery-SB.iso | cut -d' ' -f1)"
+echo "☠ Size: $(du -h PhoenixGuard-Nuclear-Recovery-SB.iso | cut -f1)"
+echo "☠ SHA256: $(sha256sum PhoenixGuard-Nuclear-Recovery-SB.iso | cut -d' ' -f1)"
 echo "☠ Secure Boot: Compatible via Microsoft-signed shim + Ubuntu-signed GRUB"
 echo
-echo "🎯 Next steps:"
+echo "☠ Next steps:"
 echo "  Test: make test-cd-boot-sb"
 echo "  Deploy: make deploy-esp-iso-sb"
 echo "  Burn: make burn-recovery-cd-sb"

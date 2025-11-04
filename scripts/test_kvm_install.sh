@@ -5,7 +5,7 @@ set -euo pipefail
 # =================================
 # Quick test setup for KVM recovery with auto-detected parameters
 
-echo "🦀☠ PhoenixGuard KVM Test Installation ☠🦀"
+echo "☠☠ PhoenixGuard KVM Test Installation ☠☠"
 echo "============================================"
 
 # Auto-detect system parameters
@@ -15,7 +15,7 @@ VMLINUZ="/boot/vmlinuz-${KERNEL_VER}"
 INITRD="/boot/initrd.img-${KERNEL_VER}"
 QCOW2="ubuntu-24.04-minimal-cloudimg-amd64.qcow2"
 
-echo "📋 Auto-detected parameters:"
+echo "☠ Auto-detected parameters:"
 echo "  Root UUID: $ROOT_UUID"
 echo "  Kernel: $VMLINUZ"
 echo "  Initrd: $INITRD"
@@ -49,7 +49,7 @@ GPU_INFO=$(lspci -nn | grep -E "VGA|Display" | grep -v Intel | head -1 || true)
 if [[ -n "$GPU_INFO" ]]; then
     GPU_BDF=$(echo "$GPU_INFO" | cut -d' ' -f1)
     GPU_IDS=$(echo "$GPU_INFO" | grep -o '\[....:....\]' | tail -1 | tr -d '[]')
-    echo "🎮 Auto-detected GPU:"
+    echo "☠ Auto-detected GPU:"
     echo "  BDF: $GPU_BDF"
     echo "  IDs: $GPU_IDS"
     echo "  Info: $GPU_INFO"
@@ -60,7 +60,7 @@ else
 fi
 
 echo
-echo "🔧 Installing KVM Snapshot Jump with enhanced recovery..."
+echo "☠ Installing KVM Snapshot Jump with enhanced recovery..."
 
 # Run the KVM installer with our parameters
 sudo ./scripts/install_kvm_snapshot_jump.sh \
@@ -77,14 +77,14 @@ echo
 echo "☠ KVM Test Installation Complete!"
 echo "=================================="
 echo
-echo "🎯 Next steps:"
+echo "☠ Next steps:"
 echo "  1. Reboot your system"
 echo "  2. Select 'PhoenixGuard Clean Boot' from UEFI menu"
 echo "  3. Choose 'KVM Snapshot Jump' from GRUB menu"
 echo "  4. Enhanced recovery environment will start with full toolset"
 echo "  5. Run 'bootkit-scan' in the VM for comprehensive analysis"
 echo
-echo "🔧 The recovery VM will include:"
+echo "☠ The recovery VM will include:"
 echo "  • Python 3 + pip + cryptography libraries"
 echo "  • flashrom + chipsec + firmware-tools"
 echo "  • radare2 + binwalk + yara for reverse engineering"

@@ -60,7 +60,7 @@ if [ -s "$LOG" ]; then
     echo "☠ UUEFI test PASSED (found marker: $EXPECT)"
     RESULT=PASS
   else
-    echo "ℹ️  Marker '$EXPECT' not found; serial output present — treating as PASS for smoke test"
+    echo "ℹ☠  Marker '$EXPECT' not found; serial output present — treating as PASS for smoke test"
     RESULT=PASS
   fi
 else

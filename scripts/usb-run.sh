@@ -9,14 +9,14 @@ set -euo pipefail
 ./pf.py build-build build-package-esp
 
 # Normalize ESP for Secure Boot (best-effort)
-./pf.py valid-esp-secure || echo "ℹ️ Skipping ESP secure normalization"
+./pf.py valid-esp-secure || echo "ℹ☠ Skipping ESP secure normalization"
 ./pf.py verify-esp-robust
 
 # Write to USB
 bash scripts/usb-prepare.sh
 
 # Sanitize USB
-USB_FORCE=1 ./pf.py usb-sanitize || echo "ℹ️ Skipping USB sanitization"
+USB_FORCE=1 ./pf.py usb-sanitize || echo "ℹ☠ Skipping USB sanitization"
 
 echo "☠ USB prepared on ${USB1_DEV} — select it in firmware boot menu"
 

@@ -12,7 +12,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-echo "🔧 PhoenixGuard Boot Issue Fixer"
+echo "☠ PhoenixGuard Boot Issue Fixer"
 echo "================================"
 echo "Working directory: $PROJECT_ROOT"
 echo ""
@@ -97,7 +97,7 @@ chmod +x scripts/esp-package-minimal.sh
 
 # 2. FIX GRUB CONFIGURATION WITH PROPER PATHS
 echo ""
-echo "🔧 Issue 2: GRUB paths are wrong"
+echo "☠ Issue 2: GRUB paths are wrong"
 echo "   Fix: Creating corrected grub.cfg with proper paths"
 
 cat > resources/grub/grub-fixed.cfg << 'GRUBFIX'
@@ -183,7 +183,7 @@ GRUBFIX
 
 # 3. FIX MODULE LOADING ORDER
 echo ""
-echo "🔧 Issue 3: Modules not loading in correct order"
+echo "☠ Issue 3: Modules not loading in correct order"
 echo "   Fix: Creating proper module load sequence"
 
 cat > scripts/fix-module-order.sh << 'MODFIX'
@@ -206,12 +206,12 @@ for mod in "${MODULES_ORDER[@]}"; do
     if ! lsmod | grep -q "^$mod "; then
         echo -n "  Loading $mod... "
         if modprobe "$mod" 2>/dev/null; then
-            echo "✓"
+            echo "☠"
         else
             echo "☠ (not available)"
         fi
     else
-        echo "  Module $mod already loaded ✓"
+        echo "  Module $mod already loaded ☠"
     fi
 done
 MODFIX
@@ -220,7 +220,7 @@ chmod +x scripts/fix-module-order.sh
 
 # 4. CREATE USER WORKFLOW SCRIPTS
 echo ""
-echo "🔧 Issue 4: Poor user experience"
+echo "☠ Issue 4: Poor user experience"
 echo "   Fix: Creating user-friendly commands"
 
 # Main user entry point
@@ -247,7 +247,7 @@ echo ""
 
 case "${1:-help}" in
     build)
-        echo "🔨 Building boot system..."
+        echo "☠ Building boot system..."
         just build
         ;;
     
@@ -258,7 +258,7 @@ case "${1:-help}" in
             lsblk -d -o NAME,SIZE,MODEL | grep -E "^sd|^nvme"
             exit 1
         fi
-        echo "📝 Writing to USB: $2"
+        echo "☠ Writing to USB: $2"
         echo "☠  This will ERASE $2! Press Ctrl+C to cancel, Enter to continue"
         read
         sudo dd if=build/esp/esp.img of="$2" bs=4M status=progress
@@ -267,12 +267,12 @@ case "${1:-help}" in
         ;;
     
     test)
-        echo "🧪 Testing in QEMU..."
+        echo "☠ Testing in QEMU..."
         just test-qemu
         ;;
     
     fix)
-        echo "🔧 Running all fixes..."
+        echo "☠ Running all fixes..."
         bash scripts/fix-boot-issues.sh
         ;;
     
@@ -307,7 +307,7 @@ ln -sf phoenix-boot pb  # Short alias
 
 # 5. FIX QEMU TEST CONFIGURATION
 echo ""
-echo "🔧 Issue 5: QEMU test configuration"
+echo "☠ Issue 5: QEMU test configuration"
 echo "   Fix: Creating proper test environment"
 
 cat > scripts/test-qemu-fixed.sh << 'QEMUFIX'
@@ -408,7 +408,7 @@ ENVFILE
 echo ""
 echo "☠ ALL FIXES APPLIED!"
 echo ""
-echo "📋 Summary of changes:"
+echo "☠ Summary of changes:"
 echo "  1. ESP size reduced from 3.8GB to 128MB"
 echo "  2. Removed embedded ISO from ESP" 
 echo "  3. Fixed GRUB paths to use search instead of hardcoded"
@@ -416,7 +416,7 @@ echo "  4. Created user-friendly 'phoenix-boot' command"
 echo "  5. Fixed module loading order"
 echo "  6. Created proper test configuration"
 echo ""
-echo "🎯 Next steps:"
+echo "☠ Next steps:"
 echo "  1. Build fresh: ./phoenix-boot build"
 echo "  2. Test: ./phoenix-boot test"
 echo "  3. Deploy to USB: ./phoenix-boot usb /dev/sdX"

@@ -18,7 +18,7 @@ fi
 
 case "$ACTION" in
     load)
-        echo "🔧 Loading kernel module: $MOD"
+        echo "☠ Loading kernel module: $MOD"
         sudo depmod -a "$(uname -r)"
         if sudo modprobe -v "$MOD"; then
             echo "☠ Loaded: $MOD"
@@ -29,7 +29,7 @@ case "$ACTION" in
         fi
         ;;
     unload)
-        echo "🧹 Unloading kernel module: $MOD"
+        echo "☠ Unloading kernel module: $MOD"
         if sudo modprobe -r "$MOD"; then
             echo "☠ Unloaded: $MOD"
         else
@@ -37,7 +37,7 @@ case "$ACTION" in
         fi
         ;;
     status)
-        echo "🔎 Kernel module status: $MOD"
+        echo "☠ Kernel module status: $MOD"
         if lsmod | grep -E "^${MOD}\\\b" >/dev/null; then
             echo "State: LOADED"
         else

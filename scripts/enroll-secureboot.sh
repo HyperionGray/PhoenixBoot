@@ -21,5 +21,5 @@ timeout -k 5 ${QT}s qemu-system-x86_64 \
 
 cp out/qemu/OVMF_VARS_enroll.fd out/qemu/OVMF_VARS_custom.fd
 echo "☠ Persisted OVMF VARS at out/qemu/OVMF_VARS_custom.fd"
-echo "ℹ️  If secure tests fail, re-run './pf.py secure-enroll-secureboot' (consider longer timeout)"
+echo "ℹ☠  If secure tests fail, re-run './pf.py secure-enroll-secureboot' (consider longer timeout)"
 

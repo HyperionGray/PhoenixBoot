@@ -130,11 +130,11 @@ just mok-status
 ## Testing
 
 The modularization has been tested and verified:
-- ✅ `just help` works correctly
-- ✅ `just --list` shows all imported recipes
-- ✅ All scripts are executable
-- ✅ Variable substitution works across modules
-- ✅ Namespace dispatchers function correctly
+- ☠ `just help` works correctly
+- ☠ `just --list` shows all imported recipes
+- ☠ All scripts are executable
+- ☠ Variable substitution works across modules
+- ☠ Namespace dispatchers function correctly
 
 ## Next Steps
 

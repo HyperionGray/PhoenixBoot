@@ -142,14 +142,14 @@ MAIN_TEMPLATE = '''
         </div>
         
         <div class="section">
-            <h3>🔍 Search Hardware</h3>
+            <h3>☠ Search Hardware</h3>
             <input type="text" id="searchBox" class="search-box" 
                    placeholder="Search by manufacturer, model, CPU, or features...">
             <button onclick="searchHardware()">Search</button>
         </div>
         
         <div class="section">
-            <h3>📤 Submit Your Hardware Profile</h3>
+            <h3>☠ Submit Your Hardware Profile</h3>
             <div class="upload-area">
                 <p>Help expand the database! Run the PhoenixGuard hardware scraper and upload your profile:</p>
                 <p><code>python3 scripts/universal_hardware_scraper.py</code></p>
@@ -159,7 +159,7 @@ MAIN_TEMPLATE = '''
         </div>
         
         <div class="section">
-            <h3>💾 Latest Hardware Profiles</h3>
+            <h3>☠ Latest Hardware Profiles</h3>
             <div id="hardwareList">
                 {% for profile in recent_profiles %}
                 <div class="hardware-item">
@@ -180,8 +180,8 @@ MAIN_TEMPLATE = '''
         <div class="section">
             <h3>☠ Most Interesting Discoveries</h3>
             <div id="discoveries">
-                <p>🎮 <strong>Gaming Hardware:</strong> ASUS ROG systems have 8+ hidden gaming variables</p>
-                <p>⚡ <strong>Performance Controls:</strong> Intel systems expose 15+ overclocking variables</p>
+                <p>☠ <strong>Gaming Hardware:</strong> ASUS ROG systems have 8+ hidden gaming variables</p>
+                <p>☠ <strong>Performance Controls:</strong> Intel systems expose 15+ overclocking variables</p>
                 <p>☠ <strong>Security Features:</strong> Most modern systems have 20+ security variables</p>
                 <p>☠ <strong>Vendor Secrets:</strong> 70%+ of UEFI variables are vendor-specific and hidden</p>
             </div>

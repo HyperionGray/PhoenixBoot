@@ -964,7 +964,7 @@ ExecuteNuclearJump (
   }
   
   Print(L"\n☠ NUCLEAR JUMP EXECUTED! ☠\n");
-  Print(L"🎯 Control transferred to kernel\n");
+  Print(L"☠ Control transferred to kernel\n");
   Print(L"☠ Boot process continues in downloaded OS\n");
   
   //

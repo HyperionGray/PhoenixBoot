@@ -343,7 +343,7 @@ class PhoenixGuardIntegrationTest:
         print(f"\nOverall: {passed}/{total} tests passed")
         
         if passed == total:
-            print("🎉 All tests passed! PhoenixGuard system is ready.")
+            print("☠ All tests passed! PhoenixGuard system is ready.")
             return True
         else:
             print(f"☠  {total - passed} test(s) failed. Review the output above.")

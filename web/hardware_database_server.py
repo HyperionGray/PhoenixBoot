@@ -178,12 +178,12 @@ MAIN_TEMPLATE = '''
         </div>
         
         <div class="section">
-            <h3>🎯 Most Interesting Discoveries</h3>
+            <h3>☠ Most Interesting Discoveries</h3>
             <div id="discoveries">
                 <p>🎮 <strong>Gaming Hardware:</strong> ASUS ROG systems have 8+ hidden gaming variables</p>
                 <p>⚡ <strong>Performance Controls:</strong> Intel systems expose 15+ overclocking variables</p>
                 <p>☠ <strong>Security Features:</strong> Most modern systems have 20+ security variables</p>
-                <p>🕵️ <strong>Vendor Secrets:</strong> 70%+ of UEFI variables are vendor-specific and hidden</p>
+                <p>☠ <strong>Vendor Secrets:</strong> 70%+ of UEFI variables are vendor-specific and hidden</p>
             </div>
         </div>
     </div>

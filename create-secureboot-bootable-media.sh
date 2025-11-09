@@ -4,6 +4,28 @@
 # This script creates a bootable USB/CD image with SecureBoot support from an ISO.
 # It handles key generation, ESP creation, and provides clear instructions for first boot.
 #
+# WORKFLOW:
+#   Input: ISO file
+#   ↓
+#   1. Check dependencies (openssl, sbsign, cert-to-efi-sig-list, etc.)
+#   ↓
+#   2. Generate SecureBoot keys (PK, KEK, db) if not present
+#   ↓
+#   3. Create authenticated variable files (.auth) for key enrollment
+#   ↓
+#   4. Build/locate PhoenixBoot artifacts (BootX64.efi, KeyEnrollEdk2.efi)
+#   ↓
+#   5. Create bootable ESP image with:
+#      - Microsoft-signed shim (BOOTX64.EFI)
+#      - Signed GRUB (grubx64.efi)
+#      - Your ISO (in /ISO/ directory)
+#      - SecureBoot keys (in /EFI/PhoenixGuard/keys/)
+#      - Key enrollment tool (KeyEnrollEdk2.efi)
+#      - GRUB config for ISO loopback boot
+#      - First boot instructions
+#   ↓
+#   Output: out/esp/secureboot-bootable.img (ready to write to USB or burn to CD)
+#
 # Usage:
 #   ./create-secureboot-bootable-media.sh --iso /path/to/ubuntu.iso [--output usb|iso|both]
 #   ./create-secureboot-bootable-media.sh --help

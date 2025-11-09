@@ -2,6 +2,20 @@
 
 This document provides quick access to the most common PhoenixBoot operations.
 
+## 🆕 NEW: Turnkey SecureBoot Bootable Media (RECOMMENDED!)
+
+**The easiest way to create SecureBoot-enabled boot media from any ISO:**
+
+```bash
+# One command does everything!
+./create-secureboot-bootable-media.sh --iso /path/to/ubuntu.iso
+
+# Write to USB:
+sudo dd if=out/esp/secureboot-bootable.img of=/dev/sdX bs=4M status=progress
+```
+
+See [SECUREBOOT_QUICKSTART.md](SECUREBOOT_QUICKSTART.md) for more details.
+
 ## Quick Start Scripts
 
 All scripts are located at the repository root for easy access.

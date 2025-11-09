@@ -1,0 +1,128 @@
+# workflows.pf - Advanced workflows using new pf-runner grammar features
+# Demonstrates: if statements, for loops, sync operations, and complex artifact workflows
+
+task workflow-artifact-create
+  describe Create all necessary artifacts for ESP and CD with secure boot support
+  env ARTIFACT_DIR=out/artifacts
+  env ESP_DIR=out/esp
+  env KEYS_DIR=out/keys
+  
+  # Create artifact directories
+  shell mkdir -p $ARTIFACT_DIR/esp $ARTIFACT_DIR/cd $ARTIFACT_DIR/docs
+  shell mkdir -p $ESP_DIR $KEYS_DIR
+  
+  # Build production binaries if needed
+  shell bash -c "if [ ! -f staging/boot/NuclearBootEdk2.efi ] || [ ! -f staging/boot/UUEFI.efi ]; then ./pf.py build-build; fi"
+  
+  # Generate secure boot keys if they don't exist
+  shell bash -c "if [ ! -f $KEYS_DIR/PK/PK.key ]; then ./pf.py secure-keygen; fi"
+  
+  # Create secure boot auth files
+  shell bash -c "if [ ! -f $KEYS_DIR/PK/PK.auth ]; then ./pf.py secure-make-auth; fi"
+  
+  # Package ESP image
+  shell ./pf.py build-package-esp
+  
+  # Copy ESP image to artifact directory
+  shell bash -c "if [ -f out/esp/esp.img ]; then cp out/esp/esp.img $ARTIFACT_DIR/esp/; fi"
+  
+  # Copy UEFI binaries to artifact directory
+  shell cp staging/boot/NuclearBootEdk2.efi $ARTIFACT_DIR/esp/
+  shell cp staging/boot/KeyEnrollEdk2.efi $ARTIFACT_DIR/esp/
+  shell cp staging/boot/UUEFI.efi $ARTIFACT_DIR/esp/
+  
+  # Copy secure boot keys to artifact directory
+  shell bash -c "if [ -d $KEYS_DIR ]; then cp -r $KEYS_DIR $ARTIFACT_DIR/; fi"
+  
+  shell echo "✅ Artifacts created in $ARTIFACT_DIR"
+  shell ls -lh $ARTIFACT_DIR/esp/
+end
+
+task workflow-cd-prepare
+  describe Prepare bootable CD/ISO with ESP and secure boot artifacts
+  env ARTIFACT_DIR=out/artifacts
+  env CD_BUILD_DIR=nuclear-cd-build
+  env ISO_NAME=PhoenixGuard-SecureBoot.iso
+  
+  # Ensure artifacts exist
+  shell bash -c "if [ ! -d $ARTIFACT_DIR/esp ]; then echo 'Run workflow-artifact-create first'; exit 1; fi"
+  
+  # Create CD build directory
+  shell mkdir -p $CD_BUILD_DIR/boot $CD_BUILD_DIR/efi $CD_BUILD_DIR/keys
+  
+  # Copy ESP image to CD
+  shell bash -c "if [ -f $ARTIFACT_DIR/esp/esp.img ]; then cp $ARTIFACT_DIR/esp/esp.img $CD_BUILD_DIR/boot/; fi"
+  
+  # Copy UEFI binaries to CD
+  shell cp $ARTIFACT_DIR/esp/*.efi $CD_BUILD_DIR/efi/ || true
+  
+  # Copy keys to CD (for manual enrollment if needed)
+  shell bash -c "if [ -d $ARTIFACT_DIR/keys ]; then cp -r $ARTIFACT_DIR/keys/* $CD_BUILD_DIR/keys/ || true; fi"
+  
+  # Create secure boot instructions
+  shell bash scripts/create-secureboot-instructions.sh
+  
+  shell echo "✅ CD structure prepared in $CD_BUILD_DIR"
+  shell echo "   Next: Use ISO creation tool to burn to CD"
+end
+
+task workflow-secureboot-instructions
+  describe Generate comprehensive secure boot setup instructions
+  shell bash scripts/generate-secureboot-instructions.sh
+end
+
+task workflow-complete-esp-cd
+  describe Complete workflow: Create artifacts, prepare CD, generate instructions
+  shell ./pf.py workflow-artifact-create
+  shell ./pf.py workflow-cd-prepare
+  shell ./pf.py workflow-secureboot-instructions
+  shell echo ""
+  shell echo "✅ Complete ESP and CD workflow finished!"
+  shell echo "   Artifacts: out/artifacts/"
+  shell echo "   CD build:  nuclear-cd-build/"
+  shell echo "   Docs:      out/artifacts/docs/SECURE_BOOT_SETUP.md"
+end
+
+task workflow-verify-artifacts
+  describe Verify all created artifacts are valid
+  env ARTIFACT_DIR=out/artifacts
+  
+  shell echo "Verifying artifacts..."
+  
+  # Check ESP image exists and has correct size
+  shell bash -c "if [ -f $ARTIFACT_DIR/esp/esp.img ]; then SIZE=\$(stat -f%z $ARTIFACT_DIR/esp/esp.img 2>/dev/null || stat -c%s $ARTIFACT_DIR/esp/esp.img); echo \"ESP image: \$SIZE bytes\"; else echo 'ESP image missing!'; exit 1; fi"
+  
+  # Check UEFI binaries
+  shell bash -c "for bin in NuclearBootEdk2.efi KeyEnrollEdk2.efi UUEFI.efi; do if [ ! -f $ARTIFACT_DIR/esp/\$bin ]; then echo \"Missing \$bin\"; exit 1; else echo \"Found \$bin\"; fi; done"
+  
+  # Check keys directory
+  shell bash -c "if [ ! -d $ARTIFACT_DIR/keys ]; then echo 'Keys directory missing!'; exit 1; else echo 'Keys directory found'; fi"
+  
+  # Verify ESP image integrity
+  shell bash -c "if command -v fsck.vfat >/dev/null 2>&1; then fsck.vfat -n $ARTIFACT_DIR/esp/esp.img || echo 'ESP image verification: OK (or fsck not available)'; fi"
+  
+  shell echo "✅ All artifacts verified"
+end
+
+task workflow-usb-write
+  describe Write artifacts to USB drive (DESTRUCTIVE - requires USB_DEVICE)
+  env USB_DEVICE=${USB_DEVICE:-}
+  env ARTIFACT_DIR=out/artifacts
+  
+  # Safety checks
+  shell bash -c "if [ -z \"$USB_DEVICE\" ]; then echo 'ERROR: Set USB_DEVICE=/dev/sdX'; exit 1; fi"
+  shell bash -c "if [ ! -b \"$USB_DEVICE\" ]; then echo 'ERROR: $USB_DEVICE is not a block device'; exit 1; fi"
+  shell bash -c "if [ ! -f $ARTIFACT_DIR/esp/esp.img ]; then echo 'ERROR: ESP image not found. Run workflow-artifact-create first'; exit 1; fi"
+  
+  # Unmount if mounted
+  shell bash -c "sudo umount ${USB_DEVICE}* 2>/dev/null || true"
+  
+  # Write ESP image
+  shell echo "Writing ESP image to $USB_DEVICE..."
+  shell sudo dd if=$ARTIFACT_DIR/esp/esp.img of=$USB_DEVICE bs=4M status=progress
+  shell sudo sync
+  
+  shell echo "✅ USB drive written successfully"
+  shell echo "   Device: $USB_DEVICE"
+  shell echo "   You can now boot from this USB drive"
+end

@@ -36,6 +36,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # Source common utilities
+# shellcheck disable=SC1091  # Script path not followed during static analysis
 source scripts/lib/common.sh 2>/dev/null || {
     info() { printf 'ℹ☠  %s\n' "$*"; }
     ok() { printf '☠ %s\n' "$*"; }
@@ -54,9 +55,7 @@ SKIP_KEYS=false
 FORCE=false
 
 # Colors for better UX
-RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 

@@ -1,3 +1,4 @@
+include "secureboot-media.pf"
 include "build.pf"
 include "test.pf"
 include "iso.pf"

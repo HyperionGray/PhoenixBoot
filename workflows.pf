@@ -126,3 +126,24 @@ task workflow-usb-write
   shell echo "   Device: $USB_DEVICE"
   shell echo "   You can now boot from this USB drive"
 end
+
+task workflow-test-uuefi
+  describe Test UUEFI application in QEMU (requires QEMU, OVMF, mtools)
+  
+  # Check dependencies
+  shell bash -c "command -v qemu-system-x86_64 >/dev/null 2>&1 || { echo 'ERROR: qemu-system-x86_64 not found. Install QEMU.'; exit 1; }"
+  shell bash -c "command -v mcopy >/dev/null 2>&1 || { echo 'ERROR: mcopy not found. Install mtools.'; exit 1; }"
+  
+  # Ensure ESP and UUEFI exist
+  shell bash -c "if [ ! -f out/esp/esp.img ]; then echo 'Building ESP image...'; ./pf.py build-package-esp; fi"
+  shell bash -c "if [ ! -f staging/boot/UUEFI.efi ]; then echo 'ERROR: UUEFI.efi not found'; exit 1; fi"
+  
+  # Run UUEFI test
+  shell ./pf.py test-qemu-uuefi
+  
+  # Display results
+  shell echo ""
+  shell echo "Test results:"
+  shell bash -c "if [ -f out/qemu/serial-uuefi.log ]; then echo '  Log: out/qemu/serial-uuefi.log'; wc -l out/qemu/serial-uuefi.log; else echo '  No log file generated'; fi"
+  shell bash -c "if [ -f out/qemu/report-uuefi.xml ]; then echo '  Report: out/qemu/report-uuefi.xml'; grep -o 'failures=\"[0-9]*\"' out/qemu/report-uuefi.xml; fi"
+end

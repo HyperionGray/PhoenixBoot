@@ -18,6 +18,9 @@ jobs:
     name: Setup and Build Artifacts
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: read
+    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -77,6 +80,9 @@ jobs:
     needs: setup-and-build
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: read
+    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -127,6 +133,9 @@ jobs:
     name: Test SecureBoot with NuclearBoot
     needs: setup-and-build
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout Repository
@@ -190,6 +199,9 @@ jobs:
     needs: setup-and-build
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: read
+    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -236,6 +248,9 @@ jobs:
     name: Test NuclearBoot Corruption Detection
     needs: setup-and-build
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout Repository
@@ -301,6 +316,9 @@ jobs:
     needs: setup-and-build
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: read
+    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -359,6 +377,9 @@ jobs:
     name: Test Cloud-Init Username/Password Setup
     needs: setup-and-build
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout Repository
@@ -473,6 +494,9 @@ jobs:
       - test-cloud-init-integration
     runs-on: ubuntu-latest
     if: always()
+    
+    permissions:
+      contents: read
     
     steps:
       - name: Download All Test Logs

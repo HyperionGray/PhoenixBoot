@@ -48,3 +48,4 @@ nohup*.out
 *.bak
 *.swp
 *.swo
+.pf_archive/

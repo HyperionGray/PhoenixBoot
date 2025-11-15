@@ -1,0 +1,137 @@
+# core.pf - Core PhoenixBoot functionality
+# Essential tasks for everyday use
+
+# --- Build Tasks ---
+task build-setup
+  describe Bootstrap toolchain & environment
+  shell bash scripts/toolchain-check.sh
+end
+
+task build-build
+  describe Build production artifacts from staging/
+  shell bash scripts/build-production.sh
+end
+
+task build-package-esp
+  describe Package bootable ESP image
+  shell bash scripts/esp-package.sh
+end
+
+# --- Testing Tasks ---
+task test-qemu
+  describe Main QEMU boot test
+  shell bash scripts/qemu-test.sh
+end
+
+task test-qemu-secure-positive
+  describe Secure Boot positive test
+  shell bash scripts/qemu-test-secure-positive.sh
+end
+
+task test-qemu-uuefi
+  describe UUEFI application test
+  shell bash scripts/qemu-test-uuefi.sh
+end
+
+# --- Secure Boot Key Management ---
+task secure-keygen
+  describe Generate Secure Boot keypairs (RSA-4096) and X.509 certs
+  shell bash scripts/generate-sb-keys.sh
+end
+
+task secure-make-auth
+  describe Create ESL and AUTH for PK/KEK/db
+  shell bash scripts/create-auth-files.sh
+end
+
+# --- MOK (Machine Owner Key) Management ---
+task os-mok-enroll
+  describe Enroll host MOK for module signing
+  shell bash -lc 'scripts/enroll-mok.sh "${MOK_CERT_PEM:-out/keys/mok/PGMOK.crt}" "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}" ${MOK_DRY_RUN:-0}'
+end
+
+task os-mok-list-keys
+  describe List available MOK certs/keys and enrollment status
+  shell bash scripts/mok-list-keys.sh
+end
+
+task secure-mok-new
+  describe Generate new PhoenixGuard MOK keypair (use NAME and CN env)
+  shell bash -lc 'scripts/mok-new.sh "${NAME:-PGMOK}" "${CN:-PhoenixGuard Module Key}"'
+end
+
+# --- Module Signing ---
+task os-kmod-sign
+  describe Sign one module file or recursively sign directory (set PATH, FORCE=1 optional)
+  shell bash -lc '[ -n "${PATH:-}" ] || { echo "Usage: PATH=<file|dir> [FORCE=1] ./pf.py os-kmod-sign"; exit 1; }'
+  shell bash -lc '"/home/punk/.venv/bin/python" utils/pgmodsign.py "${PATH}" $([ "${FORCE:-0}" = "1" ] && printf -- "--force" || true)'
+end
+
+# --- UUEFI Operations ---
+task uuefi-install
+  describe Install UUEFI.efi to system ESP
+  shell bash scripts/uuefi-install.sh
+end
+
+task uuefi-apply
+  describe UUEFI apply (set BootNext; optionally create entry)
+  shell bash scripts/uuefi-apply.sh
+end
+
+task uuefi-report
+  describe UUEFI report (read-only)
+  shell bash scripts/uuefi-report.sh
+end
+
+# --- Validation ---
+task validate-all
+  describe Run all validations
+  shell bash scripts/validate-keys.sh
+  shell bash scripts/validate-esp.sh
+end
+
+task verify-esp-robust
+  describe Robust ESP verification
+  shell bash scripts/verify-esp-robust.sh
+end
+
+# --- SecureBoot Bootable Media ---
+task secureboot-create
+  describe Create turnkey SecureBoot bootable media from ISO (set ISO_PATH=/path/to.iso)
+  shell bash create-secureboot-bootable-media.sh --iso "${ISO_PATH}"
+end
+
+task secureboot-create-usb
+  describe Create SecureBoot USB and write directly (set ISO_PATH and USB_DEVICE)
+  shell bash create-secureboot-bootable-media.sh --iso "${ISO_PATH}" --usb-device "${USB_DEVICE}"
+end
+
+# --- Convenience Workflows ---
+task esp
+  describe Convenience: build + package ESP
+  shell ./pf.py build-build build-package-esp
+end
+
+task setup
+  describe Complete project setup: build + package + verify
+  shell ./pf.py build-setup build-build build-package-esp
+  shell ./pf.py verify-esp-robust
+end
+
+task verify
+  describe Run validation (validate-all + verify-esp-robust)
+  shell ./pf.py validate-all
+  shell ./pf.py verify-esp-robust
+end
+
+task mok-flow
+  describe Full MOK workflow: generate keys, enroll MOK
+  shell ./pf.py secure-mok-new
+  shell ./pf.py os-mok-enroll
+end
+
+task cleanup
+  describe Clean build artifacts (DEEP_CLEAN=1 for full ESP clean)
+  shell bash -lc 'rm -rf out/staging/* out/qemu/* out/lint/*'
+  shell bash -lc '[ "${DEEP_CLEAN:-0}" = "1" ] && rm -rf out/esp/* || true'
+end

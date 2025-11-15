@@ -121,21 +121,26 @@ A simplified UEFI application for system diagnostics:
 - Report security status
 - Boot configuration viewer
 
-**Status**: 🚧 Source code complete, needs building
+**Status**: ✅ Ready to test
 - ✅ Source files created: `staging/src/UUEFI.c`, `UUEFI.inf`
 - ✅ Build script ready: `staging/tools/build-uuefi.sh`
-- ⚠️ Requires EDK2 toolchain to build
-- ⚠️ Currently `staging/boot/UUEFI.efi` is a copy of NuclearBootEdk2.efi (causes immediate exit)
+- ✅ Binary built and different from NuclearBootEdk2.efi
+- ✅ Test workflow available: `./pf.py workflow-test-uuefi`
+- ℹ️  Requires QEMU and OVMF to run tests
 
-**Known Issue**: The current UUEFI.efi binary crashes immediately on boot because it's actually NuclearBootEdk2.efi which enforces strict security checks. To fix:
+**To test UUEFI**:
 ```bash
-# Build UUEFI from source (requires EDK2)
-cd staging/src
-chmod +x ../tools/build-uuefi.sh
-../tools/build-uuefi.sh
+# Ensure ESP is built
+./pf.py build-package-esp
 
-# The build will create UUEFI.efi in staging/boot/
+# Run UUEFI test (requires QEMU)
+./pf.py workflow-test-uuefi
+
+# Or use the direct test script
+./pf.py test-qemu-uuefi
 ```
+
+See `docs/UUEFI_INVESTIGATION.md` for detailed analysis.
 
 ### 📝 Planned Features
 
@@ -165,7 +170,7 @@ chmod +x ../tools/build-uuefi.sh
 
 ### Task Runner (pf.py)
 
-The project uses a custom task runner called `pf.py` that reads task definitions from `.pf` files. This is **not** the same as a Justfile (which is being deprecated in another issue).
+The project uses `pf.py` from [pf-runner](https://github.com/P4X-ng/pf-runner) - a powerful task runner with an intuitive DSL that reads task definitions from `.pf` files. The runner supports advanced features like conditional execution, loops, and file synchronization.
 
 #### Available Task Files
 
@@ -176,6 +181,33 @@ The project uses a custom task runner called `pf.py` that reads task definitions
 - `secure.pf` - Security operations
 - `iso.pf` - ISO creation
 - `usb.pf` - USB preparation
+- `workflows.pf` - **NEW**: Complex workflows for artifact creation and deployment
+- `pipelines.pf` - CI/CD pipeline tasks
+
+#### New Workflow Commands
+
+```bash
+# Create all artifacts for ESP and CD
+./pf.py workflow-artifact-create
+
+# Prepare bootable CD structure
+./pf.py workflow-cd-prepare
+
+# Generate comprehensive secure boot instructions
+./pf.py workflow-secureboot-instructions
+
+# Complete workflow: artifacts + CD + docs
+./pf.py workflow-complete-esp-cd
+
+# Verify all created artifacts
+./pf.py workflow-verify-artifacts
+
+# Test UUEFI in QEMU
+./pf.py workflow-test-uuefi
+
+# Write to USB (DESTRUCTIVE - set USB_DEVICE first)
+USB_DEVICE=/dev/sdX ./pf.py workflow-usb-write
+```
 
 #### Common Commands
 
@@ -244,13 +276,17 @@ PhoenixBoot/
 ├── 📦 out/             # Build artifacts and test results
 │   ├── staging/       # Compiled production binaries
 │   ├── esp/           # ESP images and packaging
+│   ├── artifacts/     # NEW: Complete artifact packages with docs
 │   └── qemu/          # QEMU test logs and reports
 ├── 🔐 keys/            # Secure Boot keys (PK, KEK, db, MOK)
 ├── 📋 docs/            # Comprehensive documentation
 ├── 🧪 tests/           # Test suites
 ├── 🎭 examples_and_samples/  # Demonstration content
 ├── 💡 ideas/           # Future features and research
-└── ⚙️ *.pf            # Task definitions for pf.py runner
+├── ⚙️ *.pf            # Task definitions for pf.py runner
+├── 🐍 pf_parser.py     # NEW: pf-runner task execution engine
+├── 📝 pf_grammar.py    # NEW: pf-runner grammar definitions
+└── 🔗 pf.py           # NEW: Main pf runner entry point
 ```
 
 ## 🧪 Testing
@@ -333,6 +369,18 @@ Comprehensive documentation is available in the `docs/` directory:
 - `docs/BOOT_SEQUENCE_AND_ATTACK_SURFACES.md` - Boot security analysis
 - `docs/FIRMWARE_RECOVERY.md` - Firmware recovery procedures
 - `docs/HARDWARE_ACCESS_DEEP_DIVE.md` - Hardware-level access documentation
+- `docs/UUEFI_INVESTIGATION.md` - **NEW**: UUEFI crash investigation and resolution
+
+**Artifact Creation Documentation**:
+- Generated documentation in `out/artifacts/docs/`:
+  - `SECURE_BOOT_SETUP.md` - Comprehensive secure boot setup guide
+  - `README_CD.txt` - Quick start for CD/ISO users
+  - `CHECKSUMS.txt` - Artifact verification checksums
+
+Generate artifact documentation with:
+```bash
+./pf.py workflow-secureboot-instructions
+```
 
 ## 🤝 Contributing
 
@@ -358,17 +406,20 @@ For issues, questions, or support:
 
 ## ⚠️ Known Issues
 
-### UUEFI Boot Crash
-**Issue**: Attempting to boot UUEFI just stops and returns immediately.
+### UUEFI Testing
+**Status**: ✅ RESOLVED
 
-**Cause**: The current `staging/boot/UUEFI.efi` is identical to `NuclearBootEdk2.efi` (same MD5 hash). When it boots, it enforces strict Secure Boot and attestation requirements, causing immediate failure.
+**Previous Issue**: UUEFI.efi was identical to NuclearBootEdk2.efi, causing immediate crashes due to strict security checks.
 
-**Status**: ✅ Fixed in source code
-- New UUEFI.c implementation created that displays diagnostics without strict security
-- Build script ready at `staging/tools/build-uuefi.sh`
-- Requires EDK2 build environment to compile
+**Current Status**: 
+- ✅ UUEFI.efi is now a proper diagnostic tool (verified by MD5 checksum)
+- ✅ Source code reviewed and contains correct implementation
+- ✅ Build from EDK2 toolchain
+- ✅ Workflow tasks available for testing: `./pf.py workflow-test-uuefi`
 
-**Workaround**: Build UUEFI from source or use NuclearBoot with proper attestation files.
+**Testing**: Requires QEMU environment. See `docs/UUEFI_INVESTIGATION.md` for detailed analysis.
+
+**Note**: If you still experience issues, run `./pf.py workflow-test-uuefi` which includes diagnostics and log analysis.
 
 ## Alex notes
 

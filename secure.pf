@@ -68,7 +68,7 @@ end
 
 task secure-mok-inventory
   describe JSON inventory of keys and enrollment
-  shell bash scripts/keys-inventory.sh
+  shell bash scripts/mok-list-keys.sh
 end
 
 task secure-unenroll-mok

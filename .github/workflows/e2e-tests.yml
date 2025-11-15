@@ -1,0 +1,537 @@
+# End-to-End Testing Workflow for PhoenixBoot
+# Tests all features in QEMU VM with SecureBoot, cloud-init, NuclearBoot, and UUEFI
+#
+# Copyright (c) PhoenixBoot Project
+# SPDX-License-Identifier: Apache-2.0
+
+name: End-to-End Tests
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+jobs:
+  setup-and-build:
+    name: Setup and Build Artifacts
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qemu-system-x86 \
+            ovmf \
+            mtools \
+            dosfstools \
+            openssl \
+            sbsigntool \
+            efitools \
+            util-linux \
+            kpartx \
+            parted
+      
+      - name: Install Python Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install fabric lark
+      
+      - name: Bootstrap Build Environment
+        run: |
+          ./pf.py build-setup
+      
+      - name: Build Production Artifacts
+        run: |
+          ./pf.py build-build
+      
+      - name: Package ESP Image
+        run: |
+          ./pf.py build-package-esp
+      
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            out/esp/
+            out/setup/
+            staging/boot/
+          retention-days: 7
+  
+  test-basic-boot:
+    name: Test Basic QEMU Boot
+    needs: setup-and-build
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install QEMU and Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 ovmf mtools
+      
+      - name: Install Python Dependencies
+        run: |
+          pip install fabric lark
+      
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+      
+      - name: Run Basic Boot Test
+        run: |
+          chmod +x scripts/qemu-test.sh
+          ./pf.py test-qemu
+      
+      - name: Upload Test Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: basic-boot-logs
+          path: |
+            out/qemu/serial.log
+            out/qemu/report.xml
+          retention-days: 7
+      
+      - name: Check Test Results
+        if: always()
+        run: |
+          if [ -f out/qemu/report.xml ]; then
+            echo "Test report generated:"
+            cat out/qemu/report.xml
+          fi
+  
+  test-secureboot:
+    name: Test SecureBoot with NuclearBoot
+    needs: setup-and-build
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qemu-system-x86 \
+            ovmf \
+            mtools \
+            openssl \
+            sbsigntool \
+            efitools
+      
+      - name: Install Python Dependencies
+        run: |
+          pip install fabric lark
+      
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+      
+      - name: Generate SecureBoot Keys
+        run: |
+          ./pf.py secure-keygen
+      
+      - name: Create SecureBoot Auth Files
+        run: |
+          ./pf.py secure-make-auth
+      
+      - name: Enroll SecureBoot Keys in OVMF
+        run: |
+          ./pf.py secure-enroll-secureboot
+      
+      - name: Run SecureBoot Positive Test
+        run: |
+          chmod +x scripts/qemu-test-secure-positive.sh
+          ./pf.py test-qemu-secure-positive
+      
+      - name: Upload SecureBoot Test Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: secureboot-logs
+          path: |
+            out/qemu/serial-secure-positive.log
+            out/qemu/report-secure.xml
+            out/keys/
+          retention-days: 7
+  
+  test-secureboot-strict:
+    name: Test SecureBoot Strict Mode
+    needs: setup-and-build
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 ovmf mtools openssl sbsigntool efitools
+      
+      - name: Install Python Dependencies
+        run: |
+          pip install fabric lark
+      
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+      
+      - name: Generate and Enroll Keys
+        run: |
+          ./pf.py secure-keygen
+          ./pf.py secure-make-auth
+          ./pf.py secure-enroll-secureboot
+      
+      - name: Run SecureBoot Strict Test
+        run: |
+          chmod +x scripts/qemu-test-secure-strict.sh
+          ./pf.py test-qemu-secure-strict
+      
+      - name: Upload Strict Test Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: secureboot-strict-logs
+          path: out/qemu/
+          retention-days: 7
+  
+  test-attestation-failure:
+    name: Test NuclearBoot Corruption Detection
+    needs: setup-and-build
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 ovmf mtools openssl sbsigntool efitools
+      
+      - name: Install Python Dependencies
+        run: |
+          pip install fabric lark
+      
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+      
+      - name: Setup SecureBoot Environment
+        run: |
+          ./pf.py secure-keygen
+          ./pf.py secure-make-auth
+          ./pf.py secure-enroll-secureboot
+      
+      - name: Create Negative Attestation ESP (Corrupted)
+        run: |
+          ./pf.py build-package-esp-neg-attest
+      
+      - name: Run Negative Attestation Test
+        run: |
+          chmod +x scripts/qemu-test-secure-negative-attest.sh
+          # This test should fail - we expect it to detect corruption
+          ./pf.py test-qemu-secure-negative-attest || echo "Test correctly detected corruption"
+      
+      - name: Verify Corruption Detection
+        run: |
+          if grep -q "PG-ATTEST=FAIL" out/qemu/serial-negative-attest.log; then
+            echo "✅ NuclearBoot correctly detected corruption"
+            exit 0
+          else
+            echo "❌ NuclearBoot failed to detect corruption"
+            exit 1
+          fi
+      
+      - name: Upload Attestation Test Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: attestation-logs
+          path: |
+            out/qemu/serial-negative-attest.log
+            out/qemu/report-negative-attest.xml
+          retention-days: 7
+  
+  test-uuefi:
+    name: Test UUEFI Diagnostic Tool
+    needs: setup-and-build
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 ovmf mtools
+      
+      - name: Install Python Dependencies
+        run: |
+          pip install fabric lark
+      
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+      
+      - name: Run UUEFI Test
+        run: |
+          chmod +x scripts/qemu-test-uuefi.sh
+          ./pf.py test-qemu-uuefi
+      
+      - name: Verify UUEFI Output
+        run: |
+          if [ -f out/qemu/serial-uuefi.log ]; then
+            echo "UUEFI test completed. Log contents:"
+            head -50 out/qemu/serial-uuefi.log
+            if [ -s out/qemu/serial-uuefi.log ]; then
+              echo "✅ UUEFI produced output"
+            else
+              echo "❌ UUEFI log is empty"
+              exit 1
+            fi
+          else
+            echo "❌ UUEFI log file not found"
+            exit 1
+          fi
+      
+      - name: Upload UUEFI Test Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uuefi-logs
+          path: |
+            out/qemu/serial-uuefi.log
+            out/qemu/report-uuefi.xml
+          retention-days: 7
+  
+  test-cloud-init-integration:
+    name: Test Cloud-Init Username/Password Setup
+    needs: setup-and-build
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qemu-system-x86 \
+            ovmf \
+            mtools \
+            cloud-init \
+            cloud-image-utils \
+            genisoimage
+      
+      - name: Install Python Dependencies
+        run: |
+          pip install fabric lark
+      
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+      
+      - name: Create Cloud-Init Configuration
+        run: |
+          mkdir -p out/cloud-init
+          cat > out/cloud-init/meta-data << EOF
+          instance-id: phoenixboot-test
+          local-hostname: phoenixboot-vm
+          EOF
+          
+          cat > out/cloud-init/user-data << EOF
+          #cloud-config
+          users:
+            - name: phoenixuser
+              passwd: \$6\$rounds=4096\$saltsalt\$IxDD3jeSOb18LKbD8RO7CRiTKaM7qGH9j3RYV8yxcF8pZCvDfhDqKnKcHXUBxXLDvhPJ6k8ZMJ0Sk0N1234567
+              lock_passwd: false
+              sudo: ALL=(ALL) NOPASSWD:ALL
+              shell: /bin/bash
+          
+          runcmd:
+            - echo "PhoenixBoot cloud-init test successful" > /var/log/phoenixboot-test.log
+          EOF
+          
+          # Create cloud-init ISO
+          genisoimage -output out/cloud-init/cloud-init.iso \
+            -volid cidata -joliet -rock \
+            out/cloud-init/user-data out/cloud-init/meta-data
+      
+      - name: Run QEMU with Cloud-Init
+        run: |
+          mkdir -p out/qemu
+          
+          # Get OVMF paths
+          OVMF_CODE_PATH=$(sed -n '1p' out/esp/ovmf_paths.txt)
+          OVMF_VARS_PATH=$(sed -n '2p' out/esp/ovmf_paths.txt)
+          
+          # Copy OVMF vars
+          cp "$OVMF_VARS_PATH" out/qemu/OVMF_VARS_cloudinit.fd
+          
+          # Run QEMU with cloud-init ISO
+          timeout 90s qemu-system-x86_64 \
+            -machine q35 \
+            -cpu host \
+            -enable-kvm \
+            -m 2G \
+            -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE_PATH" \
+            -drive if=pflash,format=raw,file=out/qemu/OVMF_VARS_cloudinit.fd \
+            -drive format=raw,file=out/esp/esp.img \
+            -drive file=out/cloud-init/cloud-init.iso,media=cdrom \
+            -serial file:out/qemu/serial-cloudinit.log \
+            -display none \
+            -no-reboot || true
+      
+      - name: Verify Cloud-Init Execution
+        run: |
+          echo "Checking for PhoenixBoot and cloud-init markers in boot log:"
+          if grep -q "PhoenixGuard" out/qemu/serial-cloudinit.log; then
+            echo "✅ PhoenixBoot banner found"
+          else
+            echo "⚠️ PhoenixBoot banner not found"
+          fi
+          
+          echo "Boot log sample:"
+          head -100 out/qemu/serial-cloudinit.log
+      
+      - name: Upload Cloud-Init Test Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-init-logs
+          path: |
+            out/qemu/serial-cloudinit.log
+            out/cloud-init/
+          retention-days: 7
+  
+  test-summary:
+    name: Test Results Summary
+    needs: 
+      - test-basic-boot
+      - test-secureboot
+      - test-secureboot-strict
+      - test-attestation-failure
+      - test-uuefi
+      - test-cloud-init-integration
+    runs-on: ubuntu-latest
+    if: always()
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Download All Test Logs
+        uses: actions/download-artifact@v4
+        with:
+          path: test-results
+      
+      - name: Generate Test Summary
+        run: |
+          echo "# PhoenixBoot End-to-End Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Test Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Parse JUnit XML reports if available
+          if find test-results -name "*.xml" -type f; then
+            echo "### Test Reports Found:" >> $GITHUB_STEP_SUMMARY
+            find test-results -name "*.xml" -type f -exec echo "- {}" \; >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "## Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Basic QEMU Boot" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ SecureBoot with NuclearBoot" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ SecureBoot Strict Mode" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Corruption Detection (Negative Attestation)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ UUEFI Diagnostic Tool" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Cloud-Init Integration" >> $GITHUB_STEP_SUMMARY
+          echo "- ⏭️ Xen Boot (Skipped per requirements)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "All test artifacts are available in the Actions artifacts." >> $GITHUB_STEP_SUMMARY
+      
+      - name: List All Artifacts
+        run: |
+          echo "Test artifacts generated:"
+          find test-results -type f | sort

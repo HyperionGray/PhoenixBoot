@@ -35,6 +35,18 @@ task test-qemu-uuefi
   shell bash scripts/qemu-test-uuefi.sh
 end
 
+task test-qemu-cloudinit
+  describe Cloud-Init integration test with username/password
+  shell bash scripts/qemu-test-cloudinit.sh
+end
+
+task test-e2e-all
+  describe Run all end-to-end tests
+  shell bash scripts/qemu-test.sh
+  shell bash scripts/qemu-test-uuefi.sh
+  shell bash scripts/qemu-test-cloudinit.sh
+end
+
 task test-progressive-smoke
   describe Progressive recovery smoke (no host changes)
   shell bash -lc 'PG_HOST_OK=0 true'

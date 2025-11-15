@@ -293,7 +293,7 @@ PhoenixBoot/
 
 ### QEMU Testing
 
-PhoenixBoot includes comprehensive QEMU tests that boot real UEFI firmware (OVMF):
+PhoenixBoot includes comprehensive end-to-end QEMU tests that boot real UEFI firmware (OVMF):
 
 ```bash
 # Run main boot test
@@ -302,13 +302,37 @@ PhoenixBoot includes comprehensive QEMU tests that boot real UEFI firmware (OVMF
 # Run with Secure Boot enabled
 ./pf.py test-qemu-secure-positive
 
-# Test UUEFI (needs proper binary)
+# Run Secure Boot strict mode test
+./pf.py test-qemu-secure-strict
+
+# Test NuclearBoot corruption detection (negative attestation)
+./pf.py test-qemu-secure-negative-attest
+
+# Test UUEFI diagnostic tool
 ./pf.py test-qemu-uuefi
+
+# Test cloud-init integration with username/password
+./pf.py test-qemu-cloudinit
+
+# Run all end-to-end tests
+./pf.py test-e2e-all
 ```
 
 Test results are saved in:
 - Serial logs: `out/qemu/serial*.log`
 - JUnit reports: `out/qemu/report*.xml`
+
+### Automated Testing (GitHub Actions)
+
+All tests run automatically via GitHub Actions on every push and pull request:
+- ✅ Basic QEMU boot
+- ✅ SecureBoot with NuclearBoot
+- ✅ SecureBoot strict mode
+- ✅ Corruption detection (negative attestation)
+- ✅ UUEFI diagnostic tool
+- ✅ Cloud-Init integration
+
+See `.github/workflows/e2e-tests.yml` for the complete workflow configuration.
 
 ### Building from Source
 

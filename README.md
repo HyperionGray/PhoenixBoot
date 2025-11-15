@@ -5,6 +5,28 @@
 
 **PhoenixBoot** (also known as PhoenixGuard) is a production-ready firmware defense system designed to protect against bootkits, rootkits, and supply chain attacks. It provides hardware-level firmware recovery, secure boot enforcement, and a complete UEFI boot chain with cryptographic verification.
 
+## 🎯 NEW: Turnkey SecureBoot Bootable Media Creator
+
+**The simplest way to create SecureBoot-enabled boot media from any ISO!**
+
+```bash
+# One command creates everything you need:
+./create-secureboot-bootable-media.sh --iso /path/to/ubuntu.iso
+
+# Output: USB image ready to write, with keys enrolled and instructions included
+# Write to USB: sudo dd if=out/esp/secureboot-bootable.img of=/dev/sdX bs=4M status=progress
+```
+
+This new script solves the confusion around multiple runners and provides:
+- ✅ Automatic SecureBoot key generation (PK, KEK, db)
+- ✅ Bootable ESP with Microsoft-signed shim (works immediately!)
+- ✅ Key enrollment tool included on the media
+- ✅ Clear first-boot instructions for enrollment
+- ✅ ISO loopback support (boots your ISO directly)
+- ✅ Works on USB or CD/DVD
+
+**See [SecureBoot Bootable Media Guide](docs/SECUREBOOT_BOOTABLE_MEDIA.md) for detailed instructions.**
+
 ## 🚀 Quick Start
 
 ### Prerequisites

@@ -204,6 +204,12 @@ DisplayBuildInfo(
     return;
   }
 
+  // Check if DeviceHandle is valid before using it
+  if (LoadedImage->DeviceHandle == NULL) {
+    Print(L"ESP UUID: Not available (no device handle)\n");
+    return;
+  }
+
   Status = gBS->HandleProtocol(LoadedImage->DeviceHandle, &gEfiSimpleFileSystemProtocolGuid, (VOID **)&Fs);
   if (EFI_ERROR(Status) || Fs == NULL) {
     Print(L"Could not access file system\n");

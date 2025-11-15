@@ -170,77 +170,63 @@ See `docs/UUEFI_INVESTIGATION.md` for detailed analysis.
 
 ### Task Runner (pf.py)
 
-The project uses `pf.py` from [pf-runner](https://github.com/P4X-ng/pf-runner) - a powerful task runner with an intuitive DSL that reads task definitions from `.pf` files. The runner supports advanced features like conditional execution, loops, and file synchronization.
+The project uses `pf.py` from [pf-runner](https://github.com/P4X-ng/pf-runner) - a powerful task runner with an intuitive DSL that reads task definitions from `.pf` files.
 
-#### Available Task Files
+#### Core Task File
 
-- `build.pf` - Build tasks
-- `test.pf` - Testing tasks
-- `os.pf` - OS-level operations
-- `validate.pf` - Validation and verification
-- `secure.pf` - Security operations
-- `iso.pf` - ISO creation
-- `usb.pf` - USB preparation
-- `workflows.pf` - **NEW**: Complex workflows for artifact creation and deployment
-- `pipelines.pf` - CI/CD pipeline tasks
+PhoenixBoot now uses a streamlined `core.pf` that includes only the most essential functionality:
+- Build tasks (setup, build, package ESP)
+- Testing tasks (QEMU variants)
+- Secure Boot key management
+- MOK (Machine Owner Key) operations
+- Module signing
+- UUEFI operations
+- Validation and verification
+- SecureBoot bootable media creation
 
-#### New Workflow Commands
-
-```bash
-# Create all artifacts for ESP and CD
-./pf.py workflow-artifact-create
-
-# Prepare bootable CD structure
-./pf.py workflow-cd-prepare
-
-# Generate comprehensive secure boot instructions
-./pf.py workflow-secureboot-instructions
-
-# Complete workflow: artifacts + CD + docs
-./pf.py workflow-complete-esp-cd
-
-# Verify all created artifacts
-./pf.py workflow-verify-artifacts
-
-# Test UUEFI in QEMU
-./pf.py workflow-test-uuefi
-
-# Write to USB (DESTRUCTIVE - set USB_DEVICE first)
-USB_DEVICE=/dev/sdX ./pf.py workflow-usb-write
-```
-
-#### Common Commands
+#### Essential Commands
 
 ```bash
-# Build production artifacts
-./pf.py build-build
+# List all available tasks
+./pf.py list
 
-# Package ESP image
-./pf.py build-package-esp
+# Complete setup: build + package + verify
+./pf.py setup
+
+# Build and package ESP
+./pf.py esp
 
 # Run QEMU tests
 ./pf.py test-qemu
-
-# Test UUEFI (currently fails - see Known Issues)
+./pf.py test-qemu-secure-positive
 ./pf.py test-qemu-uuefi
 
-# Install UUEFI to system ESP
+# Secure Boot key generation
+./pf.py secure-keygen
+./pf.py secure-make-auth
+
+# MOK management and module signing
+./pf.py secure-mok-new
+./pf.py os-mok-enroll
+./pf.py os-mok-list-keys
+PATH=/path/to/module ./pf.py os-kmod-sign
+
+# UUEFI operations
 ./pf.py uuefi-install
-
-# Set one-time boot to UUEFI
-./pf.py os-boot-once
-
-# Display system security report
+./pf.py uuefi-apply
 ./pf.py uuefi-report
 
-# Validate keys and ESP
+# Validation
+./pf.py verify
 ./pf.py validate-all
 
-# Enroll MOK keys
-./pf.py os-mok-enroll
+# SecureBoot bootable media creation
+ISO_PATH=/path/to.iso ./pf.py secureboot-create
+ISO_PATH=/path/to.iso USB_DEVICE=/dev/sdX ./pf.py secureboot-create-usb
 
-# Sign kernel modules
-PATH=/path/to/module ./pf.py os-kmod-sign
+# Cleanup
+./pf.py cleanup
+DEEP_CLEAN=1 ./pf.py cleanup
 ```
 
 ### Direct Script Usage

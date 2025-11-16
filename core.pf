@@ -39,6 +39,11 @@ task secure-keygen
   shell bash scripts/generate-sb-keys.sh
 end
 
+task secure-env
+  describe Comprehensive security environment check - verify boot integrity, EFI vars, kernel security, and detect bootkits
+  shell bash scripts/secure-env-check.sh
+end
+
 task secure-make-auth
   describe Create ESL and AUTH for PK/KEK/db
   shell bash scripts/create-auth-files.sh

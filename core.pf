@@ -17,6 +17,11 @@ task build-package-esp
   shell bash scripts/esp-package.sh
 end
 
+task build-package-esp-neg-attest
+  describe Create negative attestation ESP (corrupted hash)
+  shell bash scripts/package-esp-neg-attest.sh
+end
+
 # --- Testing Tasks ---
 task test-qemu
   describe Main QEMU boot test
@@ -31,6 +36,16 @@ end
 task test-qemu-uuefi
   describe UUEFI application test
   shell bash scripts/qemu-test-uuefi.sh
+end
+
+task test-qemu-secure-strict
+  describe Secure Boot strict mode test
+  shell bash scripts/qemu-test-secure-strict.sh
+end
+
+task test-qemu-secure-negative-attest
+  describe NuclearBoot corruption detection test
+  shell bash scripts/qemu-test-secure-negative-attest.sh
 end
 
 # --- Secure Boot Key Management ---

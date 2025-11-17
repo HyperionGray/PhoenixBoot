@@ -1,4 +1,7 @@
 # Main PhoenixBoot task file
-# Includes only core functionality for essential operations
+# Includes core functionality and secure boot features
 
 include "core.pf"
+include "secure.pf"
+include "workflows.pf"
+include "maint.pf"

@@ -16,104 +16,142 @@ sudo dd if=out/esp/secureboot-bootable.img of=/dev/sdX bs=4M status=progress
 
 See [SECUREBOOT_QUICKSTART.md](SECUREBOOT_QUICKSTART.md) for more details.
 
-## Quick Start Scripts
+## Task Runner (Recommended)
 
-All scripts are located at the repository root for easy access.
+PhoenixBoot uses `pf.py` as the primary task runner. All tasks are defined in `.pf` files.
+
+### List All Available Tasks
+
+```bash
+./pf.py list
+```
 
 ### Initial Setup
 
 ```bash
 # Bootstrap toolchain and environment
-./setup-toolchain.sh
+./pf.py build-setup
 
 # Generate SecureBoot keys
-./generate-secureboot-keys.sh
+./pf.py secure-keygen
+
+# Complete setup workflow
+./pf.py setup
 ```
 
 ### Kernel Module Signing
 
 ```bash
-# Sign kernel modules (most prominent - kernel signing made easy!)
+# Sign a single module
+PATH=/path/to/module.ko ./pf.py os-kmod-sign
+
+# Sign all modules in a directory (with force)
+PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
+
+# Alternative: Use the helper script
 ./sign-kernel-modules.sh module.ko
 ./sign-kernel-modules.sh *.ko
-./sign-kernel-modules.sh --force module.ko  # Re-sign
-
-# With custom certificate/key
-./sign-kernel-modules.sh --cert-path /path/to/cert.pem --key-path /path/to/key.pem module.ko
+./sign-kernel-modules.sh --force module.ko
 ```
 
 ### Building and Packaging
 
 ```bash
 # Build production artifacts
-./build-production.sh
+./pf.py build-build
 
 # Package bootable ESP image
-./package-esp.sh
+./pf.py build-package-esp
+
+# Convenience: Build + Package
+./pf.py esp
+
+# Complete setup: Build + Package + Verify
+./pf.py setup
 ```
 
 ### SecureBoot and MOK Management
 
 ```bash
-# Enroll MOK certificate
-sudo ./enroll-mok.sh
+# Generate new MOK keypair
+./pf.py secure-mok-new
 
-# Verify SecureBoot status
-./verify-secureboot.sh
+# Enroll MOK certificate
+./pf.py os-mok-enroll
+
+# List MOK certificates
+./pf.py os-mok-list-keys
+
+# Full MOK workflow
+./pf.py mok-flow
 ```
 
 ### Testing
 
 ```bash
 # Run QEMU boot tests
-./test-qemu.sh
+./pf.py test-qemu
+
+# SecureBoot tests
+./pf.py test-qemu-secure-positive
+./pf.py test-qemu-secure-strict
+./pf.py test-qemu-secure-negative-attest
+
+# UUEFI diagnostic test
+./pf.py test-qemu-uuefi
 
 # Validate ESP contents
-./validate-esp.sh
+./pf.py validate-all
+./pf.py verify-esp-robust
 ```
 
-### Clean GRUB Installation
+### UUEFI Operations
 
 ```bash
-# Install clean GRUB to ESP
-# ☠ WARNING: May conflict with existing GRUB configurations!
-sudo ./install-clean-grub.sh --esp /boot/efi --root-uuid <UUID>
+# Install UUEFI.efi to system ESP
+./pf.py uuefi-install
+
+# Set BootNext for one-time UUEFI boot
+./pf.py uuefi-apply
+
+# Display system security status (read-only)
+./pf.py uuefi-report
 ```
 
-## Advanced Operations
+### Cleanup
 
-For more advanced operations, use the scripts in the `scripts/` directory:
+```bash
+# Clean build artifacts
+./pf.py cleanup
+
+# Deep clean (including ESP)
+DEEP_CLEAN=1 ./pf.py cleanup
+```
+
+## Direct Script Access
+
+For operations not covered by pf.py tasks, use scripts directly:
 
 ```bash
 # SecureBoot key management
-scripts/generate-sb-keys.sh
-scripts/create-auth-files.sh
-scripts/mok-status.sh
-scripts/mok-list-keys.sh
+bash scripts/generate-sb-keys.sh
+bash scripts/create-auth-files.sh
+bash scripts/mok-status.sh
 
 # ESP packaging variants
-scripts/esp-package-enroll.sh
-scripts/esp-package-minimal.sh
-scripts/package-esp-neg-attest.sh
-
-# Testing
-scripts/qemu-test-secure-positive.sh
-scripts/qemu-test-secure-strict.sh
-scripts/qemu-test-uuefi.sh
+bash scripts/esp-package-enroll.sh
+bash scripts/esp-package-minimal.sh
 
 # Validation
-scripts/validate-keys.sh
-scripts/verify-esp-robust.sh
-scripts/baseline-verify.sh
+bash scripts/validate-keys.sh
+bash scripts/verify-esp-robust.sh
 
 # Boot configuration
-scripts/os-boot-clean.sh
-scripts/install_clean_grub_boot.sh
+bash scripts/install_clean_grub_boot.sh
 
 # Recovery and maintenance
-scripts/reboot-to-metal.sh
-scripts/reboot-to-vm.sh
-scripts/scan-bootkits.sh
+bash scripts/reboot-to-metal.sh
+bash scripts/scan-bootkits.sh
 ```
 
 ## Environment Variables
@@ -128,41 +166,58 @@ export KMOD_KEY=/path/to/key.pem
 # MOK certificate paths
 export MOK_CERT_PEM=out/keys/mok/PGMOK.crt
 export MOK_CERT_DER=out/keys/mok/PGMOK.der
+
+# Force source rebuild
+export PG_FORCE_BUILD=1
+
+# Task runner environment (optional)
+export PFY_FILE=Pfyfile.pf
 ```
 
-## Nuclear Boot Workflow
+## Common Workflows
 
-The nuclear boot workflow provides a clean GRUB installation for recovery scenarios.
+### First-Time Setup
+```bash
+# 1. Setup environment
+./pf.py build-setup
 
-### Known Limitations
+# 2. Generate keys
+./pf.py secure-keygen
+./pf.py secure-make-auth
 
-The nuclear boot workflow may encounter issues with:
-- Already-customized Linux distributions with custom GRUB configurations
-- Existing GRUB menu entries from distro package managers
-- BIOS settings with hardcoded boot entries
-- Distro-specific SecureBoot keys
+# 3. Build and package
+./pf.py setup
 
-### Best Practices
+# 4. Test in QEMU
+./pf.py test-qemu
+```
 
-For optimal results:
-1. Back up `/boot/efi/EFI` directory before installation
-2. Clear conflicting UEFI boot entries: `efibootmgr -b <num> -B`
-3. Ensure BIOS is set to default boot order
-4. Verify SecureBoot keys are properly enrolled
+### MOK Enrollment for Module Signing
+```bash
+# 1. Generate MOK
+./pf.py secure-mok-new
 
-See `scripts/install_clean_grub_boot.sh` for detailed documentation.
+# 2. Enroll MOK (requires reboot)
+./pf.py os-mok-enroll
 
-## Legacy Task Runner (.pf files)
-
-The repository still contains `.pf` files for the `pfy` task runner, but the new root-level scripts provide a simpler, more direct interface. The `.pf` files are maintained for backward compatibility but are no longer the primary way to interact with PhoenixBoot.
+# 3. After reboot, sign modules
+PATH=/lib/modules/$(uname -r)/kernel/drivers/my_module.ko ./pf.py os-kmod-sign
+```
 
 ## Getting Help
 
-Most scripts support `--help` or `-h` flags for detailed usage information:
-
 ```bash
+# List all available tasks
+./pf.py list
+
+# Check sign-kernel-modules.sh options
 ./sign-kernel-modules.sh --help
-./install-clean-grub.sh --help
+
+# Check script help messages
+bash scripts/<script-name>.sh --help  # (where available)
 ```
 
-For scripts without help flags, check the comments at the top of each script file.
+For detailed documentation, see:
+- `README.md` - Project overview
+- `docs/` - Comprehensive documentation
+- Script comments - Many scripts have detailed headers

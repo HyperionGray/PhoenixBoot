@@ -1,12 +1,6 @@
-task secure-keygen
-  describe Generate Secure Boot keypairs (RSA-4096) and X.509 certs
-  shell bash scripts/generate-sb-keys.sh
-end
-
-task secure-make-auth
-  describe Create ESL and AUTH for PK/KEK/db
-  shell bash scripts/create-auth-files.sh
-end
+# secure.pf - Secure Boot specific tasks
+# Note: Core secure boot tasks (secure-keygen, secure-make-auth, secure-mok-new) 
+# are in core.pf to avoid duplication
 
 task secure-package-esp-enroll
   describe Package enrollment ESP
@@ -45,10 +39,7 @@ task secure-enroll-mok
   shell bash -lc 'scripts/enroll-mok.sh "${MOK_CERT_PEM:-out/keys/mok/PGMOK.crt}" "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}" ${MOK_DRY_RUN:-0}'
 end
 
-task secure-mok-new
-  describe Generate new PhoenixGuard MOK keypair (use NAME and CN env)
-  shell bash -lc 'scripts/mok-new.sh "${NAME:-PGMOK}" "${CN:-PhoenixGuard Module Key}"'
-end
+# Note: secure-mok-new moved to core.pf to avoid duplication
 
 task secure-mok-enroll-new
   describe Generate + enroll PhoenixGuard MOK (reboot to complete)

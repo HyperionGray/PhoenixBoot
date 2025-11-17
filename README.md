@@ -168,16 +168,29 @@ See `docs/UUEFI_INVESTIGATION.md` for detailed analysis.
 
 ## 🛠️ Usage Guide
 
-### Task Runner (pf.py)
+### Task Runner (pf.py) - PRIMARY INTERFACE
 
 The project uses `pf.py` from [pf-runner](https://github.com/P4X-ng/pf-runner) - a powerful task runner with an intuitive DSL that reads task definitions from `.pf` files.
 
-#### Core Task File
+**All operations should use `./pf.py <task>` as the primary interface.**
 
-PhoenixBoot now uses a streamlined `core.pf` that includes only the most essential functionality:
+#### Task Organization
+
+PhoenixBoot organizes tasks across multiple `.pf` files for clarity:
+- **`core.pf`** - Essential functionality (build, test, keys, MOK, module signing, UUEFI)
+- **`secure.pf`** - Advanced Secure Boot operations (enrollment, key management)
+- **`workflows.pf`** - Multi-step workflows (artifact creation, CD preparation, USB writing)
+- **`maint.pf`** - Maintenance tasks (linting, formatting, documentation)
+
+All task files are included in `Pfyfile.pf` and accessible via `./pf.py list`.
+
+#### Core Functionality
+#### Core Functionality
+
+Available in `core.pf`:
 - Build tasks (setup, build, package ESP)
-- Testing tasks (QEMU variants)
-- Secure Boot key management
+- Testing tasks (QEMU variants, SecureBoot tests, negative attestation)
+- Secure Boot key management (keygen, auth creation)
 - MOK (Machine Owner Key) operations
 - Module signing
 - UUEFI operations
@@ -254,26 +267,83 @@ bash scripts/qemu-test-uuefi.sh
 
 ```
 PhoenixBoot/
-├── 🎯 staging/          # Production-ready code (source for all builds)
-│   ├── src/            # UEFI application source (NuclearBootEdk2, KeyEnrollEdk2, UUEFI)
-│   ├── boot/           # Compiled EFI binaries (checked in as prebuilt)
-│   └── tools/          # Build scripts for EDK2 compilation
-├── 🔧 scripts/         # Operational scripts for installation and testing
-├── 📦 out/             # Build artifacts and test results
-│   ├── staging/       # Compiled production binaries
-│   ├── esp/           # ESP images and packaging
-│   ├── artifacts/     # NEW: Complete artifact packages with docs
-│   └── qemu/          # QEMU test logs and reports
-├── 🔐 keys/            # Secure Boot keys (PK, KEK, db, MOK)
-├── 📋 docs/            # Comprehensive documentation
-├── 🧪 tests/           # Test suites
-├── 🎭 examples_and_samples/  # Demonstration content
-├── 💡 ideas/           # Future features and research
-├── ⚙️ *.pf            # Task definitions for pf.py runner
-├── 🐍 pf_parser.py     # NEW: pf-runner task execution engine
-├── 📝 pf_grammar.py    # NEW: pf-runner grammar definitions
-└── 🔗 pf.py           # NEW: Main pf runner entry point
+├── 🎯 Root Directory
+│   ├── pf.py                              # Task runner (symlink to pf_universal)
+│   ├── Pfyfile.pf                          # Main task file (includes all .pf files)
+│   ├── core.pf                             # Essential tasks
+│   ├── secure.pf                           # Advanced SecureBoot tasks
+│   ├── workflows.pf                        # Multi-step workflows
+│   ├── maint.pf                            # Maintenance tasks
+│   ├── create-secureboot-bootable-media.sh # Standalone: Create bootable media from ISO
+│   ├── sign-kernel-modules.sh              # User-facing: Sign kernel modules easily
+│   └── README.md, QUICKSTART.md, docs/     # Documentation
+│
+├── 🎯 staging/                             # Production-ready code (source for all builds)
+│   ├── src/                                # UEFI application source (NuclearBootEdk2, KeyEnrollEdk2, UUEFI)
+│   ├── boot/                               # Compiled EFI binaries (checked in as prebuilt)
+│   └── tools/                              # Build scripts for EDK2 compilation
+│
+├── 🔧 scripts/                             # ~80 operational scripts
+│   ├── Core Operations:
+│   │   ├── build-production.sh             # Build production artifacts
+│   │   ├── esp-package.sh                  # Package bootable ESP
+│   │   ├── toolchain-check.sh              # Bootstrap environment
+│   │   └── generate-sb-keys.sh             # Generate SecureBoot keys
+│   ├── Testing:
+│   │   ├── qemu-test*.sh                   # Various QEMU test scenarios
+│   │   └── validate-*.sh                   # Validation scripts
+│   ├── MOK & Module Signing:
+│   │   ├── enroll-mok.sh                   # Enroll MOK certificates
+│   │   ├── mok-*.sh                        # MOK management scripts
+│   │   └── sign-kmods.sh                   # Sign kernel modules
+│   └── Advanced:
+│       ├── install_clean_grub_boot.sh      # Clean GRUB installation
+│       ├── uuefi-*.sh                      # UUEFI operations
+│       └── recovery-*.sh                   # Recovery workflows
+│
+├── 🐍 utils/                               # Python utilities
+│   ├── pgmodsign.py                        # Kernel module signing (canonical location)
+│   ├── cert_inventory.py                   # Certificate management
+│   ├── test_efi_parser.py                  # EFI parser tests
+│   └── test_integration.py                 # Integration tests
+│
+├── 📦 out/                                 # Build artifacts and test results
+│   ├── staging/                            # Compiled production binaries
+│   ├── staging/                            # Compiled production binaries
+│   ├── esp/                                # ESP images and packaging
+│   ├── artifacts/                          # Complete artifact packages with docs
+│   ├── qemu/                               # QEMU test logs and reports
+│   └── keys/                               # Generated SecureBoot keys
+│
+├── 🔐 keys/                                # Secure Boot keys (PK, KEK, db, MOK) - legacy location
+├── 📋 docs/                                # Comprehensive documentation
+├── 🧪 tests/                               # Test suites
+├── 🎭 examples_and_samples/                # Demonstration content (473MB)
+│   ├── demo/                               # Demo materials (291MB)
+│   └── official_bios_backup/               # BIOS backups (180MB)
+├── 💡 ideas/                               # Future features and research
+├── 🌐 web/                                 # Web interfaces (hardware database server)
+└── 📚 resources/                           # Additional resources (Xen, P4X OS ideas)
 ```
+
+### Key Differences from Before
+
+**Reduced Clutter:**
+- ❌ Removed 9 wrapper scripts from root (use `./pf.py <task>` instead)
+- ❌ Removed duplicate `pgmodsign.py` from root (use `utils/pgmodsign.py`)
+- ✅ All tasks now accessible via unified `./pf.py list`
+- ✅ Clear task organization across 4 `.pf` files
+
+**Primary Interface:**
+- Use `./pf.py <task>` for all operations
+- Use `bash scripts/<script>.sh` only for operations not in tasks
+- Use `./sign-kernel-modules.sh` for convenient module signing
+- Use `./create-secureboot-bootable-media.sh` for turnkey bootable media
+
+**Better Organization:**
+- All Python utilities consolidated in `utils/`
+- All operational scripts in `scripts/`
+- All task definitions in `.pf` files
 
 ## 🧪 Testing
 

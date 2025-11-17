@@ -61,4 +61,4 @@ if [[ $# -eq 0 ]]; then
 fi
 
 # Execute pgmodsign.py with all arguments
-exec python3 "${SCRIPT_DIR}/pgmodsign.py" "$@"
+exec python3 "${SCRIPT_DIR}/utils/pgmodsign.py" "$@"

@@ -112,9 +112,26 @@ Kernel module signing for Secure Boot:
 
 **Status**: ✅ Fully functional
 
+#### 7. **Security Environment Check (`secure_env`)**
+Comprehensive security validation and boot integrity checker:
+- **EFI Variables Security** - Scans for suspicious modifications in EFI vars
+- **Boot Integrity** - Verifies bootloader, kernel, and initramfs integrity
+- **Secure Boot Status** - Validates Secure Boot configuration and enrollment
+- **Kernel Security** - Checks kernel hardening features (lockdown, KASLR, etc.)
+- **Bootkit Detection** - Scans for firmware-level malware against baseline
+- **Module Signatures** - Verifies kernel modules are properly signed
+- **Attack Vector Analysis** - Detects dangerous boot parameters and rootkit indicators
+- **Automated Reporting** - Generates detailed text and JSON security reports
+
+**Usage**: `./pf.py secure-env` or `bash scripts/secure-env-check.sh`
+
+**Documentation**: See [docs/SECURE_ENV_COMMAND.md](docs/SECURE_ENV_COMMAND.md)
+
+**Status**: ✅ Fully implemented and tested
+
 ### 🚧 Partially Implemented
 
-#### 7. **UUEFI - Universal UEFI Diagnostic Tool**
+#### 8. **UUEFI - Universal UEFI Diagnostic Tool**
 A simplified UEFI application for system diagnostics:
 - Display firmware information
 - Show memory map
@@ -144,7 +161,7 @@ See `docs/UUEFI_INVESTIGATION.md` for detailed analysis.
 
 ### 📝 Planned Features
 
-#### 8. **Hardware Firmware Recovery**
+#### 9. **Hardware Firmware Recovery**
 - SPI flash extraction and verification
 - Bootkit protection bypass
 - Firmware baseline comparison
@@ -152,14 +169,14 @@ See `docs/UUEFI_INVESTIGATION.md` for detailed analysis.
 
 **Status**: 📝 Research phase, scripts exist in `scripts/`
 
-#### 9. **Xen Hypervisor Integration**
+#### 10. **Xen Hypervisor Integration**
 - VM snapshot-based recovery
 - Dom0 firmware audits
 - GPU passthrough for clean boot environments
 
 **Status**: 📝 Documentation and proof-of-concept in `resources/xen/`
 
-#### 10. **Cloud Integration**
+#### 11. **Cloud Integration**
 - Remote attestation API
 - Centralized firmware database
 - Cooperative defense network
@@ -214,6 +231,9 @@ Available in `core.pf`:
 ./pf.py test-qemu-secure-positive
 ./pf.py test-qemu-uuefi
 
+# Security environment check (NEW!)
+./pf.py secure-env
+
 # Secure Boot key generation
 ./pf.py secure-keygen
 ./pf.py secure-make-auth
@@ -252,6 +272,9 @@ bash scripts/uuefi-install.sh
 bash scripts/uuefi-apply.sh
 bash scripts/uuefi-report.sh
 bash scripts/host-uuefi-once.sh
+
+# Security environment check
+bash scripts/secure-env-check.sh
 
 # Boot management
 bash scripts/os-boot-clean.sh

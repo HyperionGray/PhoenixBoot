@@ -74,10 +74,16 @@ CompareGuid(
   IN EFI_GUID *Guid2
   )
 {
-  UINT32 *g1 = (UINT32 *)Guid1;
-  UINT32 *g2 = (UINT32 *)Guid2;
+  UINT8 *g1 = (UINT8 *)Guid1;
+  UINT8 *g2 = (UINT8 *)Guid2;
   
-  return (g1[0] == g2[0] && g1[1] == g2[1] && g1[2] == g2[2] && g1[3] == g2[3]);
+  // Byte-by-byte comparison to avoid alignment issues
+  for (UINTN i = 0; i < sizeof(EFI_GUID); i++) {
+    if (g1[i] != g2[i]) {
+      return FALSE;
+    }
+  }
+  return TRUE;
 }
 
 /**
@@ -158,13 +164,16 @@ CheckVariableHeuristics(
   CHAR16 TempStr[512];
   
   VarInfo->IsSuspicious = FALSE;
+  VarInfo->SuspicionReason[0] = 0;  // Clear reason string
   
   // Heuristic 1: Unusually large variables (except db/dbx which can be large)
   if (VarInfo->DataSize > 32768 && 
       StrCmp(VarInfo->Name, L"db") != 0 && 
       StrCmp(VarInfo->Name, L"dbx") != 0) {
     VarInfo->IsSuspicious = TRUE;
-    UnicodeSPrint(VarInfo->SuspicionReason, 256, L"Unusually large size: %lu bytes", VarInfo->DataSize);
+    if (VarInfo->SuspicionReason[0] == 0) {
+      UnicodeSPrint(VarInfo->SuspicionReason, 256, L"Unusually large size: %lu bytes", VarInfo->DataSize);
+    }
     
     UnicodeSPrint(TempStr, 512, L"Variable '%s' has unusual size: %lu bytes", 
                   VarInfo->Name, VarInfo->DataSize);
@@ -180,7 +189,9 @@ CheckVariableHeuristics(
     
     if ((VarInfo->Attributes & expectedAttr) != expectedAttr) {
       VarInfo->IsSuspicious = TRUE;
-      UnicodeSPrint(VarInfo->SuspicionReason, 256, L"Unexpected attributes: 0x%08x", VarInfo->Attributes);
+      if (VarInfo->SuspicionReason[0] == 0) {
+        UnicodeSPrint(VarInfo->SuspicionReason, 256, L"Unexpected attributes: 0x%08x", VarInfo->Attributes);
+      }
       
       UnicodeSPrint(TempStr, 512, L"Boot variable '%s' has non-standard attributes", VarInfo->Name);
       AddSuspiciousItem(L"Boot variable with unusual attributes", TempStr, 2);
@@ -192,7 +203,9 @@ CheckVariableHeuristics(
     if ((VarInfo->Attributes & EFI_VARIABLE_RUNTIME_ACCESS) &&
         !(VarInfo->Attributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS)) {
       VarInfo->IsSuspicious = TRUE;
-      StrCpyS(VarInfo->SuspicionReason, 256, L"Security var writable without auth");
+      if (VarInfo->SuspicionReason[0] == 0) {
+        StrCpyS(VarInfo->SuspicionReason, 256, L"Security var writable without auth");
+      }
       
       UnicodeSPrint(TempStr, 512, L"Security variable '%s' may be writable without authentication", 
                     VarInfo->Name);
@@ -209,7 +222,9 @@ CheckVariableHeuristics(
     for (UINTN i = 0; suspiciousKeywords[i] != NULL; i++) {
       if (StrStr(VarInfo->Name, suspiciousKeywords[i]) != NULL) {
         VarInfo->IsSuspicious = TRUE;
-        UnicodeSPrint(VarInfo->SuspicionReason, 256, L"Contains keyword: %s", suspiciousKeywords[i]);
+        if (VarInfo->SuspicionReason[0] == 0) {
+          UnicodeSPrint(VarInfo->SuspicionReason, 256, L"Contains keyword: %s", suspiciousKeywords[i]);
+        }
         
         UnicodeSPrint(TempStr, 512, L"Vendor variable '%s' contains suspicious keyword", 
                       VarInfo->Name);

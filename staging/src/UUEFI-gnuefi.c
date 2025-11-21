@@ -42,9 +42,16 @@ STATIC UINTN gSuspiciousCount = 0;
 BOOLEAN
 CompareGuid(EFI_GUID *Guid1, EFI_GUID *Guid2)
 {
-    UINT32 *g1 = (UINT32 *)Guid1;
-    UINT32 *g2 = (UINT32 *)Guid2;
-    return (g1[0] == g2[0] && g1[1] == g2[1] && g1[2] == g2[2] && g1[3] == g2[3]);
+    UINT8 *g1 = (UINT8 *)Guid1;
+    UINT8 *g2 = (UINT8 *)Guid2;
+    
+    // Byte-by-byte comparison to avoid alignment issues
+    for (UINTN i = 0; i < sizeof(EFI_GUID); i++) {
+        if (g1[i] != g2[i]) {
+            return FALSE;
+        }
+    }
+    return TRUE;
 }
 
 /**
@@ -151,7 +158,14 @@ EnumerateAllVariables(VOID)
         if (Status == EFI_BUFFER_TOO_SMALL || Status == EFI_SUCCESS) {
             VARIABLE_INFO *var = &gVariables[gVariableCount];
             
-            StrCpy(var->Name, VariableName);
+            // Safely copy variable name with bounds check
+            UINTN nameLen = StrLen(VariableName);
+            if (nameLen >= MAX_VARIABLE_NAME_SIZE) {
+                nameLen = MAX_VARIABLE_NAME_SIZE - 1;
+            }
+            CopyMem(var->Name, VariableName, nameLen * sizeof(CHAR16));
+            var->Name[nameLen] = 0;  // Null terminate
+            
             CopyMem(&var->VendorGuid, &VendorGuid, sizeof(EFI_GUID));
             var->DataSize = DataSize;
             var->Attributes = Attributes;
@@ -300,7 +314,10 @@ ShowInteractiveMenu(VOID)
                 uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &Key);
                 break;
             case L'6':
-                FreePool(gVariables);
+                if (gVariables) {
+                    FreePool(gVariables);
+                    gVariables = NULL;
+                }
                 EnumerateAllVariables();
                 Print(L"\nPress any key...");
                 uefi_call_wrapper(BS->WaitForEvent, 3, 1, &ST->ConIn->WaitForKey, &MapKey);

@@ -131,18 +131,25 @@ Comprehensive security validation and boot integrity checker:
 
 ### 🚧 Partially Implemented
 
-#### 8. **UUEFI - Universal UEFI Diagnostic Tool**
-A simplified UEFI application for system diagnostics:
-- Display firmware information
-- Show memory map
-- Report security status
-- Boot configuration viewer
+#### 8. **UUEFI - Universal UEFI Diagnostic Tool** 🆕 Enhanced v2.0
+A powerful UEFI application for system diagnostics and variable management:
+- **Display firmware information** - Vendor, version, UEFI revision
+- **Show memory map** - Total and available memory
+- **Report security status** - Secure Boot, Setup Mode, key enrollment
+- **Boot configuration viewer** - BootOrder and boot entries
+- **🆕 Complete EFI variable enumeration** - Read ALL variables in the system
+- **🆕 Smart categorization** - Automatically group by type (boot, security, vendor)
+- **🆕 Security heuristics engine** - Detect suspicious variables and patterns
+- **🆕 Interactive menu system** - User-friendly navigation and management
+- **🆕 Security analysis report** - Comprehensive findings with severity levels
+- **🆕 Vendor variable toggle** - Safely enable/disable OEM features (with protections)
 
-**Status**: ✅ Ready to test
-- ✅ Source files created: `staging/src/UUEFI.c`, `UUEFI.inf`
-- ✅ Build script ready: `staging/tools/build-uuefi.sh`
-- ✅ Binary built and different from NuclearBootEdk2.efi
-- ✅ Test workflow available: `./pf.py workflow-test-uuefi`
+**Status**: ✅ Enhanced and ready to use
+- ✅ Source files: `staging/src/UUEFI.c`, `UUEFI.inf` (EDK2 build)
+- ✅ GNU-EFI version: `staging/src/UUEFI-gnuefi.c` (alternative build)
+- ✅ Build script: `staging/tools/build-uuefi.sh`
+- ✅ Version 2.0.0 with advanced features
+- ✅ Test workflow: `./pf.py workflow-test-uuefi`
 - ℹ️  Requires QEMU and OVMF to run tests
 
 **To test UUEFI**:
@@ -157,7 +164,9 @@ A simplified UEFI application for system diagnostics:
 ./pf.py test-qemu-uuefi
 ```
 
-See `docs/UUEFI_INVESTIGATION.md` for detailed analysis.
+**Documentation**: 
+- `docs/UUEFI_ENHANCED.md` - Complete feature documentation
+- `docs/UUEFI_INVESTIGATION.md` - Development history and troubleshooting
 
 ### 📝 Planned Features
 
@@ -472,7 +481,8 @@ Comprehensive documentation is available in the `docs/` directory:
 - `docs/BOOT_SEQUENCE_AND_ATTACK_SURFACES.md` - Boot security analysis
 - `docs/FIRMWARE_RECOVERY.md` - Firmware recovery procedures
 - `docs/HARDWARE_ACCESS_DEEP_DIVE.md` - Hardware-level access documentation
-- `docs/UUEFI_INVESTIGATION.md` - **NEW**: UUEFI crash investigation and resolution
+- `docs/UUEFI_INVESTIGATION.md` - UUEFI crash investigation and resolution
+- `docs/UUEFI_ENHANCED.md` - **🆕 NEW**: UUEFI v2.0 enhanced features and usage guide
 
 **Artifact Creation Documentation**:
 - Generated documentation in `out/artifacts/docs/`:

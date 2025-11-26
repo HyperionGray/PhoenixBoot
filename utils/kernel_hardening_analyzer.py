@@ -12,6 +12,8 @@ Based on:
 - CIS Benchmarks
 - NSA Kernel Hardening Guidelines
 
+Requirements: Python 3.8+ (uses walrus operator)
+
 Usage:
     python3 kernel_hardening_analyzer.py --config /boot/config-$(uname -r)
     python3 kernel_hardening_analyzer.py --auto
@@ -27,6 +29,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, asdict
 from enum import Enum
+from datetime import datetime
 import argparse
 
 
@@ -544,7 +547,7 @@ class KernelHardeningAnalyzer:
         lines = []
         lines.append("# PhoenixBoot Hardened Kernel Configuration Baseline")
         lines.append("# Based on DISA STIG and security best practices")
-        lines.append("# Generated: " + str(__import__('datetime').datetime.now()))
+        lines.append("# Generated: " + datetime.now().isoformat())
         lines.append("")
         
         # Group by category

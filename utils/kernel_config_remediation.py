@@ -426,7 +426,7 @@ def main():
             print(f"  sudo {output_path}")
             print()
             print("For kexec double-jump workflow:")
-            print(f"  {sys.argv[0]} --kexec-guide")
+            print("  python3 utils/kernel_config_remediation.py --kexec-guide")
             return 0
         else:
             return 1

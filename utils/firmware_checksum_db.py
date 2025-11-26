@@ -6,6 +6,8 @@ PhoenixBoot Firmware Checksum Database
 Manages and verifies firmware checksums against known-good values.
 Supports automated firmware verification and bootkit detection.
 
+Requirements: Python 3.8+ (uses walrus operator)
+
 Usage:
     python3 firmware_checksum_db.py --verify /path/to/firmware.bin
     python3 firmware_checksum_db.py --add /path/to/firmware.bin --vendor ASUS --model "ROG X570"

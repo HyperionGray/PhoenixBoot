@@ -501,17 +501,18 @@ check_kernel_hardening() {
   
   print_check "INFO" "Running kernel hardening analysis..."
   
-  # Run the analyzer
-  local analysis_output="${LOG_DIR}/kernel_hardening_${TIMESTAMP}.txt"
+  # Run the analyzer once in JSON mode for efficiency
   local analysis_json="${LOG_DIR}/kernel_hardening_${TIMESTAMP}.json"
-  
-  "${PY}" "${REPO_ROOT}/utils/kernel_hardening_analyzer.py" --auto --format text \
-    --output "${analysis_output}" 2>&1 || true
   
   "${PY}" "${REPO_ROOT}/utils/kernel_hardening_analyzer.py" --auto --format json \
     --output "${analysis_json}" 2>&1 || true
   
   if [ -f "${analysis_json}" ]; then
+    # Generate text report from JSON for user display
+    local analysis_output="${LOG_DIR}/kernel_hardening_${TIMESTAMP}.txt"
+    "${PY}" "${REPO_ROOT}/utils/kernel_hardening_analyzer.py" --auto --format text \
+      --output "${analysis_output}" 2>&1 || true
+    
     # Parse JSON results
     local security_level=$(${PY} -c "import json; print(json.load(open('${analysis_json}')).get('security_level', 'UNKNOWN'))" 2>/dev/null || echo "UNKNOWN")
     local score=$(${PY} -c "import json; print(json.load(open('${analysis_json}')).get('score', 0))" 2>/dev/null || echo "0")

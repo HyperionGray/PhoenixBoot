@@ -98,7 +98,6 @@ class PhoenixGuardModuleSigner:
             print("   Status: ✓ Keys found")
             # Try to extract certificate info
             try:
-                import subprocess
                 result = subprocess.run(
                     ["openssl", "x509", "-in", str(self.cert_file), "-noout", "-subject", "-fingerprint"],
                     capture_output=True, text=True, timeout=5

@@ -980,13 +980,16 @@ NuclearWipeSystem(VOID)
         StrnCmp(gVariables[i].Name, L"Boot", 4) == 0 &&
         StrLen(gVariables[i].Name) == 8) { // Boot#### format
       
-      // Parse boot number
+      // Parse boot number (Boot#### format - hex)
       UINT16 bootNum = 0;
       for (UINTN j = 4; j < 8; j++) {
+        bootNum = bootNum * 16; // Hex parsing, not decimal
         if (gVariables[i].Name[j] >= L'0' && gVariables[i].Name[j] <= L'9') {
-          bootNum = bootNum * 10 + (gVariables[i].Name[j] - L'0');
+          bootNum += (gVariables[i].Name[j] - L'0');
         } else if (gVariables[i].Name[j] >= L'A' && gVariables[i].Name[j] <= L'F') {
-          bootNum = bootNum * 16 + (gVariables[i].Name[j] - L'A' + 10);
+          bootNum += (gVariables[i].Name[j] - L'A' + 10);
+        } else if (gVariables[i].Name[j] >= L'a' && gVariables[i].Name[j] <= L'f') {
+          bootNum += (gVariables[i].Name[j] - L'a' + 10);
         }
       }
       

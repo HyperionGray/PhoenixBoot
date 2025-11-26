@@ -57,6 +57,49 @@ echo ""
 echo "🔐 Certificate details:"
 # Show details
 openssl x509 -in "$CRT" -noout -subject -issuer -dates -fingerprint -sha1
+
+# Create comprehensive README in MOK directory
+cat > "$OUT_DIR/README.md" <<'MOKREADME'
+# 🔑 MOK (Machine Owner Key) Directory
+
+This directory contains your **MOK keys** for signing kernel modules so they work with SecureBoot enabled.
+
+## 📚 What is MOK?
+
+**MOK (Machine Owner Key)** is a key type for signing **kernel modules** (`.ko` files). When SecureBoot is enabled, the Linux kernel rejects unsigned kernel modules for security.
+
+## 🚀 Quick Start
+
+1. **Generate MOK key** (if not already done):
+   ```bash
+   ./pf.py secure-mok-new
+   ```
+
+2. **Enroll MOK**:
+   ```bash
+   ./pf.py os-mok-enroll
+   # Set a password when prompted
+   ```
+
+3. **Reboot** - MOK Manager will appear to complete enrollment
+
+4. **Sign modules**:
+   ```bash
+   ./sign-kernel-modules.sh /path/to/module.ko
+   ```
+
+## 🔍 Verify Enrollment
+
+```bash
+./pf.py os-mok-list-keys
+mokutil --sb-state
+```
+
+## 📖 Full Documentation
+
+See the main repository README.md for complete MOK documentation, common use cases, and troubleshooting.
+MOKREADME
+
 echo ""
 echo "📚 What to do next:"
 echo ""
@@ -76,4 +119,7 @@ echo "     ./sign-kernel-modules.sh /lib/modules/\$(uname -r)/kernel/fs/apfs/apf
 echo ""
 echo "  4️⃣  Check enrollment status anytime:"
 echo "     ./pf.py os-mok-list-keys"
+echo ""
+echo "📖 For detailed MOK documentation, see:"
+echo "   $OUT_DIR/README.md (just created!)"
 echo ""

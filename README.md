@@ -29,6 +29,12 @@ This new script solves the confusion around multiple runners and provides:
 
 ## 🚀 Quick Start
 
+> **🆕 NEW FOR USERS:** PhoenixBoot now includes comprehensive educational output!
+> - Every key generation command explains what it creates and how to use it
+> - README files in `keys/` and `out/keys/mok/` explain key hierarchies
+> - New user guide: `docs/UNDERSTANDING_BOOT_ARTIFACTS.md` explains shims, keys, and boot concepts
+> - **Never been confused about "which shim to use"? Start here!**
+
 ### Prerequisites
 
 - Linux system with UEFI firmware
@@ -483,6 +489,12 @@ Comprehensive documentation is available in the `docs/` directory:
 - `docs/HARDWARE_ACCESS_DEEP_DIVE.md` - Hardware-level access documentation
 - `docs/UUEFI_INVESTIGATION.md` - UUEFI crash investigation and resolution
 - `docs/UUEFI_ENHANCED.md` - **🆕 NEW**: UUEFI v2.0 enhanced features and usage guide
+- `docs/UNDERSTANDING_BOOT_ARTIFACTS.md` - **🆕 NEW**: Beginner-friendly guide to keys, shims, and boot artifacts
+
+**Key and Artifact Documentation**:
+- `keys/README.md` - **🆕 NEW**: Explains SecureBoot keys (PK, KEK, db) hierarchy and usage
+- `out/keys/mok/README.md` - **🆕 NEW**: MOK (Machine Owner Key) guide for kernel module signing
+- Quick reference: Run any key generation command to see educational output!
 
 **Artifact Creation Documentation**:
 - Generated documentation in `out/artifacts/docs/`:

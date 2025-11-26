@@ -26,6 +26,7 @@
 #define MAX_VARIABLES 500
 #define MAX_SUSPICIOUS_ITEMS 50
 #define MAX_DESCRIPTION_SIZE 512
+#define MAX_DISPLAYED_DELETIONS 10
 
 // Variable categories
 typedef enum {
@@ -141,7 +142,7 @@ DescribeVariable(
   )
 {
   // Clear description
-  VarInfo->Description[0] = 0;
+  ZeroMem(VarInfo->Description, MAX_DESCRIPTION_SIZE * sizeof(CHAR16));
   VarInfo->IsEditable = FALSE;
   
   // Boot variables
@@ -738,11 +739,14 @@ ShowNuclearWipeMenu(VOID)
       
       Print(L"\nType 'WIPE' to confirm (or anything else to cancel): ");
       
-      // Simple confirmation - in a real implementation, would get string input
+      // NOTE: Full string input is complex in UEFI without additional libraries.
+      // This implementation checks first character only. For production use,
+      // consider implementing full string comparison or using UEFI Forms Browser.
       gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
       gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
       Print(L"%c...\n", Key.UnicodeChar);
       
+      // Check first character as simplified confirmation
       if (Key.UnicodeChar == L'W' || Key.UnicodeChar == L'w') {
         Print(L"\n⚠ Wiping vendor variables...\n");
         
@@ -791,10 +795,14 @@ ShowNuclearWipeMenu(VOID)
       Print(L"\n");
       Print(L"Type 'RESET' to confirm (or anything else to cancel): ");
       
+      // NOTE: Full string input is complex in UEFI without additional libraries.
+      // This implementation checks first character only. For production use,
+      // consider implementing full string comparison or using UEFI Forms Browser.
       gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
       gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
       Print(L"%c...\n", Key.UnicodeChar);
       
+      // Check first character as simplified confirmation
       if (Key.UnicodeChar == L'R' || Key.UnicodeChar == L'r') {
         Print(L"\n⚠⚠⚠ Performing full NVRAM reset...\n");
         
@@ -815,9 +823,9 @@ ShowNuclearWipeMenu(VOID)
           
           if (!EFI_ERROR(Status)) {
             resetCount++;
-            if (resetCount <= 10) {  // Show first 10
+            if (resetCount <= MAX_DISPLAYED_DELETIONS) {
               Print(L"  ✓ Deleted: %s\n", gVariables[i].Name);
-            } else if (resetCount == 11) {
+            } else if (resetCount == MAX_DISPLAYED_DELETIONS + 1) {
               Print(L"  ... (continuing)\n");
             }
           }

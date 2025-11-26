@@ -2,11 +2,134 @@
 
 ## Overview
 
-UUEFI (Universal UEFI Diagnostic Application) has been significantly enhanced to provide comprehensive EFI variable management and security analysis capabilities. Version 2.0.0 transforms UUEFI from a simple diagnostic tool into a powerful firmware-level security and configuration utility.
+UUEFI (Universal UEFI Diagnostic Application) has been significantly enhanced to provide comprehensive EFI variable management and security analysis capabilities. Version 3.0.0 transforms UUEFI from a diagnostic tool into a powerful full BIOS replacement that provides complete control over system configuration, similar to traditional BIOS interfaces but with modern UEFI capabilities.
 
-## New Features
+## What's New in Version 3.0.0
 
-### 1. Complete EFI Variable Enumeration
+### Revolutionary Features
+
+🔥 **Complete BIOS Replacement** - UUEFI now functions as a full-featured BIOS that runs AFTER your hardware BIOS, giving you a second layer of configuration control.
+
+🔥 **Variable Editing** - Edit ANY tweakable EFI variable with intelligent type detection and safety protections.
+
+🔥 **ESP Configuration Management** - View and manage configuration files directly from the EFI System Partition.
+
+🔥 **Nuclear Wipe System** - The ultimate malware response tool that can completely wipe your system including BIOS settings and disk data.
+
+🔥 **Enhanced Descriptions** - Every variable now includes a human-readable description explaining its purpose.
+
+## Core Features
+
+## Core Features
+
+### 1. Complete EFI Variable Enumeration with Descriptions
+
+UUEFI reads **ALL** EFI variables present in the system using the UEFI Runtime Services `GetNextVariableName()` API. This provides complete visibility into:
+
+- Boot configuration variables (with detailed descriptions)
+- Security keys and settings (with safety explanations)
+- Hardware-specific configurations (with purpose identification)
+- Vendor-specific features (marked as editable)
+- Unknown or undocumented variables (flagged for investigation)
+
+**NEW in v3.0:** Each variable now includes:
+- **Human-readable description** - Explains what the variable does
+- **Editability flag** - Indicates if it's safe to modify
+- **Type detection** - Automatically identifies data types (boolean, numeric, string)
+- **Current value display** - Shows actual value in multiple formats
+
+Example:
+```
+Variable: MyAsusAutoInstall [EDITABLE]
+  Size: 1 bytes, Attr: 0x00000007
+  Description: MyASUS software auto-install setting (editable)
+  Current Value: 1 (Enabled)
+```
+
+### 2. Variable Editing System
+
+UUEFI v3.0 introduces a comprehensive variable editing system that allows safe modification of EFI variables:
+
+**Supported Operations:**
+- Set variable to 0 (Disable)
+- Set variable to 1 (Enable)
+- Delete variable completely
+- View current value in multiple formats (hex, decimal, boolean)
+
+**Safety Features:**
+- Security variables (PK, KEK, db, dbx, SecureBoot) are **protected** from modification
+- Critical boot variables (BootOrder, BootCurrent) are **protected**
+- Vendor-specific variables are **marked as editable**
+- Double confirmation required before any changes
+- Clear warnings about potential impacts
+
+**Example Editable Variables:**
+- Boot animations (disable for faster boot)
+- Vendor bloatware (MyASUS, Armoury Crate auto-install)
+- Cloud recovery settings
+- OEM telemetry features
+- Hardware feature toggles
+
+### 3. ESP Configuration Viewer and Manager
+
+Access and view configuration files stored in the EFI System Partition:
+
+**Accessible Files:**
+- `/EFI/PhoenixGuard/config.txt` - PhoenixGuard settings
+- `/EFI/PhoenixGuard/ESP_UUID.txt` - ESP identification
+- `/EFI/BOOT/grub.cfg` - GRUB configuration
+- `/EFI/ubuntu/grub.cfg` - Ubuntu-specific GRUB
+- `loader/loader.conf` - systemd-boot configuration
+
+**Features:**
+- Preview file contents (first 512 bytes)
+- Show file sizes and locations
+- Read-only viewing for safety
+- Instructions for editing from OS
+
+**Companion Tool:**
+```bash
+# Extract all ESP configurations to JSON
+sudo bash scripts/esp-config-extract.sh
+
+# Output: esp_configs_YYYYMMDD_HHMMSS.json
+```
+
+### 4. Nuclear Wipe System ☢️
+
+The "nuclear option" for severe malware infections or system decommissioning:
+
+**What It Does:**
+1. **Wipes Vendor Variables** - Removes all vendor-specific settings
+2. **Clears Boot Entries** - Removes non-current boot entries (preserves active boot)
+3. **Provides Disk Wipe Instructions** - Guides you through using nwipe
+4. **Full NVRAM Reset** - Returns BIOS to near-factory state
+
+**Safety Measures:**
+- Requires multiple confirmations
+- Preserves current boot entry (so you can still boot)
+- Protects critical security variables
+- Provides clear next-steps documentation
+
+**Integration with nwipe:**
+```bash
+# Launch nuclear wipe from OS
+sudo bash scripts/nuclear-wipe.sh
+
+# Options:
+# 1. Interactive mode (recommended)
+# 2. Quick wipe (zeros only)
+# 3. DoD Short (3 passes)
+# 4. PRNG Stream (cryptographically secure)
+```
+
+**Use Cases:**
+- ✓ Severe malware/rootkit infection
+- ✓ Security breach response
+- ✓ System decommissioning
+- ✓ Complete fresh start needed
+
+### 5. Smart Variable Categorization
 
 UUEFI now reads **ALL** EFI variables present in the system using the UEFI Runtime Services `GetNextVariableName()` API. This provides complete visibility into:
 

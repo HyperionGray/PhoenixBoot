@@ -79,6 +79,47 @@ class PhoenixGuardModuleSigner:
         # Pre-resolve certificate paths
         self.cert_file = Path(self.cert_path)
         self.key_file = Path(self.key_path)
+        
+        # Print helpful key information on initialization
+        self._print_key_info()
+
+    def _print_key_info(self):
+        """Print information about which keys are being used for signing."""
+        print("")
+        print("═" * 70)
+        print("🔑 PhoenixGuard Kernel Module Signer")
+        print("═" * 70)
+        print("")
+        print("📌 Signing Configuration:")
+        print(f"   Certificate: {self.cert_path}")
+        print(f"   Private Key: {self.key_path}")
+        
+        if self.cert_file.exists() and self.key_file.exists():
+            print("   Status: ✓ Keys found")
+            # Try to extract certificate info
+            try:
+                import subprocess
+                result = subprocess.run(
+                    ["openssl", "x509", "-in", str(self.cert_file), "-noout", "-subject", "-fingerprint"],
+                    capture_output=True, text=True, timeout=5
+                )
+                if result.returncode == 0:
+                    for line in result.stdout.strip().split('\n'):
+                        print(f"   {line}")
+            except:
+                pass
+        else:
+            print("   Status: ⚠ Keys not found!")
+            print("")
+            print("💡 To create MOK keys, run:")
+            print("   ./pf.py secure-mok-new")
+            print("")
+        print("")
+        print("📚 What this does:")
+        print("   • Signs kernel modules (.ko files) with your MOK key")
+        print("   • Required for loading modules with SecureBoot enabled")
+        print("   • Backup created automatically (.ko.unsigned)")
+        print("")
 
     def strip_trailing_signatures(self, module_path: Path) -> int:
         """
@@ -249,7 +290,25 @@ class PhoenixGuardModuleSigner:
                     "command_executed": " ".join(cmd),
                     "stripped_signatures": stripped,
                 }
-                logger.info("☠ Module signed successfully")
+                logger.info("✅ Module signed successfully: %s", module.name)
+                print("")
+                print("─" * 70)
+                print(f"✅ Successfully signed: {module.name}")
+                print("─" * 70)
+                print(f"   Module: {module}")
+                print(f"   Backup: {backup_path}")
+                print(f"   Signed with: {Path(self.cert_path).name}")
+                print("")
+                print("📚 What to do next:")
+                print("   1. Load the module: sudo modprobe " + module.stem)
+                print("   2. Or reboot to automatically load signed modules")
+                print("   3. Check status: modinfo " + str(module) + " | grep sig")
+                print("")
+                print("💡 If this is your first time:")
+                print("   - Ensure MOK is enrolled: ./pf.py os-mok-list-keys")
+                print("   - If not enrolled, run: ./pf.py os-mok-enroll")
+                print("   - Then reboot and enroll via MOK Manager")
+                print("")
             else:
                 result = {
                     "status": "failed",
@@ -257,7 +316,7 @@ class PhoenixGuardModuleSigner:
                     "module_path": str(module),
                     "timestamp": datetime.now().isoformat(),
                 }
-                logger.error("☠ Module signing failed - signature not detected")
+                logger.error("❌ Module signing failed - signature not detected")
         except Exception as e:
             result = {
                 "status": "error",
@@ -265,15 +324,23 @@ class PhoenixGuardModuleSigner:
                 "module_path": str(module),
                 "timestamp": datetime.now().isoformat(),
             }
-            logger.error("☠ Module signing error: %s", e)
+            logger.error("❌ Module signing error: %s", e)
 
         self.signing_log.append(result)
         return result
 
     def sign_multiple_modules(self, module_paths: List[str], **kwargs) -> List[Dict[str, Any]]:
         results: List[Dict[str, Any]] = []
-        logger.info("Batch signing %d module(s)", len(module_paths))
-        for m in module_paths:
+        total = len(module_paths)
+        logger.info("Batch signing %d module(s)", total)
+        print("")
+        print("═" * 70)
+        print(f"📦 Batch Signing {total} Module(s)")
+        print("═" * 70)
+        print("")
+        
+        for idx, m in enumerate(module_paths, 1):
+            print(f"[{idx}/{total}] Processing: {Path(m).name}")
             try:
                 results.append(self.sign_kernel_module(m, **kwargs))
             except Exception as e:
@@ -284,8 +351,22 @@ class PhoenixGuardModuleSigner:
                     "timestamp": datetime.now().isoformat(),
                 })
                 logger.error("Failed to sign %s: %s", m, e)
+        
         ok = len([r for r in results if r.get("status") == "success"])
-        logger.info("Batch complete: %d/%d signed", ok, len(module_paths))
+        skipped = len([r for r in results if r.get("status") == "skipped"])
+        failed = total - ok - skipped
+        
+        print("")
+        print("═" * 70)
+        print("📊 Batch Signing Summary")
+        print("═" * 70)
+        print(f"   ✅ Signed:   {ok}/{total}")
+        if skipped > 0:
+            print(f"   ⏭️  Skipped:  {skipped}/{total} (already signed)")
+        if failed > 0:
+            print(f"   ❌ Failed:   {failed}/{total}")
+        print("")
+        logger.info("Batch complete: %d/%d signed, %d skipped, %d failed", ok, total, skipped, failed)
         return results
 
     def save_signing_log(self, output_file: Optional[str] = None) -> str:

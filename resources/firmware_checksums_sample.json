@@ -1,0 +1,67 @@
+{
+  "description": "PhoenixBoot Firmware Checksum Database - Sample Entries",
+  "version": "1.0",
+  "last_updated": "2025-11-26",
+  "entries": [
+    {
+      "vendor": "ASUS",
+      "model": "ROG Strix X570-E Gaming",
+      "version": "4021",
+      "sha256": "example_asus_rog_x570e_4021_sha256_placeholder",
+      "sha1": "example_sha1_placeholder",
+      "md5": "example_md5_placeholder",
+      "size": 16777216,
+      "source": "vendor_official",
+      "confidence_score": 90,
+      "added_date": "2025-11-26T00:00:00",
+      "notes": "Official ASUS BIOS version 4021 from vendor website"
+    },
+    {
+      "vendor": "MSI",
+      "model": "B550 TOMAHAWK",
+      "version": "7C91v1A",
+      "sha256": "example_msi_b550_tomahawk_sha256_placeholder",
+      "sha1": "example_sha1_placeholder",
+      "md5": "example_md5_placeholder",
+      "size": 16777216,
+      "source": "vendor_official",
+      "confidence_score": 90,
+      "added_date": "2025-11-26T00:00:00",
+      "notes": "Official MSI BIOS from vendor website"
+    },
+    {
+      "vendor": "Intel",
+      "model": "NUC10i7FNH",
+      "version": "FNCML357.0059",
+      "sha256": "example_intel_nuc_sha256_placeholder",
+      "sha1": "example_sha1_placeholder",
+      "md5": "example_md5_placeholder",
+      "size": 8388608,
+      "source": "vendor_official",
+      "confidence_score": 95,
+      "added_date": "2025-11-26T00:00:00",
+      "notes": "Intel NUC BIOS from Intel Download Center"
+    },
+    {
+      "vendor": "Gigabyte",
+      "model": "Z590 AORUS ELITE",
+      "version": "F6",
+      "sha256": "example_gigabyte_z590_sha256_placeholder",
+      "sha1": "example_sha1_placeholder",
+      "md5": "example_md5_placeholder",
+      "size": 16777216,
+      "source": "vendor_official",
+      "confidence_score": 85,
+      "added_date": "2025-11-26T00:00:00",
+      "notes": "Gigabyte BIOS F6 version"
+    }
+  ],
+  "usage_instructions": [
+    "This is a sample database with placeholder checksums for demonstration",
+    "To add real firmware:",
+    "  FIRMWARE_PATH=/path/to/bios.bin VENDOR='ASUS' MODEL='ROG X570' VERSION='4021' ./pf.py firmware-checksum-add",
+    "To verify firmware:",
+    "  FIRMWARE_PATH=/path/to/bios.bin ./pf.py firmware-checksum-verify",
+    "For production use, populate with actual firmware checksums from trusted sources"
+  ]
+}

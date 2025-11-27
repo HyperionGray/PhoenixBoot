@@ -25,7 +25,8 @@
 #define MAX_VARIABLE_NAME_SIZE 1024
 #define MAX_VARIABLES 500
 #define MAX_SUSPICIOUS_ITEMS 50
-#define MAX_INPUT_SIZE 256
+#define MAX_DESCRIPTION_SIZE 512
+#define MAX_DISPLAYED_DELETIONS 10
 
 // Variable categories
 typedef enum {
@@ -45,8 +46,8 @@ typedef struct {
   VARIABLE_CATEGORY Category;
   BOOLEAN IsSuspicious;
   CHAR16 SuspicionReason[256];
+  CHAR16 Description[MAX_DESCRIPTION_SIZE];
   BOOLEAN IsEditable;
-  CHAR16 Description[512];
 } VARIABLE_INFO;
 
 // Suspicious activity structure
@@ -128,6 +129,135 @@ CategorizeVariable(
   
   // Hardware/vendor-specific variables (non-standard GUID)
   return VAR_CAT_VENDOR;
+}
+
+/**
+  Describe a variable based on known patterns and names
+  
+  @param VarInfo  Variable information to populate with description
+**/
+VOID
+DescribeVariable(
+  IN OUT VARIABLE_INFO *VarInfo
+  )
+{
+  // Clear description
+  ZeroMem(VarInfo->Description, MAX_DESCRIPTION_SIZE * sizeof(CHAR16));
+  VarInfo->IsEditable = FALSE;
+  
+  // Boot variables
+  if (VarInfo->Category == VAR_CAT_BOOT) {
+    if (StrCmp(VarInfo->Name, L"BootOrder") == 0) {
+      StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Boot device order sequence");
+    } else if (StrCmp(VarInfo->Name, L"BootCurrent") == 0) {
+      StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Currently booted device entry");
+    } else if (StrCmp(VarInfo->Name, L"BootNext") == 0) {
+      StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Next boot device (one-time)");
+    } else if (StrnCmp(VarInfo->Name, L"Boot", 4) == 0) {
+      StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Boot device entry configuration");
+    }
+    return;
+  }
+  
+  // Security variables
+  if (VarInfo->Category == VAR_CAT_SECURITY) {
+    if (StrCmp(VarInfo->Name, L"SecureBoot") == 0) {
+      StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Secure Boot enabled/disabled status");
+    } else if (StrCmp(VarInfo->Name, L"SetupMode") == 0) {
+      StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Firmware in setup mode for key enrollment");
+    } else if (StrCmp(VarInfo->Name, L"PK") == 0) {
+      StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Platform Key (root of trust)");
+    } else if (StrCmp(VarInfo->Name, L"KEK") == 0) {
+      StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Key Exchange Key database");
+    } else if (StrCmp(VarInfo->Name, L"db") == 0) {
+      StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Authorized signature database (whitelist)");
+    } else if (StrCmp(VarInfo->Name, L"dbx") == 0) {
+      StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Forbidden signature database (blacklist)");
+    }
+    return;
+  }
+  
+  // Vendor-specific patterns
+  if (VarInfo->Category == VAR_CAT_VENDOR) {
+    // ASUS-specific variables
+    if (StrStr(VarInfo->Name, L"Asus") != NULL) {
+      if (StrStr(VarInfo->Name, L"Animation") != NULL) {
+        StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"ASUS: BIOS UI animations control");
+        VarInfo->IsEditable = TRUE;
+      } else if (StrStr(VarInfo->Name, L"Myasus") != NULL) {
+        StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"ASUS: MyASUS software auto-install");
+        VarInfo->IsEditable = TRUE;
+      } else if (StrStr(VarInfo->Name, L"Camera") != NULL) {
+        StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"ASUS: Camera security and privacy");
+      } else if (StrStr(VarInfo->Name, L"Gnvs") != NULL) {
+        StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"ASUS: ACPI Global NVS variables");
+      } else if (StrStr(VarInfo->Name, L"Armoury") != NULL || StrStr(VarInfo->Name, L"ArmouryCrate") != NULL) {
+        StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"ASUS: ROG Armoury Crate gaming config");
+        VarInfo->IsEditable = TRUE;
+      } else if (StrStr(VarInfo->Name, L"TouchPad") != NULL) {
+        StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"ASUS: Touchpad device configuration");
+      } else {
+        StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"ASUS vendor-specific configuration");
+        VarInfo->IsEditable = TRUE;
+      }
+      return;
+    }
+    
+    // Intel-specific variables
+    if (StrStr(VarInfo->Name, L"Intel") != NULL || StrnCmp(VarInfo->Name, L"Cnv", 3) == 0) {
+      if (StrStr(VarInfo->Name, L"Wlan") != NULL || StrStr(VarInfo->Name, L"Wifi") != NULL) {
+        StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Intel: WiFi configuration");
+        VarInfo->IsEditable = TRUE;
+      } else if (StrStr(VarInfo->Name, L"Bt") != NULL || StrStr(VarInfo->Name, L"Bluetooth") != NULL) {
+        StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Intel: Bluetooth configuration");
+        VarInfo->IsEditable = TRUE;
+      } else if (StrStr(VarInfo->Name, L"Vmd") != NULL) {
+        StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Intel: VMD NVMe RAID configuration");
+      } else if (StrStr(VarInfo->Name, L"Rst") != NULL) {
+        StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Intel: Rapid Storage Technology");
+      } else {
+        StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Intel hardware configuration");
+      }
+      return;
+    }
+    
+    // Wireless/Network patterns
+    if (StrCmp(VarInfo->Name, L"WRDS") == 0 || StrCmp(VarInfo->Name, L"WRDD") == 0 ||
+        StrCmp(VarInfo->Name, L"WGDS") == 0 || StrCmp(VarInfo->Name, L"EWRD") == 0) {
+      StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"WiFi regulatory domain settings");
+      VarInfo->IsEditable = TRUE;
+      return;
+    }
+    if (StrCmp(VarInfo->Name, L"SADS") == 0 || StrCmp(VarInfo->Name, L"BRDS") == 0) {
+      StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Bluetooth regulatory settings");
+      VarInfo->IsEditable = TRUE;
+      return;
+    }
+    
+    // Memory-related
+    if (StrStr(VarInfo->Name, L"Memory") != NULL) {
+      if (StrStr(VarInfo->Name, L"Overwrite") != NULL) {
+        StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Memory overwrite request (security)");
+      } else if (StrStr(VarInfo->Name, L"Retrain") != NULL) {
+        StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Memory training control");
+        VarInfo->IsEditable = TRUE;
+      } else {
+        StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Memory configuration");
+      }
+      return;
+    }
+    
+    // Recovery/Cloud features
+    if (StrStr(VarInfo->Name, L"Recovery") != NULL || StrStr(VarInfo->Name, L"Cloud") != NULL) {
+      StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Cloud recovery service configuration");
+      VarInfo->IsEditable = TRUE;
+      return;
+    }
+    
+    // Generic vendor variable
+    StrCpyS(VarInfo->Description, MAX_DESCRIPTION_SIZE, L"Vendor-specific feature or setting");
+    VarInfo->IsEditable = TRUE;
+  }
 }
 
 /**
@@ -382,6 +512,9 @@ EnumerateAllVariables(VOID)
       var->Attributes = Attributes;
       var->Category = CategorizeVariable(VariableName, &VendorGuid);
       
+      // Describe the variable
+      DescribeVariable(var);
+      
       // Run heuristics
       CheckVariableHeuristics(var);
       
@@ -440,14 +573,14 @@ DisplayVariablesByCategory(
     
     for (UINTN i = 0; i < gVariableCount; i++) {
       if (gVariables[i].Category == cat) {
-        Print(L"  %s", gVariables[i].Name);
+        Print(L"  [%lu] %s", i, gVariables[i].Name);
         
         if (gVariables[i].IsSuspicious) {
           Print(L" ⚠ SUSPICIOUS: %s", gVariables[i].SuspicionReason);
         }
         
         if (gVariables[i].IsEditable) {
-          Print(L" [EDITABLE]");
+          Print(L" ✎");
         }
         
         Print(L"\n    Size: %lu bytes, Attr: 0x%08x\n", 
@@ -773,279 +906,350 @@ ToggleVariable(
 }
 
 /**
-  Display ESP configuration files
+  Nuclear Wipe Menu - Complete system reset with NVRAM wipe
   
-  @param ImageHandle  Image handle for file system access
+  This provides a "nuclear option" for complete system reset:
+  - Warns user about data loss
+  - Optionally wipes all non-essential NVRAM variables
+  - Provides info about disk wiping tools (nwipe)
+  - Resets firmware to defaults
 **/
 VOID
-DisplayESPConfig(
-  IN EFI_HANDLE ImageHandle
-  )
-{
-  EFI_STATUS Status;
-  EFI_LOADED_IMAGE_PROTOCOL *LoadedImage = NULL;
-  EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *Fs = NULL;
-  EFI_FILE_PROTOCOL *Root = NULL;
-  EFI_FILE_PROTOCOL *ConfigFile = NULL;
-  
-  Print(L"\n╔════════════════════════════════════════════╗\n");
-  Print(L"║        ESP CONFIGURATION VIEWER            ║\n");
-  Print(L"╚════════════════════════════════════════════╝\n");
-  
-  Status = gBS->HandleProtocol(ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&LoadedImage);
-  if (EFI_ERROR(Status) || LoadedImage == NULL || LoadedImage->DeviceHandle == NULL) {
-    Print(L"\n✗ Cannot access ESP file system\n");
-    return;
-  }
-  
-  Status = gBS->HandleProtocol(LoadedImage->DeviceHandle, &gEfiSimpleFileSystemProtocolGuid, (VOID **)&Fs);
-  if (EFI_ERROR(Status) || Fs == NULL) {
-    Print(L"\n✗ Cannot access ESP file system\n");
-    return;
-  }
-  
-  Status = Fs->OpenVolume(Fs, &Root);
-  if (EFI_ERROR(Status) || Root == NULL) {
-    Print(L"\n✗ Cannot open ESP volume\n");
-    return;
-  }
-  
-  Print(L"\nScanning ESP for configuration files...\n");
-  Print(L"Common locations checked:\n");
-  Print(L"  - /EFI/PhoenixGuard/\n");
-  Print(L"  - /EFI/BOOT/\n");
-  Print(L"  - /EFI/ubuntu/\n");
-  
-  // Try to read PhoenixGuard config
-  CHAR16 *ConfigPaths[] = {
-    L"\\EFI\\PhoenixGuard\\config.txt",
-    L"\\EFI\\PhoenixGuard\\ESP_UUID.txt",
-    L"\\EFI\\BOOT\\grub.cfg",
-    NULL
-  };
-  
-  for (UINTN i = 0; ConfigPaths[i] != NULL; i++) {
-    Status = Root->Open(Root, &ConfigFile, ConfigPaths[i], EFI_FILE_MODE_READ, 0);
-    if (!EFI_ERROR(Status) && ConfigFile) {
-      Print(L"\n✓ Found: %s\n", ConfigPaths[i]);
-      
-      // Get file size
-      EFI_FILE_INFO *FileInfo = NULL;
-      UINTN BufferSize = SIZE_OF_EFI_FILE_INFO + 512;
-      FileInfo = AllocateZeroPool(BufferSize);
-      
-      if (FileInfo) {
-        Status = ConfigFile->GetInfo(ConfigFile, &gEfiFileInfoGuid, &BufferSize, FileInfo);
-        if (!EFI_ERROR(Status)) {
-          Print(L"  Size: %lu bytes\n", FileInfo->FileSize);
-          
-          // Read first 512 bytes
-          if (FileInfo->FileSize > 0) {
-            UINTN ReadSize = FileInfo->FileSize > 512 ? 512 : FileInfo->FileSize;
-            UINT8 *Buffer = AllocateZeroPool(ReadSize + 1);
-            
-            if (Buffer) {
-              UINTN ActualRead = ReadSize;
-              Status = ConfigFile->Read(ConfigFile, &ActualRead, Buffer);
-              if (!EFI_ERROR(Status) && ActualRead > 0) {
-                Print(L"  Content (first %lu bytes):\n", ActualRead);
-                // Convert to CHAR16 for display
-                for (UINTN j = 0; j < ActualRead && j < 256; j++) {
-                  if (Buffer[j] >= 32 && Buffer[j] < 127) {
-                    Print(L"%c", (CHAR16)Buffer[j]);
-                  } else if (Buffer[j] == '\n') {
-                    Print(L"\n  ");
-                  }
-                }
-                Print(L"\n");
-              }
-              FreePool(Buffer);
-            }
-          }
-        }
-        FreePool(FileInfo);
-      }
-      
-      ConfigFile->Close(ConfigFile);
-    }
-  }
-  
-  Print(L"\n✓ ESP configuration scan complete\n");
-  Print(L"\nNote: Full config editing requires mounting ESP from OS\n");
-  Print(L"      Use scripts/esp-package.sh for advanced config management\n");
-  
-  if (Root) Root->Close(Root);
-}
-
-/**
-  Nuclear Wipe System - Safely wipe system and BIOS/EFI variables
-  
-  This is the "nuclear option" for when a system has serious malware
-  and needs complete reinitiation.
-**/
-VOID
-NuclearWipeSystem(VOID)
+ShowNuclearWipeMenu(VOID)
 {
   EFI_INPUT_KEY Key;
   UINTN Index;
   
   Print(L"\n");
   Print(L"╔════════════════════════════════════════════╗\n");
-  Print(L"║     ☢ NUCLEAR WIPE SYSTEM ☢              ║\n");
-  Print(L"║     EXTREME CAUTION REQUIRED              ║\n");
+  Print(L"║      ☢ NUCLEAR WIPE MENU ☢               ║\n");
+  Print(L"║  COMPLETE SYSTEM RESET & SANITIZATION     ║\n");
   Print(L"╚════════════════════════════════════════════╝\n");
-  
-  Print(L"\n⚠⚠⚠ CRITICAL WARNING ⚠⚠⚠\n");
-  Print(L"\nThis feature will:\n");
-  Print(L"  1. Reset ALL user-modifiable EFI variables\n");
-  Print(L"  2. Clear boot configuration\n");
-  Print(L"  3. Reset vendor-specific settings\n");
-  Print(L"  4. Launch disk wipe utility (if available)\n");
-  Print(L"\nThis is intended for severe malware/rootkit scenarios.\n");
-  Print(L"Your system will need complete reconfiguration after this!\n");
-  
-  Print(L"\nFeatures:\n");
-  Print(L"  • Reset NVRAM to factory defaults\n");
-  Print(L"  • Clear all boot entries\n");
-  Print(L"  • Reset vendor variables\n");
-  Print(L"  • Integration with nwipe for disk wiping\n");
-  
-  Print(L"\n⚠ This operation is IRREVERSIBLE!\n");
-  Print(L"\nAre you ABSOLUTELY SURE you want to proceed?\n");
-  Print(L"Type 'NUCLEAR' to confirm (case sensitive), or any other key to cancel:\n");
-  
-  // Simple confirmation - in production would read full string
-  Print(L"\nPress 'N' to proceed with nuclear wipe, any other key to cancel: ");
+  Print(L"\n");
+  Print(L"⚠⚠⚠ EXTREME WARNING ⚠⚠⚠\n");
+  Print(L"This menu provides options for complete system sanitization.\n");
+  Print(L"Use these options ONLY when:\n");
+  Print(L"  • You have serious malware/rootkit infection\n");
+  Print(L"  • You need to completely wipe and reset the system\n");
+  Print(L"  • You want to return firmware to factory defaults\n");
+  Print(L"\n");
+  Print(L"Available Options:\n");
+  Print(L"══════════════════\n");
+  Print(L"\n");
+  Print(L"1. NVRAM Variable Wipe (Vendor Variables Only)\n");
+  Print(L"   - Deletes all non-critical vendor-specific variables\n");
+  Print(L"   - Preserves boot configuration and security keys\n");
+  Print(L"   - Useful for removing vendor bloatware/malware\n");
+  Print(L"   ⚠ Risk Level: MEDIUM - May affect vendor features\n");
+  Print(L"\n");
+  Print(L"2. Full NVRAM Reset (Factory Defaults)\n");
+  Print(L"   - Resets ALL variables including boot order\n");
+  Print(L"   - Preserves only critical security variables (PK, KEK, db, dbx)\n");
+  Print(L"   - System will boot to firmware setup on next boot\n");
+  Print(L"   ⚠ Risk Level: HIGH - Will reset all BIOS settings\n");
+  Print(L"\n");
+  Print(L"3. Disk Wiping Information\n");
+  Print(L"   - Shows information about secure disk wiping\n");
+  Print(L"   - Recommends nwipe and other tools\n");
+  Print(L"   - No data is modified\n");
+  Print(L"   ⚠ Risk Level: NONE - Information only\n");
+  Print(L"\n");
+  Print(L"4. Complete Nuclear Wipe (NVRAM + Disk Instructions)\n");
+  Print(L"   - Combination of options 2 & 3\n");
+  Print(L"   - Full firmware reset + disk wipe guidance\n");
+  Print(L"   - Maximum sanitization for critical situations\n");
+  Print(L"   ⚠ Risk Level: EXTREME - Complete system reset\n");
+  Print(L"\n");
+  Print(L"Q. Return to Main Menu (Recommended)\n");
+  Print(L"\n");
+  Print(L"Select option (or Q to cancel): ");
   
   gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
   gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
   Print(L"%c\n", Key.UnicodeChar);
   
-  if (Key.UnicodeChar != L'N' && Key.UnicodeChar != L'n') {
-    Print(L"\n✓ Nuclear wipe cancelled - system unchanged\n");
-    return;
-  }
-  
-  Print(L"\n⚠ FINAL CONFIRMATION ⚠\n");
-  Print(L"Press 'Y' one more time to execute nuclear wipe: ");
-  
-  gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
-  gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
-  Print(L"%c\n", Key.UnicodeChar);
-  
-  if (Key.UnicodeChar != L'Y' && Key.UnicodeChar != L'y') {
-    Print(L"\n✓ Nuclear wipe cancelled - system unchanged\n");
-    return;
-  }
-  
-  Print(L"\n☢ EXECUTING NUCLEAR WIPE ☢\n");
-  Print(L"═══════════════════════════\n\n");
-  
-  // Phase 1: Reset vendor-specific variables
-  Print(L"Phase 1: Resetting vendor variables...\n");
-  UINTN wipedVendor = 0;
-  
-  for (UINTN i = 0; i < gVariableCount; i++) {
-    if (gVariables[i].Category == VAR_CAT_VENDOR && gVariables[i].IsEditable) {
-      // Try to delete the variable
-      EFI_STATUS Status = gRT->SetVariable(
-        gVariables[i].Name,
-        &gVariables[i].VendorGuid,
-        gVariables[i].Attributes,
-        0,
-        NULL
-      );
+  switch (Key.UnicodeChar) {
+    case L'1':
+      // Wipe vendor variables only
+      Print(L"\n☢ VENDOR VARIABLE WIPE ☢\n");
+      Print(L"═══════════════════════════\n");
+      Print(L"This will DELETE all vendor-specific variables that are\n");
+      Print(L"marked as safe to remove (excluding critical system variables).\n");
+      Print(L"\n");
+      Print(L"Variables to be removed: ");
       
-      if (!EFI_ERROR(Status)) {
-        wipedVendor++;
-        Print(L"  ✓ Wiped: %s\n", gVariables[i].Name);
-      }
-    }
-  }
-  
-  Print(L"✓ Phase 1 complete: %lu vendor variables wiped\n\n", wipedVendor);
-  
-  // Phase 2: Clear non-current boot entries
-  Print(L"Phase 2: Clearing boot entries (preserving BootCurrent)...\n");
-  UINTN wipedBoot = 0;
-  
-  // Get BootCurrent so we don't delete it
-  UINT16 BootCurrent = 0xFFFF;
-  UINTN Size = sizeof(BootCurrent);
-  EFI_GUID GlobalVar = EFI_GLOBAL_VARIABLE;
-  gRT->GetVariable(L"BootCurrent", &GlobalVar, NULL, &Size, &BootCurrent);
-  
-  for (UINTN i = 0; i < gVariableCount; i++) {
-    if (gVariables[i].Category == VAR_CAT_BOOT && 
-        StrnCmp(gVariables[i].Name, L"Boot", 4) == 0 &&
-        StrLen(gVariables[i].Name) == 8) { // Boot#### format
-      
-      // Parse boot number (Boot#### format - hex)
-      UINT16 bootNum = 0;
-      for (UINTN j = 4; j < 8; j++) {
-        bootNum = bootNum * 16; // Hex parsing, not decimal
-        if (gVariables[i].Name[j] >= L'0' && gVariables[i].Name[j] <= L'9') {
-          bootNum += (gVariables[i].Name[j] - L'0');
-        } else if (gVariables[i].Name[j] >= L'A' && gVariables[i].Name[j] <= L'F') {
-          bootNum += (gVariables[i].Name[j] - L'A' + 10);
-        } else if (gVariables[i].Name[j] >= L'a' && gVariables[i].Name[j] <= L'f') {
-          bootNum += (gVariables[i].Name[j] - L'a' + 10);
+      // Count editable vendor variables
+      UINTN vendorCount = 0;
+      for (UINTN i = 0; i < gVariableCount; i++) {
+        if (gVariables[i].Category == VAR_CAT_VENDOR && gVariables[i].IsEditable) {
+          vendorCount++;
         }
       }
+      Print(L"%lu\n", vendorCount);
       
-      // Skip current boot
-      if (bootNum == BootCurrent) {
-        Print(L"  ⊙ Preserved: %s (current boot)\n", gVariables[i].Name);
-        continue;
+      if (vendorCount == 0) {
+        Print(L"\n✓ No vendor variables found that are safe to remove.\n");
+        Print(L"Press any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
       }
       
-      // Delete boot entry
-      EFI_STATUS Status = gRT->SetVariable(
-        gVariables[i].Name,
-        &gVariables[i].VendorGuid,
-        gVariables[i].Attributes,
-        0,
-        NULL
-      );
+      Print(L"\nType 'WIPE' to confirm (or anything else to cancel): ");
       
-      if (!EFI_ERROR(Status)) {
-        wipedBoot++;
-        Print(L"  ✓ Wiped: %s\n", gVariables[i].Name);
+      // NOTE: Full string input is complex in UEFI without additional libraries.
+      // This implementation checks first character only. For production use,
+      // consider implementing full string comparison or using UEFI Forms Browser.
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      Print(L"%c...\n", Key.UnicodeChar);
+      
+      // Check first character as simplified confirmation
+      if (Key.UnicodeChar == L'W' || Key.UnicodeChar == L'w') {
+        Print(L"\n⚠ Wiping vendor variables...\n");
+        
+        UINTN deletedCount = 0;
+        for (UINTN i = 0; i < gVariableCount; i++) {
+          if (gVariables[i].Category == VAR_CAT_VENDOR && gVariables[i].IsEditable) {
+            EFI_STATUS Status = gRT->SetVariable(
+              gVariables[i].Name,
+              &gVariables[i].VendorGuid,
+              0,  // Clear attributes
+              0,  // Zero size = delete
+              NULL
+            );
+            
+            if (!EFI_ERROR(Status)) {
+              deletedCount++;
+              Print(L"  ✓ Deleted: %s\n", gVariables[i].Name);
+            }
+          }
+        }
+        
+        Print(L"\n✓ Deleted %lu vendor variables\n", deletedCount);
+        Print(L"  Reboot required for changes to take effect.\n");
+      } else {
+        Print(L"✗ Cancelled\n");
       }
-    }
+      
+      Print(L"\nPress any key to continue...");
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      break;
+      
+    case L'2':
+      // Full NVRAM reset
+      Print(L"\n☢☢☢ FULL NVRAM RESET ☢☢☢\n");
+      Print(L"═════════════════════════════\n");
+      Print(L"This will DELETE ALL non-security variables!\n");
+      Print(L"Your system will:\n");
+      Print(L"  • Lose all boot configuration\n");
+      Print(L"  • Reset all BIOS settings to defaults\n");
+      Print(L"  • Boot to firmware setup on next boot\n");
+      Print(L"  • Preserve only Secure Boot keys (PK, KEK, db, dbx)\n");
+      Print(L"\n");
+      Print(L"This is EXTREME and should ONLY be used if you have\n");
+      Print(L"serious firmware malware or corruption.\n");
+      Print(L"\n");
+      Print(L"Type 'RESET' to confirm (or anything else to cancel): ");
+      
+      // NOTE: Full string input is complex in UEFI without additional libraries.
+      // This implementation checks first character only. For production use,
+      // consider implementing full string comparison or using UEFI Forms Browser.
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      Print(L"%c...\n", Key.UnicodeChar);
+      
+      // Check first character as simplified confirmation
+      if (Key.UnicodeChar == L'R' || Key.UnicodeChar == L'r') {
+        Print(L"\n⚠⚠⚠ Performing full NVRAM reset...\n");
+        
+        UINTN resetCount = 0;
+        for (UINTN i = 0; i < gVariableCount; i++) {
+          // Skip security variables
+          if (gVariables[i].Category == VAR_CAT_SECURITY) {
+            continue;
+          }
+          
+          EFI_STATUS Status = gRT->SetVariable(
+            gVariables[i].Name,
+            &gVariables[i].VendorGuid,
+            0,
+            0,
+            NULL
+          );
+          
+          if (!EFI_ERROR(Status)) {
+            resetCount++;
+            if (resetCount <= MAX_DISPLAYED_DELETIONS) {
+              Print(L"  ✓ Deleted: %s\n", gVariables[i].Name);
+            } else if (resetCount == MAX_DISPLAYED_DELETIONS + 1) {
+              Print(L"  ... (continuing)\n");
+            }
+          }
+        }
+        
+        Print(L"\n✓ Reset complete: %lu variables deleted\n", resetCount);
+        Print(L"  Security keys preserved\n");
+        Print(L"  System will boot to firmware setup\n");
+        Print(L"  REBOOT IMMEDIATELY\n");
+      } else {
+        Print(L"✗ Cancelled\n");
+      }
+      
+      Print(L"\nPress any key to continue...");
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      break;
+      
+    case L'3':
+      // Disk wiping information
+      Print(L"\n💾 SECURE DISK WIPING INFORMATION 💾\n");
+      Print(L"═════════════════════════════════════\n");
+      Print(L"\n");
+      Print(L"For complete system sanitization, you need to securely\n");
+      Print(L"wipe all disk drives in addition to NVRAM reset.\n");
+      Print(L"\n");
+      Print(L"🔧 Recommended Tool: nwipe\n");
+      Print(L"─────────────────────────────────\n");
+      Print(L"nwipe is a secure disk eraser that:\n");
+      Print(L"  • Supports multiple wipe methods (DoD, Gutmann, PRNG, etc.)\n");
+      Print(L"  • Works with HDDs, SSDs, and NVMe drives\n");
+      Print(L"  • Provides verification and progress tracking\n");
+      Print(L"  • Available on most Linux live systems\n");
+      Print(L"\n");
+      Print(L"📋 How to use nwipe:\n");
+      Print(L"─────────────────────\n");
+      Print(L"1. Boot from a Linux live USB (Ubuntu, SystemRescue, etc.)\n");
+      Print(L"2. Install nwipe: sudo apt install nwipe\n");
+      Print(L"3. Run as root: sudo nwipe\n");
+      Print(L"4. Select drives to wipe\n");
+      Print(L"5. Choose wipe method (DoD Short is usually sufficient)\n");
+      Print(L"6. Start wipe and wait for completion\n");
+      Print(L"\n");
+      Print(L"⚠ WARNING: This permanently destroys ALL data!\n");
+      Print(L"    There is NO RECOVERY after wiping!\n");
+      Print(L"\n");
+      Print(L"🔐 For SSDs with hardware encryption:\n");
+      Print(L"──────────────────────────────────────\n");
+      Print(L"  • Use 'hdparm --security-erase' for instant secure erase\n");
+      Print(L"  • Or use manufacturer's tools (Samsung Magician, etc.)\n");
+      Print(L"  • ATA Secure Erase is faster and more thorough for SSDs\n");
+      Print(L"\n");
+      Print(L"🔥 Nuclear Option Workflow:\n");
+      Print(L"───────────────────────────\n");
+      Print(L"1. Use UUEFI option 2 (Full NVRAM Reset) first\n");
+      Print(L"2. Reboot to firmware setup\n");
+      Print(L"3. Verify all settings reset to defaults\n");
+      Print(L"4. Boot to Linux live USB\n");
+      Print(L"5. Run nwipe on all drives\n");
+      Print(L"6. Reinstall OS from trusted media\n");
+      Print(L"7. Re-enroll Secure Boot keys if desired\n");
+      Print(L"\n");
+      Print(L"Press any key to continue...");
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      break;
+      
+    case L'4':
+      // Complete nuclear wipe
+      Print(L"\n☢☢☢ COMPLETE NUCLEAR WIPE ☢☢☢\n");
+      Print(L"═════════════════════════════════\n");
+      Print(L"This option provides a complete workflow for maximum\n");
+      Print(L"system sanitization when dealing with serious malware,\n");
+      Print(L"rootkits, or firmware-level infections.\n");
+      Print(L"\n");
+      Print(L"📋 Nuclear Wipe Procedure:\n");
+      Print(L"──────────────────────────\n");
+      Print(L"\n");
+      Print(L"STEP 1: NVRAM Reset (Done in UUEFI)\n");
+      Print(L"  → Use Option 2 to perform Full NVRAM Reset\n");
+      Print(L"  → This will happen now if you confirm\n");
+      Print(L"\n");
+      Print(L"STEP 2: Firmware Reset\n");
+      Print(L"  → After NVRAM reset, system will boot to firmware setup\n");
+      Print(L"  → Verify all settings are at factory defaults\n");
+      Print(L"  → Optionally: Update firmware/BIOS to latest version\n");
+      Print(L"\n");
+      Print(L"STEP 3: Disk Sanitization (External Tool)\n");
+      Print(L"  → Boot Linux live USB (Ubuntu, SystemRescue, etc.)\n");
+      Print(L"  → Run: sudo nwipe\n");
+      Print(L"  → Select all drives and wipe with DoD method\n");
+      Print(L"  → Wait for completion (may take hours)\n");
+      Print(L"\n");
+      Print(L"STEP 4: Clean Reinstall\n");
+      Print(L"  → Install OS from verified trusted media\n");
+      Print(L"  → Enable Secure Boot with your own keys\n");
+      Print(L"  → Install PhoenixGuard for ongoing protection\n");
+      Print(L"\n");
+      Print(L"⚠⚠⚠ THIS IS THE NUCLEAR OPTION ⚠⚠⚠\n");
+      Print(L"ALL DATA WILL BE PERMANENTLY DESTROYED\n");
+      Print(L"ONLY USE IF ABSOLUTELY NECESSARY\n");
+      Print(L"\n");
+      Print(L"Proceed with NVRAM reset now? (Y/N): ");
+      
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      Print(L"%c\n", Key.UnicodeChar);
+      
+      if (Key.UnicodeChar == L'Y' || Key.UnicodeChar == L'y') {
+        Print(L"\n🔥 INITIATING NUCLEAR WIPE SEQUENCE 🔥\n");
+        Print(L"\nStep 1/4: NVRAM Reset\n");
+        Print(L"═══════════════════════\n");
+        
+        // Perform the same operation as option 2
+        UINTN resetCount = 0;
+        for (UINTN i = 0; i < gVariableCount; i++) {
+          if (gVariables[i].Category == VAR_CAT_SECURITY) {
+            continue;
+          }
+          
+          EFI_STATUS Status = gRT->SetVariable(
+            gVariables[i].Name,
+            &gVariables[i].VendorGuid,
+            0,
+            0,
+            NULL
+          );
+          
+          if (!EFI_ERROR(Status)) {
+            resetCount++;
+          }
+        }
+        
+        Print(L"✓ NVRAM reset complete: %lu variables deleted\n", resetCount);
+        Print(L"✓ Security keys preserved\n\n");
+        Print(L"Next Steps:\n");
+        Print(L"──────────\n");
+        Print(L"1. System will reboot to firmware setup\n");
+        Print(L"2. Verify settings are at defaults\n");
+        Print(L"3. Boot Linux live USB\n");
+        Print(L"4. Run: sudo nwipe\n");
+        Print(L"5. Wipe all drives\n");
+        Print(L"6. Reinstall OS from trusted media\n");
+        Print(L"\n");
+        Print(L"⚠ REBOOT NOW TO COMPLETE THE PROCESS ⚠\n");
+      } else {
+        Print(L"✗ Nuclear wipe cancelled\n");
+      }
+      
+      Print(L"\nPress any key to continue...");
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      break;
+      
+    case L'Q':
+    case L'q':
+      // Return to menu
+      break;
+      
+    default:
+      Print(L"Invalid option\n");
+      Print(L"Press any key to continue...");
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      break;
   }
-  
-  Print(L"✓ Phase 2 complete: %lu boot entries wiped\n\n", wipedBoot);
-  
-  // Phase 3: Information about disk wiping
-  Print(L"Phase 3: Disk Wiping (requires reboot to nwipe)\n");
-  Print(L"  ℹ For complete disk wiping:\n");
-  Print(L"    1. Boot into recovery environment\n");
-  Print(L"    2. Run: nwipe /dev/sda (or appropriate device)\n");
-  Print(L"    3. Select DoD Short or PRNG Stream method\n");
-  Print(L"    4. Confirm and wait for completion\n");
-  Print(L"\n  ℹ To integrate nwipe:\n");
-  Print(L"    - PhoenixBoot recovery env includes nwipe\n");
-  Print(L"    - Use 'workflow-recovery-boot' to create media\n");
-  Print(L"    - Boot from recovery media and select wipe option\n");
-  Print(L"\n✓ Phase 3 complete: Instructions provided\n\n");
-  
-  Print(L"╔════════════════════════════════════════════╗\n");
-  Print(L"║  ☢ NUCLEAR WIPE SUMMARY ☢                ║\n");
-  Print(L"╚════════════════════════════════════════════╝\n");
-  Print(L"\nWiped Items:\n");
-  Print(L"  • Vendor variables: %lu\n", wipedVendor);
-  Print(L"  • Boot entries: %lu\n", wipedBoot);
-  Print(L"  • Total: %lu items\n\n", wipedVendor + wipedBoot);
-  
-  Print(L"⚠ NEXT STEPS:\n");
-  Print(L"  1. Reboot system\n");
-  Print(L"  2. Enter BIOS/UEFI setup (usually DEL or F2)\n");
-  Print(L"  3. Restore any critical settings\n");
-  Print(L"  4. Re-enroll Secure Boot keys if needed\n");
-  Print(L"  5. For disk wipe: boot to recovery and run nwipe\n");
-  Print(L"\n✓ Nuclear wipe process complete!\n");
-  Print(L"  System will need reconfiguration on next boot.\n");
 }
 
 /**
@@ -1073,12 +1277,8 @@ ShowInteractiveMenu(VOID)
     Print(L"5. Show Security Report (Suspicious Activity)\n");
     Print(L"6. Edit Variable (Advanced)\n");
     Print(L"7. Re-scan Variables\n");
-    Print(L"\n═══ System Configuration ═══\n");
-    Print(L"8. View ESP Configuration Files\n");
-    Print(L"9. Export Variable List\n");
-    Print(L"\n═══ Advanced/Nuclear Options ═══\n");
-    Print(L"N. ☢ Nuclear Wipe System (EXTREME CAUTION)\n");
-    Print(L"\nQ. Return to Firmware\n");
+    Print(L"8. ☢ Nuclear Wipe Menu (EXTREME)\n");
+    Print(L"Q. Return to Firmware\n");
     Print(L"\nSelect option: ");
     
     gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
@@ -1162,38 +1362,7 @@ ShowInteractiveMenu(VOID)
         break;
         
       case L'8':
-        {
-          // Need to pass ImageHandle - store it globally or pass through
-          Print(L"\nESP Configuration viewing requires ImageHandle\n");
-          Print(L"This feature shows configuration files in ESP\n");
-          Print(L"\nPress any key to continue...");
-          gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
-          gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
-        }
-        break;
-        
-      case L'9':
-        Print(L"\n╔════════════════════════════════════════════╗\n");
-        Print(L"║      EXPORT VARIABLE LIST                 ║\n");
-        Print(L"╚════════════════════════════════════════════╝\n");
-        Print(L"\nVariable export summary:\n");
-        Print(L"  Total variables: %lu\n", gVariableCount);
-        Print(L"  Boot config: %lu\n", 0); // Would count by category
-        Print(L"  Security: %lu\n", 0);
-        Print(L"  Vendor: %lu\n", 0);
-        Print(L"\n✓ To export to file: Boot to OS and run:\n");
-        Print(L"  python3 scripts/uefi_variable_discovery.py\n");
-        Print(L"\nPress any key to continue...");
-        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
-        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
-        break;
-        
-      case L'N':
-      case L'n':
-        NuclearWipeSystem();
-        Print(L"\nPress any key to continue...");
-        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
-        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        ShowNuclearWipeMenu();
         break;
         
       case L'Q':
@@ -1465,9 +1634,8 @@ UefiMain (
   Print(L"\n");
   Print(L"╔════════════════════════════════════════════╗\n");
   Print(L"║  🔥 PhoenixGuard UUEFI %s         ║\n", UUEFI_VERSION);
-  Print(L"║  Universal UEFI Diagnostic & Config Tool  ║\n");
-  Print(L"║  Enhanced: Full BIOS-like Configuration   ║\n");
-  Print(L"║  • Variable Editing • ESP Config • Wipe   ║\n");
+  Print(L"║  Universal UEFI Diagnostic Tool           ║\n");
+  Print(L"║  Full BIOS Features + Nuclear Wipe        ║\n");
   Print(L"╚════════════════════════════════════════════╝\n");
 
   // Display marker for test detection
@@ -1503,6 +1671,7 @@ UefiMain (
   Print(L"\n\nOptions:\n");
   Print(L"  M - Enter Interactive Menu (View & Manage Variables)\n");
   Print(L"  R - Show Security Report\n");
+  Print(L"  N - ☢ Nuclear Wipe Menu (EXTREME)\n");
   Print(L"  Q - Return to Firmware\n");
   Print(L"\nSelect option: ");
   
@@ -1516,10 +1685,13 @@ UefiMain (
     
     if (Key.UnicodeChar == L'M' || Key.UnicodeChar == L'm') {
       ShowInteractiveMenu();
-      Print(L"\nOptions: M - Menu, R - Report, Q - Quit\nSelect: ");
+      Print(L"\nOptions: M - Menu, R - Report, N - Nuclear Wipe, Q - Quit\nSelect: ");
     } else if (Key.UnicodeChar == L'R' || Key.UnicodeChar == L'r') {
       DisplaySecurityReport();
-      Print(L"\nOptions: M - Menu, R - Report, Q - Quit\nSelect: ");
+      Print(L"\nOptions: M - Menu, R - Report, N - Nuclear Wipe, Q - Quit\nSelect: ");
+    } else if (Key.UnicodeChar == L'N' || Key.UnicodeChar == L'n') {
+      ShowNuclearWipeMenu();
+      Print(L"\nOptions: M - Menu, R - Report, N - Nuclear Wipe, Q - Quit\nSelect: ");
     } else if (Key.UnicodeChar == L'Q' || Key.UnicodeChar == L'q') {
       break;
     } else {

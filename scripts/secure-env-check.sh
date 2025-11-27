@@ -452,6 +452,135 @@ check_attack_vectors() {
   fi
 }
 
+# Function to check firmware checksums against database
+check_firmware_checksums() {
+  print_section "Firmware Checksum Verification"
+  
+  # Check if firmware checksum tool is available
+  if [ ! -f "${REPO_ROOT}/utils/firmware_checksum_db.py" ]; then
+    print_check "SKIP" "Firmware checksum database tool not found"
+    return
+  fi
+  
+  print_check "INFO" "Firmware checksum database available"
+  
+  # Check for common firmware locations
+  local firmware_locations=(
+    "/sys/firmware/efi"
+    "/lib/firmware"
+    "/boot/efi/EFI"
+  )
+  
+  local firmware_found=false
+  for fw_path in "${firmware_locations[@]}"; do
+    if [ -d "$fw_path" ]; then
+      firmware_found=true
+      print_check "INFO" "Firmware location: ${fw_path}"
+    fi
+  done
+  
+  if ! $firmware_found; then
+    print_check "SKIP" "No firmware locations found"
+    return
+  fi
+  
+  # Note about firmware verification
+  print_check "INFO" "Firmware checksum verification available via:"
+  print_check "INFO" "  ${PY} ${REPO_ROOT}/utils/firmware_checksum_db.py --verify <firmware_file>"
+}
+
+# Function to analyze kernel hardening configuration
+check_kernel_hardening() {
+  print_section "Kernel Hardening Configuration Analysis"
+  
+  # Check if kernel hardening analyzer is available
+  if [ ! -f "${REPO_ROOT}/utils/kernel_hardening_analyzer.py" ]; then
+    print_check "SKIP" "Kernel hardening analyzer not found"
+    return
+  fi
+  
+  print_check "INFO" "Running kernel hardening analysis..."
+  
+  # Run the analyzer once in JSON mode for efficiency
+  local analysis_json="${LOG_DIR}/kernel_hardening_${TIMESTAMP}.json"
+  
+  "${PY}" "${REPO_ROOT}/utils/kernel_hardening_analyzer.py" --auto --format json \
+    --output "${analysis_json}" 2>&1 || true
+  
+  if [ -f "${analysis_json}" ]; then
+    # Generate text report from JSON for user display
+    local analysis_output="${LOG_DIR}/kernel_hardening_${TIMESTAMP}.txt"
+    "${PY}" "${REPO_ROOT}/utils/kernel_hardening_analyzer.py" --auto --format text \
+      --output "${analysis_output}" 2>&1 || true
+    
+    # Parse JSON results
+    local security_level=$(${PY} -c "import json; print(json.load(open('${analysis_json}')).get('security_level', 'UNKNOWN'))" 2>/dev/null || echo "UNKNOWN")
+    local score=$(${PY} -c "import json; print(json.load(open('${analysis_json}')).get('score', 0))" 2>/dev/null || echo "0")
+    local failed=$(${PY} -c "import json; print(json.load(open('${analysis_json}')).get('failed', 0))" 2>/dev/null || echo "0")
+    
+    print_check "INFO" "Kernel hardening score: ${score}/100 (${security_level})"
+    
+    if [ "$security_level" = "POOR" ]; then
+      print_check "FAIL" "Kernel hardening is POOR - ${failed} critical configurations missing" "HIGH"
+    elif [ "$security_level" = "ACCEPTABLE" ]; then
+      print_check "FAIL" "Kernel hardening is ACCEPTABLE - improvements recommended" "MEDIUM"
+    elif [ "$security_level" = "GOOD" ] || [ "$security_level" = "EXCELLENT" ]; then
+      print_check "PASS" "Kernel hardening configuration is ${security_level}"
+    else
+      print_check "INFO" "Kernel hardening analysis completed - see ${analysis_output}"
+    fi
+    
+    # Check for critical missing options
+    local critical_missing=$(${PY} -c "
+import json
+data = json.load(open('${analysis_json}'))
+critical = [f for f in data.get('findings', []) if not f['passed'] and f['severity'] == 'CRITICAL']
+print(len(critical))
+" 2>/dev/null || echo "0")
+    
+    if [ "$critical_missing" -gt 0 ]; then
+      print_check "FAIL" "${critical_missing} CRITICAL kernel hardening options are missing" "CRITICAL"
+      print_check "INFO" "Run './pf.py kernel-hardening-report' for detailed analysis"
+    fi
+    
+    print_check "PASS" "Detailed kernel hardening report: ${analysis_output}"
+  else
+    print_check "FAIL" "Kernel hardening analysis failed to produce output" "LOW"
+  fi
+}
+
+# Function to check if kexec-based remediation is possible
+check_kexec_remediation() {
+  print_section "Kernel Remediation Capabilities"
+  
+  if [ ! -f "${REPO_ROOT}/utils/kernel_config_remediation.py" ]; then
+    print_check "SKIP" "Kernel remediation tool not found"
+    return
+  fi
+  
+  print_check "INFO" "Checking kexec availability for kernel remediation..."
+  
+  # Check kexec status
+  local kexec_output="${LOG_DIR}/kexec_check_${TIMESTAMP}.txt"
+  "${PY}" "${REPO_ROOT}/utils/kernel_config_remediation.py" --check-kexec > "${kexec_output}" 2>&1 || true
+  
+  if grep -q "✓ Available" "${kexec_output}"; then
+    print_check "PASS" "kexec is available - kernel remediation possible via double-jump"
+    
+    # Check lockdown state
+    if grep -q "confidentiality" "${kexec_output}"; then
+      print_check "FAIL" "Kernel lockdown in confidentiality mode - blocks kexec" "MEDIUM"
+      print_check "INFO" "Consider using integrity mode for kexec-based remediation"
+    elif grep -q "integrity" "${kexec_output}"; then
+      print_check "PASS" "Kernel lockdown in integrity mode - allows signed kexec"
+    fi
+  else
+    print_check "FAIL" "kexec not available - kernel remediation requires traditional reboot" "LOW"
+  fi
+  
+  print_check "INFO" "For kexec double-jump guide: ${PY} ${REPO_ROOT}/utils/kernel_config_remediation.py --kexec-guide"
+}
+
 # Function to provide security recommendations
 provide_recommendations() {
   print_section "Security Recommendations"
@@ -568,6 +697,9 @@ main() {
   check_efi_variables || true
   check_boot_integrity || true
   check_kernel_security || true
+  check_kernel_hardening || true
+  check_firmware_checksums || true
+  check_kexec_remediation || true
   check_bootkits || true
   check_module_signatures || true
   check_attack_vectors || true

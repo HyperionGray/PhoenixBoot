@@ -59,6 +59,62 @@ task secure-env
   shell bash scripts/secure-env-check.sh
 end
 
+task kernel-hardening-check
+  describe Analyze kernel configuration against DISA STIG and hardening best practices
+  shell bash -lc '"${PYTHON:-python3}" utils/kernel_hardening_analyzer.py --auto'
+end
+
+task kernel-hardening-report
+  describe Generate detailed kernel hardening report (text and JSON)
+  shell bash -lc 'mkdir -p out/reports && "${PYTHON:-python3}" utils/kernel_hardening_analyzer.py --auto --format text --output out/reports/kernel_hardening_report.txt'
+  shell bash -lc '"${PYTHON:-python3}" utils/kernel_hardening_analyzer.py --auto --format json --output out/reports/kernel_hardening_report.json'
+  shell bash -lc 'echo "Reports saved to:"; echo "  Text: out/reports/kernel_hardening_report.txt"; echo "  JSON: out/reports/kernel_hardening_report.json"'
+end
+
+task kernel-hardening-baseline
+  describe Generate hardened kernel config baseline based on DISA STIG
+  shell bash -lc 'mkdir -p out/baselines && "${PYTHON:-python3}" utils/kernel_hardening_analyzer.py --generate-baseline --output out/baselines/hardened_kernel.config'
+end
+
+task kernel-config-diff
+  describe Compare current kernel config against hardened baseline
+  shell bash -lc '"${PYTHON:-python3}" utils/kernel_config_remediation.py --current /boot/config-$(uname -r) --diff'
+end
+
+task kernel-config-remediate
+  describe Generate kernel config remediation script
+  shell bash -lc 'mkdir -p out/remediation && "${PYTHON:-python3}" utils/kernel_config_remediation.py --current /boot/config-$(uname -r) --remediate --output out/remediation/kernel_remediation.sh'
+  shell bash -lc 'echo "Remediation script generated: out/remediation/kernel_remediation.sh"'
+end
+
+task kernel-kexec-check
+  describe Check if kexec is available for kernel remediation
+  shell bash -lc '"${PYTHON:-python3}" utils/kernel_config_remediation.py --check-kexec'
+end
+
+task kernel-kexec-guide
+  describe Show kexec double-jump remediation workflow guide
+  shell bash -lc '"${PYTHON:-python3}" utils/kernel_config_remediation.py --kexec-guide'
+end
+
+task firmware-checksum-list
+  describe List all firmware checksums in database
+  shell bash -lc '"${PYTHON:-python3}" utils/firmware_checksum_db.py --list'
+end
+
+task firmware-checksum-verify
+  describe Verify firmware file against database (set FIRMWARE_PATH=<path>)
+  shell bash -lc '[ -n "${FIRMWARE_PATH:-}" ] || { echo "Usage: FIRMWARE_PATH=<file> ./pf.py firmware-checksum-verify"; exit 1; }'
+  shell bash -lc '"${PYTHON:-python3}" utils/firmware_checksum_db.py --verify "${FIRMWARE_PATH}"'
+end
+
+task firmware-checksum-add
+  describe Add firmware to checksum database (set FIRMWARE_PATH, VENDOR, MODEL, VERSION)
+  shell bash -lc '[ -n "${FIRMWARE_PATH:-}" ] || { echo "Usage: FIRMWARE_PATH=<file> VENDOR=<vendor> MODEL=<model> VERSION=<version> ./pf.py firmware-checksum-add"; exit 1; }'
+  shell bash -lc '[ -n "${VENDOR:-}" ] && [ -n "${MODEL:-}" ] && [ -n "${VERSION:-}" ] || { echo "Error: VENDOR, MODEL, and VERSION are required"; exit 1; }'
+  shell bash -lc '"${PYTHON:-python3}" utils/firmware_checksum_db.py --add "${FIRMWARE_PATH}" --vendor "${VENDOR}" --model "${MODEL}" --version "${VERSION}" --source "${SOURCE:-manual}" --confidence ${CONFIDENCE:-50}'
+end
+
 task secure-make-auth
   describe Create ESL and AUTH for PK/KEK/db
   shell bash scripts/create-auth-files.sh

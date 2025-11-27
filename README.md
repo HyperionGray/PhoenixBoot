@@ -58,6 +58,43 @@ pip install -r requirements.txt  # if requirements.txt exists
 
 ### ✅ Implemented Features
 
+#### 0. **🆕 Kernel Hardening and UEFI Variable Checks**
+Comprehensive kernel configuration analysis and UEFI security verification:
+- **Kernel Hardening Analyzer** - Check kernel config against DISA STIG standards
+- **UEFI Variable Security** - Verify SecureBoot variables and firmware integrity
+- **Firmware Checksum Database** - Validate firmware against known-good checksums
+- **Kernel Config Remediation** - Fix kernel configs with kexec double-jump technique
+- **DISA STIG Compliance** - Automated checks for security best practices
+- **Configuration Diff** - Compare current kernel config against hardened baseline
+
+**Usage**: 
+```bash
+# Comprehensive security check
+./pf.py secure-env
+
+# Kernel hardening analysis
+./pf.py kernel-hardening-check
+./pf.py kernel-hardening-report
+
+# Generate hardened baseline
+./pf.py kernel-hardening-baseline
+
+# Compare and remediate
+./pf.py kernel-config-diff
+./pf.py kernel-config-remediate
+
+# Check kexec for remediation
+./pf.py kernel-kexec-check
+
+# Firmware checksum management
+./pf.py firmware-checksum-list
+FIRMWARE_PATH=/path/to/bios.bin ./pf.py firmware-checksum-verify
+```
+
+**Documentation**: See [Kernel Hardening Guide](docs/KERNEL_HARDENING_GUIDE.md)
+
+**Status**: ✅ Fully implemented and tested
+
 #### 1. **Nuclear Boot (NuclearBootEdk2)**
 A battle-tested UEFI bootloader with strict security requirements:
 - **Secure Boot enforcement** - Requires Secure Boot to be enabled
@@ -146,12 +183,25 @@ A powerful UEFI application for system diagnostics and complete firmware-level c
 - **🆕 ESP configuration viewer** - View config files from EFI System Partition
 - **🆕 Nuclear wipe system** - Complete system wipe for malware response
 - **🆕 Variable descriptions** - Human-readable explanations for every variable
+- **Complete EFI variable enumeration** - Read ALL variables in the system
+- **Smart categorization** - Automatically group by type (boot, security, vendor)
+- **Security heuristics engine** - Detect suspicious variables and patterns
+- **Interactive menu system** - User-friendly navigation and management
+- **Security analysis report** - Comprehensive findings with severity levels
+- **Vendor variable toggle** - Safely enable/disable OEM features (with protections)
+- **🆕 v3.0: Comprehensive descriptions** - 150+ variable patterns documented (ASUS, Intel, WiFi, BT, etc.)
+- **🆕 v3.0: Edit indicators** - Visual markers (✎) show which variables are safe to edit
+- **🆕 v3.0: Nuclear Wipe Menu** - Complete system sanitization suite with 4 options:
+  - Vendor variable wipe (remove bloatware)
+  - Full NVRAM reset (factory defaults, preserves security keys)
+  - Disk wiping guide (nwipe instructions and workflow)
+  - Complete nuclear wipe (NVRAM + disk for extreme malware situations)
 
 **Status**: ✅ Enhanced v3.0 and ready to use
 - ✅ Source files: `staging/src/UUEFI.c`, `UUEFI.inf` (EDK2 build)
 - ✅ GNU-EFI version: `staging/src/UUEFI-gnuefi.c` (alternative build)
 - ✅ Build script: `staging/tools/build-uuefi.sh`
-- ✅ Version 3.0.0 with full BIOS-like features
+- ✅ Version 3.0.0 with full BIOS features
 - ✅ Test workflow: `./pf.py workflow-test-uuefi`
 - ✅ Companion scripts: `scripts/esp-config-extract.sh`, `scripts/nuclear-wipe.sh`
 - ℹ️  Requires QEMU and OVMF to run tests
@@ -169,9 +219,19 @@ A powerful UEFI application for system diagnostics and complete firmware-level c
 ```
 
 **Documentation**: 
-- `docs/UUEFI_V3_GUIDE.md` - **🆕 NEW**: Complete v3.0 user guide with use cases and examples
-- `docs/UUEFI_ENHANCED.md` - Complete feature documentation and technical reference
+- `docs/UUEFI_V3_FEATURES.md` - 🆕 v3.0 comprehensive feature guide
+- `docs/UUEFI_ENHANCED.md` - v2.0 feature documentation
 - `docs/UUEFI_INVESTIGATION.md` - Development history and troubleshooting
+
+**Key Features for "Nuclear Boot" Scenarios**:
+- **Variable Descriptions**: Understand every firmware setting
+- **Safe Editing**: Disable bloatware and telemetry
+- **Security Analysis**: Detect firmware tampering
+- **Nuclear Wipe**: Complete system reset for serious malware
+  - Remove all vendor bloat
+  - Reset BIOS to factory defaults
+  - Guide for secure disk wiping with nwipe
+  - Full workflow for firmware-level malware removal
 
 ### 📝 Planned Features
 

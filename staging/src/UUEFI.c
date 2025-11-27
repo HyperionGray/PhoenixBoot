@@ -369,6 +369,79 @@ CheckVariableHeuristics(
 }
 
 /**
+  Get description for a variable based on its name and category
+  
+  @param VarInfo  Variable information
+**/
+VOID
+AddVariableDescription(
+  IN OUT VARIABLE_INFO *VarInfo
+  )
+{
+  // Initialize description
+  VarInfo->Description[0] = 0;
+  VarInfo->IsEditable = FALSE;
+  
+  // Boot variables
+  if (VarInfo->Category == VAR_CAT_BOOT) {
+    if (StrCmp(VarInfo->Name, L"BootOrder") == 0) {
+      StrCpyS(VarInfo->Description, 512, L"Order of boot devices tried at system startup");
+    } else if (StrCmp(VarInfo->Name, L"BootCurrent") == 0) {
+      StrCpyS(VarInfo->Description, 512, L"Currently booted device entry");
+    } else if (StrCmp(VarInfo->Name, L"BootNext") == 0) {
+      StrCpyS(VarInfo->Description, 512, L"Next boot device for one-time boot");
+      VarInfo->IsEditable = TRUE;
+    } else if (StrnCmp(VarInfo->Name, L"Boot", 4) == 0) {
+      StrCpyS(VarInfo->Description, 512, L"Boot device entry configuration");
+    }
+  }
+  
+  // Security variables
+  else if (VarInfo->Category == VAR_CAT_SECURITY) {
+    if (StrCmp(VarInfo->Name, L"SecureBoot") == 0) {
+      StrCpyS(VarInfo->Description, 512, L"Secure Boot status (1=enabled, 0=disabled)");
+    } else if (StrCmp(VarInfo->Name, L"SetupMode") == 0) {
+      StrCpyS(VarInfo->Description, 512, L"Setup mode status (1=setup, 0=user mode)");
+    } else if (StrCmp(VarInfo->Name, L"PK") == 0) {
+      StrCpyS(VarInfo->Description, 512, L"Platform Key - root of trust for Secure Boot");
+    } else if (StrCmp(VarInfo->Name, L"KEK") == 0) {
+      StrCpyS(VarInfo->Description, 512, L"Key Exchange Key - intermediate authority");
+    } else if (StrCmp(VarInfo->Name, L"db") == 0) {
+      StrCpyS(VarInfo->Description, 512, L"Signature Database - allowed signatures");
+    } else if (StrCmp(VarInfo->Name, L"dbx") == 0) {
+      StrCpyS(VarInfo->Description, 512, L"Forbidden Signature Database - revoked signatures");
+    }
+  }
+  
+  // Vendor-specific variables (mark as editable)
+  else if (VarInfo->Category == VAR_CAT_VENDOR) {
+    VarInfo->IsEditable = TRUE;
+    
+    // Check for common vendor variable patterns
+    if (StrStr(VarInfo->Name, L"Animation") != NULL) {
+      StrCpyS(VarInfo->Description, 512, L"BIOS boot animation settings (editable)");
+    } else if (StrStr(VarInfo->Name, L"MyAsus") != NULL || StrStr(VarInfo->Name, L"MyASUS") != NULL) {
+      StrCpyS(VarInfo->Description, 512, L"MyASUS software auto-install setting (editable)");
+    } else if (StrStr(VarInfo->Name, L"Armoury") != NULL || StrStr(VarInfo->Name, L"Crate") != NULL) {
+      StrCpyS(VarInfo->Description, 512, L"Armoury Crate configuration (editable)");
+    } else if (StrStr(VarInfo->Name, L"CloudRecovery") != NULL) {
+      StrCpyS(VarInfo->Description, 512, L"Cloud recovery support setting (editable)");
+    } else if (StrStr(VarInfo->Name, L"Camera") != NULL) {
+      StrCpyS(VarInfo->Description, 512, L"Camera/webcam configuration");
+    } else if (StrStr(VarInfo->Name, L"Touchpad") != NULL) {
+      StrCpyS(VarInfo->Description, 512, L"Touchpad device configuration");
+    } else {
+      StrCpyS(VarInfo->Description, 512, L"Vendor-specific configuration (may be editable)");
+    }
+  }
+  
+  // If no description set, use generic one
+  if (VarInfo->Description[0] == 0) {
+    StrCpyS(VarInfo->Description, 512, L"No description available");
+  }
+}
+
+/**
   Enumerate all EFI variables
   
   @retval EFI_SUCCESS  Variables enumerated successfully
@@ -444,6 +517,9 @@ EnumerateAllVariables(VOID)
       
       // Run heuristics
       CheckVariableHeuristics(var);
+      
+      // Add description
+      AddVariableDescription(var);
       
       gVariableCount++;
     }
@@ -570,7 +646,189 @@ DisplaySecurityReport(VOID)
 }
 
 /**
-  Toggle a vendor variable (enable/disable)
+  Edit a variable value with type detection
+  
+  @param VarIndex  Index of the variable to edit
+  
+  @retval EFI_SUCCESS  Variable edited successfully
+  @retval Other        Error occurred
+**/
+EFI_STATUS
+EditVariable(
+  IN UINTN VarIndex
+  )
+{
+  if (VarIndex >= gVariableCount) {
+    return EFI_INVALID_PARAMETER;
+  }
+  
+  VARIABLE_INFO *var = &gVariables[VarIndex];
+  
+  // Safety check - don't allow editing critical security variables
+  if (var->Category == VAR_CAT_SECURITY) {
+    Print(L"⚠ Cannot edit security variables for safety\n");
+    Print(L"  Use proper key enrollment tools for security variables\n");
+    return EFI_ACCESS_DENIED;
+  }
+  
+  // Check if variable is marked as editable
+  if (!var->IsEditable && var->Category != VAR_CAT_VENDOR) {
+    Print(L"⚠ Variable not marked as safely editable\n");
+    Print(L"  Editing may cause system instability\n");
+    Print(L"Press 'Y' to continue anyway, any other key to cancel: ");
+    
+    EFI_INPUT_KEY Key;
+    UINTN Index;
+    gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+    gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+    Print(L"%c\n", Key.UnicodeChar);
+    
+    if (Key.UnicodeChar != L'Y' && Key.UnicodeChar != L'y') {
+      Print(L"Cancelled\n");
+      return EFI_ABORTED;
+    }
+  }
+  
+  Print(L"\n╔════════════════════════════════════════════╗\n");
+  Print(L"║           EDIT VARIABLE                   ║\n");
+  Print(L"╚════════════════════════════════════════════╝\n");
+  Print(L"\nVariable: %s\n", var->Name);
+  Print(L"Description: %s\n", var->Description);
+  Print(L"Current Size: %lu bytes\n", var->DataSize);
+  
+  // Read current value
+  UINT8 *CurrentData = AllocateZeroPool(var->DataSize);
+  if (CurrentData == NULL) {
+    Print(L"✗ Failed to allocate memory\n");
+    return EFI_OUT_OF_RESOURCES;
+  }
+  
+  UINTN DataSize = var->DataSize;
+  EFI_STATUS Status = gRT->GetVariable(
+    var->Name,
+    &var->VendorGuid,
+    NULL,
+    &DataSize,
+    CurrentData
+  );
+  
+  if (!EFI_ERROR(Status)) {
+    Print(L"Current Value (hex): ");
+    for (UINTN i = 0; i < (DataSize > 16 ? 16 : DataSize); i++) {
+      Print(L"%02x ", CurrentData[i]);
+    }
+    if (DataSize > 16) {
+      Print(L"... (%lu more bytes)", DataSize - 16);
+    }
+    Print(L"\n");
+    
+    // Try to interpret value
+    if (DataSize == 1) {
+      Print(L"Current Value (decimal): %u\n", CurrentData[0]);
+      Print(L"Current Value (boolean): %s\n", CurrentData[0] ? L"Enabled" : L"Disabled");
+    } else if (DataSize == 2) {
+      UINT16 val = *(UINT16*)CurrentData;
+      Print(L"Current Value (decimal): %u\n", val);
+    } else if (DataSize == 4) {
+      UINT32 val = *(UINT32*)CurrentData;
+      Print(L"Current Value (decimal): %u\n", val);
+    }
+  }
+  
+  Print(L"\n⚠ WARNING: Incorrect values may cause system instability!\n");
+  Print(L"\nEdit Options:\n");
+  Print(L"  1. Set to 0 (Disable)\n");
+  Print(L"  2. Set to 1 (Enable)\n");
+  Print(L"  3. Delete Variable\n");
+  Print(L"  0. Cancel\n");
+  Print(L"\nSelect option: ");
+  
+  EFI_INPUT_KEY Key;
+  UINTN Index;
+  gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+  gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+  Print(L"%c\n", Key.UnicodeChar);
+  
+  UINT8 newValue;
+  BOOLEAN deleteVar = FALSE;
+  
+  switch (Key.UnicodeChar) {
+    case L'1':
+      newValue = 0;
+      break;
+    case L'2':
+      newValue = 1;
+      break;
+    case L'3':
+      deleteVar = TRUE;
+      break;
+    case L'0':
+      Print(L"Cancelled\n");
+      FreePool(CurrentData);
+      return EFI_ABORTED;
+    default:
+      Print(L"Invalid option\n");
+      FreePool(CurrentData);
+      return EFI_INVALID_PARAMETER;
+  }
+  
+  // Confirm action
+  Print(L"\nConfirm action? This will take effect on next boot.\n");
+  Print(L"Press 'Y' to confirm, any other key to cancel: ");
+  
+  gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+  gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+  Print(L"%c\n", Key.UnicodeChar);
+  
+  if (Key.UnicodeChar != L'Y' && Key.UnicodeChar != L'y') {
+    Print(L"Cancelled\n");
+    FreePool(CurrentData);
+    return EFI_ABORTED;
+  }
+  
+  if (deleteVar) {
+    // Delete variable by setting size to 0
+    Status = gRT->SetVariable(
+      var->Name,
+      &var->VendorGuid,
+      var->Attributes,
+      0,
+      NULL
+    );
+    
+    if (EFI_ERROR(Status)) {
+      Print(L"✗ Failed to delete variable: %r\n", Status);
+      Print(L"  Variable may be read-only or protected\n");
+    } else {
+      Print(L"✓ Variable deleted successfully\n");
+      Print(L"  Change will take effect after reboot\n");
+    }
+  } else {
+    // Set new value
+    Status = gRT->SetVariable(
+      var->Name,
+      &var->VendorGuid,
+      var->Attributes,
+      sizeof(newValue),
+      &newValue
+    );
+    
+    if (EFI_ERROR(Status)) {
+      Print(L"✗ Failed to modify variable: %r\n", Status);
+      Print(L"  Variable may be read-only or protected\n");
+    } else {
+      Print(L"✓ Variable modified successfully\n");
+      Print(L"  New value: %u\n", newValue);
+      Print(L"  Change will take effect after reboot\n");
+    }
+  }
+  
+  FreePool(CurrentData);
+  return Status;
+}
+
+/**
+  Toggle a variable (enable/disable)
   
   @param VarIndex  Index of the variable to toggle
   
@@ -1007,15 +1265,17 @@ ShowInteractiveMenu(VOID)
   while (!exitMenu) {
     Print(L"\n");
     Print(L"╔════════════════════════════════════════════╗\n");
-    Print(L"║        UUEFI INTERACTIVE MENU             ║\n");
+    Print(L"║    UUEFI INTERACTIVE MENU v3.0            ║\n");
+    Print(L"║    Full BIOS-like Configuration           ║\n");
     Print(L"╚════════════════════════════════════════════╝\n");
     Print(L"\n");
+    Print(L"═══ Variable Management ═══\n");
     Print(L"1. View All Variables\n");
     Print(L"2. View Boot Configuration Variables\n");
     Print(L"3. View Security Variables\n");
     Print(L"4. View Vendor-Specific Variables\n");
     Print(L"5. Show Security Report (Suspicious Activity)\n");
-    Print(L"6. Toggle Vendor Variable (Advanced)\n");
+    Print(L"6. Edit Variable (Advanced)\n");
     Print(L"7. Re-scan Variables\n");
     Print(L"8. ☢ Nuclear Wipe Menu (EXTREME)\n");
     Print(L"Q. Return to Firmware\n");
@@ -1062,10 +1322,33 @@ ShowInteractiveMenu(VOID)
         break;
         
       case L'6':
-        Print(L"\nEnter variable index to toggle (or 0 to cancel): ");
-        // Simplified - in real implementation, would get number input
-        Print(L"\n⚠ Feature requires numeric input - use option 4 to see vendor variables\n");
-        Print(L"  Variable indices are shown in the list\n");
+        Print(L"\n╔════════════════════════════════════════════╗\n");
+        Print(L"║           VARIABLE EDITING                ║\n");
+        Print(L"╚════════════════════════════════════════════╝\n");
+        Print(L"\nShowing editable variables:\n\n");
+        
+        // Show editable variables
+        UINTN editableCount = 0;
+        for (UINTN i = 0; i < gVariableCount; i++) {
+          if (gVariables[i].IsEditable) {
+            Print(L"  [%lu] %s\n", i, gVariables[i].Name);
+            Print(L"      %s\n", gVariables[i].Description);
+            editableCount++;
+            if (editableCount >= 20) {
+              Print(L"  ... and more\n");
+              break;
+            }
+          }
+        }
+        
+        if (editableCount == 0) {
+          Print(L"  No safely editable variables found\n");
+        } else {
+          Print(L"\n⚠ Note: Variable indices shown in brackets []\n");
+          Print(L"  To edit: note the index number\n");
+          Print(L"  Feature requires additional implementation for index input\n");
+        }
+        
         Print(L"\nPress any key to continue...");
         gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
         gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);

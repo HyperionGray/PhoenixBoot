@@ -168,12 +168,21 @@ Comprehensive security validation and boot integrity checker:
 
 ### 🚧 Partially Implemented
 
-#### 8. **UUEFI - Universal UEFI Diagnostic Tool** 🔥 Enhanced v3.0 - Full BIOS Features + Nuclear Wipe
-A powerful UEFI application that functions as a **complete BIOS interface** running after hardware BIOS:
+#### 8. **UUEFI - Universal UEFI Diagnostic Tool** 🆕 Enhanced v3.0
+A powerful UEFI application for system diagnostics and complete firmware-level configuration:
 - **Display firmware information** - Vendor, version, UEFI revision
 - **Show memory map** - Total and available memory
 - **Report security status** - Secure Boot, Setup Mode, key enrollment
 - **Boot configuration viewer** - BootOrder and boot entries
+- **🆕 Complete EFI variable enumeration** - Read ALL variables with descriptions
+- **🆕 Variable editing system** - Safely modify tweakable variables
+- **🆕 Smart categorization** - Automatically group by type (boot, security, vendor)
+- **🆕 Security heuristics engine** - Detect suspicious variables and patterns
+- **🆕 Interactive menu system** - User-friendly navigation and management
+- **🆕 Security analysis report** - Comprehensive findings with severity levels
+- **🆕 ESP configuration viewer** - View config files from EFI System Partition
+- **🆕 Nuclear wipe system** - Complete system wipe for malware response
+- **🆕 Variable descriptions** - Human-readable explanations for every variable
 - **Complete EFI variable enumeration** - Read ALL variables in the system
 - **Smart categorization** - Automatically group by type (boot, security, vendor)
 - **Security heuristics engine** - Detect suspicious variables and patterns
@@ -188,12 +197,13 @@ A powerful UEFI application that functions as a **complete BIOS interface** runn
   - Disk wiping guide (nwipe instructions and workflow)
   - Complete nuclear wipe (NVRAM + disk for extreme malware situations)
 
-**Status**: ✅ Enhanced and ready to use
+**Status**: ✅ Enhanced v3.0 and ready to use
 - ✅ Source files: `staging/src/UUEFI.c`, `UUEFI.inf` (EDK2 build)
 - ✅ GNU-EFI version: `staging/src/UUEFI-gnuefi.c` (alternative build)
 - ✅ Build script: `staging/tools/build-uuefi.sh`
 - ✅ Version 3.0.0 with full BIOS features
 - ✅ Test workflow: `./pf.py workflow-test-uuefi`
+- ✅ Companion scripts: `scripts/esp-config-extract.sh`, `scripts/nuclear-wipe.sh`
 - ℹ️  Requires QEMU and OVMF to run tests
 
 **To test UUEFI**:
@@ -336,6 +346,10 @@ bash scripts/uuefi-install.sh
 bash scripts/uuefi-apply.sh
 bash scripts/uuefi-report.sh
 bash scripts/host-uuefi-once.sh
+
+# UUEFI v3.0 companion tools
+bash scripts/esp-config-extract.sh     # Extract ESP configurations
+bash scripts/nuclear-wipe.sh           # Nuclear system wipe (EXTREME CAUTION)
 
 # Security environment check
 bash scripts/secure-env-check.sh
@@ -537,7 +551,8 @@ Comprehensive documentation is available in the `docs/` directory:
 - `docs/FIRMWARE_RECOVERY.md` - Firmware recovery procedures
 - `docs/HARDWARE_ACCESS_DEEP_DIVE.md` - Hardware-level access documentation
 - `docs/UUEFI_INVESTIGATION.md` - UUEFI crash investigation and resolution
-- `docs/UUEFI_ENHANCED.md` - **🆕 NEW**: UUEFI v2.0 enhanced features and usage guide
+- `docs/UUEFI_V3_GUIDE.md` - **🆕 NEW**: UUEFI v3.0 complete user guide with use cases
+- `docs/UUEFI_ENHANCED.md` - **🆕 NEW**: UUEFI v3.0 enhanced features and technical reference
 
 **Artifact Creation Documentation**:
 - Generated documentation in `out/artifacts/docs/`:

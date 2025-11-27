@@ -201,5 +201,75 @@ else
 die "OVMF paths not discovered - run './pf.py build-setup' first"
 fi
 
-ok "ESP image created: out/esp/esp.img"
+echo ""
+echo "═══════════════════════════════════════════════════════════════"
+echo "✅ ESP (EFI System Partition) image created successfully!"
+echo "═══════════════════════════════════════════════════════════════"
+echo ""
+echo "📁 Output location: out/esp/esp.img ($(du -h out/esp/esp.img | cut -f1))"
+echo "   Checksum: $(cat out/esp/esp.img.sha256 | cut -d' ' -f1 | cut -c1-16)..."
+echo ""
+echo "📦 What's inside this ESP image:"
+echo ""
+echo "   🔹 EFI/BOOT/BOOTX64.EFI          - PhoenixGuard bootloader (signed with db key)"
+echo "   🔹 EFI/PhoenixGuard/BootX64.efi   - PhoenixGuard vendor copy"
+if [ -f out/staging/KeyEnrollEdk2.efi ]; then
+echo "   🔹 EFI/BOOT/KeyEnrollEdk2.efi     - Key enrollment tool (for first-time setup)"
+fi
+if [ -n "$SHIM_SRC" ]; then
+echo "   🔹 EFI/PhoenixGuard/shimx64.efi   - Microsoft-signed shim (from: $SHIM_SRC)"
+fi
+if [ -n "$GRUB_SRC" ]; then
+echo "   🔹 EFI/PhoenixGuard/grubx64.efi   - GRUB bootloader"
+fi
+if [ -n "$ISO_BASENAME" ]; then
+echo "   🔹 ISO/$ISO_BASENAME              - Your bootable ISO"
+fi
+echo "   🔹 EFI/BOOT/grub.cfg              - GRUB configuration"
+echo "   🔹 boot/grub/x86_64-efi/*.mod     - GRUB modules"
+echo ""
+echo "🔐 SecureBoot keys used for signing:"
+echo "   db.key + db.crt from: keys/db.*"
+echo "   (Bootloader signed and ready for SecureBoot!)"
+echo ""
+if [ -n "$ISO_BASENAME" ]; then
+echo "📚 What to do next:"
+echo ""
+echo "  Option 1: Create bootable USB from this ESP"
+echo "    → Copy this ESP as the first partition on a USB drive"
+echo "    → Or use './pf.py secureboot-create' for turnkey solution"
+echo ""
+echo "  Option 2: Test in QEMU"
+echo "    → ./pf.py test-qemu"
+echo "    → ./pf.py test-qemu-secure-positive  (with SecureBoot)"
+echo ""
+echo "  Option 3: Deploy to system ESP"
+echo "    → Manual: sudo cp -r out/esp/mount/* /boot/efi/"
+echo "    → Then update UEFI boot entries"
+echo ""
+else
+echo "📚 What to do next:"
+echo ""
+echo "  1️⃣  Test this ESP in QEMU:"
+echo "     ./pf.py test-qemu"
+echo ""
+echo "  2️⃣  Create bootable media with an ISO:"
+echo "     ISO_PATH=/path/to/your.iso ./pf.py build-package-esp"
+echo "     OR use the turnkey script:"
+echo "     ./create-secureboot-bootable-media.sh --iso /path/to/your.iso"
+echo ""
+echo "  3️⃣  Deploy to your system's ESP:"
+echo "     sudo cp -r EFI/PhoenixGuard /boot/efi/EFI/"
+echo "     sudo efibootmgr -c -L 'PhoenixGuard' -l '\EFI\PhoenixGuard\BootX64.efi'"
+echo ""
+fi
+echo "💡 REMINDER: The shim in this image is SIGNED"
+echo "   • If you used Microsoft-signed shim: Works immediately with most systems"
+echo "   • If you signed it yourself: You need to enroll your db key first"
+echo ""
+echo "🔗 More info:"
+echo "   • Keys explained: keys/README.md"
+echo "   • SecureBoot setup: SECUREBOOT_QUICKSTART.md"
+echo "   • Full docs: docs/SECURE_BOOT.md"
+echo ""
 

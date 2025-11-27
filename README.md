@@ -64,6 +64,43 @@ pip install -r requirements.txt  # if requirements.txt exists
 
 ### ✅ Implemented Features
 
+#### 0. **🆕 Kernel Hardening and UEFI Variable Checks**
+Comprehensive kernel configuration analysis and UEFI security verification:
+- **Kernel Hardening Analyzer** - Check kernel config against DISA STIG standards
+- **UEFI Variable Security** - Verify SecureBoot variables and firmware integrity
+- **Firmware Checksum Database** - Validate firmware against known-good checksums
+- **Kernel Config Remediation** - Fix kernel configs with kexec double-jump technique
+- **DISA STIG Compliance** - Automated checks for security best practices
+- **Configuration Diff** - Compare current kernel config against hardened baseline
+
+**Usage**: 
+```bash
+# Comprehensive security check
+./pf.py secure-env
+
+# Kernel hardening analysis
+./pf.py kernel-hardening-check
+./pf.py kernel-hardening-report
+
+# Generate hardened baseline
+./pf.py kernel-hardening-baseline
+
+# Compare and remediate
+./pf.py kernel-config-diff
+./pf.py kernel-config-remediate
+
+# Check kexec for remediation
+./pf.py kernel-kexec-check
+
+# Firmware checksum management
+./pf.py firmware-checksum-list
+FIRMWARE_PATH=/path/to/bios.bin ./pf.py firmware-checksum-verify
+```
+
+**Documentation**: See [Kernel Hardening Guide](docs/KERNEL_HARDENING_GUIDE.md)
+
+**Status**: ✅ Fully implemented and tested
+
 #### 1. **Nuclear Boot (NuclearBootEdk2)**
 A battle-tested UEFI bootloader with strict security requirements:
 - **Secure Boot enforcement** - Requires Secure Boot to be enabled
@@ -137,25 +174,42 @@ Comprehensive security validation and boot integrity checker:
 
 ### 🚧 Partially Implemented
 
-#### 8. **UUEFI - Universal UEFI Diagnostic Tool** 🆕 Enhanced v2.0
-A powerful UEFI application for system diagnostics and variable management:
+#### 8. **UUEFI - Universal UEFI Diagnostic Tool** 🆕 Enhanced v3.0
+A powerful UEFI application for system diagnostics and complete firmware-level configuration:
 - **Display firmware information** - Vendor, version, UEFI revision
 - **Show memory map** - Total and available memory
 - **Report security status** - Secure Boot, Setup Mode, key enrollment
 - **Boot configuration viewer** - BootOrder and boot entries
-- **🆕 Complete EFI variable enumeration** - Read ALL variables in the system
+- **🆕 Complete EFI variable enumeration** - Read ALL variables with descriptions
+- **🆕 Variable editing system** - Safely modify tweakable variables
 - **🆕 Smart categorization** - Automatically group by type (boot, security, vendor)
 - **🆕 Security heuristics engine** - Detect suspicious variables and patterns
 - **🆕 Interactive menu system** - User-friendly navigation and management
 - **🆕 Security analysis report** - Comprehensive findings with severity levels
-- **🆕 Vendor variable toggle** - Safely enable/disable OEM features (with protections)
+- **🆕 ESP configuration viewer** - View config files from EFI System Partition
+- **🆕 Nuclear wipe system** - Complete system wipe for malware response
+- **🆕 Variable descriptions** - Human-readable explanations for every variable
+- **Complete EFI variable enumeration** - Read ALL variables in the system
+- **Smart categorization** - Automatically group by type (boot, security, vendor)
+- **Security heuristics engine** - Detect suspicious variables and patterns
+- **Interactive menu system** - User-friendly navigation and management
+- **Security analysis report** - Comprehensive findings with severity levels
+- **Vendor variable toggle** - Safely enable/disable OEM features (with protections)
+- **🆕 v3.0: Comprehensive descriptions** - 150+ variable patterns documented (ASUS, Intel, WiFi, BT, etc.)
+- **🆕 v3.0: Edit indicators** - Visual markers (✎) show which variables are safe to edit
+- **🆕 v3.0: Nuclear Wipe Menu** - Complete system sanitization suite with 4 options:
+  - Vendor variable wipe (remove bloatware)
+  - Full NVRAM reset (factory defaults, preserves security keys)
+  - Disk wiping guide (nwipe instructions and workflow)
+  - Complete nuclear wipe (NVRAM + disk for extreme malware situations)
 
-**Status**: ✅ Enhanced and ready to use
+**Status**: ✅ Enhanced v3.0 and ready to use
 - ✅ Source files: `staging/src/UUEFI.c`, `UUEFI.inf` (EDK2 build)
 - ✅ GNU-EFI version: `staging/src/UUEFI-gnuefi.c` (alternative build)
 - ✅ Build script: `staging/tools/build-uuefi.sh`
-- ✅ Version 2.0.0 with advanced features
+- ✅ Version 3.0.0 with full BIOS features
 - ✅ Test workflow: `./pf.py workflow-test-uuefi`
+- ✅ Companion scripts: `scripts/esp-config-extract.sh`, `scripts/nuclear-wipe.sh`
 - ℹ️  Requires QEMU and OVMF to run tests
 
 **To test UUEFI**:
@@ -171,8 +225,19 @@ A powerful UEFI application for system diagnostics and variable management:
 ```
 
 **Documentation**: 
-- `docs/UUEFI_ENHANCED.md` - Complete feature documentation
+- `docs/UUEFI_V3_FEATURES.md` - 🆕 v3.0 comprehensive feature guide
+- `docs/UUEFI_ENHANCED.md` - v2.0 feature documentation
 - `docs/UUEFI_INVESTIGATION.md` - Development history and troubleshooting
+
+**Key Features for "Nuclear Boot" Scenarios**:
+- **Variable Descriptions**: Understand every firmware setting
+- **Safe Editing**: Disable bloatware and telemetry
+- **Security Analysis**: Detect firmware tampering
+- **Nuclear Wipe**: Complete system reset for serious malware
+  - Remove all vendor bloat
+  - Reset BIOS to factory defaults
+  - Guide for secure disk wiping with nwipe
+  - Full workflow for firmware-level malware removal
 
 ### 📝 Planned Features
 
@@ -287,6 +352,10 @@ bash scripts/uuefi-install.sh
 bash scripts/uuefi-apply.sh
 bash scripts/uuefi-report.sh
 bash scripts/host-uuefi-once.sh
+
+# UUEFI v3.0 companion tools
+bash scripts/esp-config-extract.sh     # Extract ESP configurations
+bash scripts/nuclear-wipe.sh           # Nuclear system wipe (EXTREME CAUTION)
 
 # Security environment check
 bash scripts/secure-env-check.sh
@@ -495,6 +564,8 @@ Comprehensive documentation is available in the `docs/` directory:
 - `keys/README.md` - **🆕 NEW**: Explains SecureBoot keys (PK, KEK, db) hierarchy and usage
 - `out/keys/mok/README.md` - **🆕 NEW**: MOK (Machine Owner Key) guide for kernel module signing
 - Quick reference: Run any key generation command to see educational output!
+- `docs/UUEFI_V3_GUIDE.md` - **🆕 NEW**: UUEFI v3.0 complete user guide with use cases
+- `docs/UUEFI_ENHANCED.md` - **🆕 NEW**: UUEFI v3.0 enhanced features and technical reference
 
 **Artifact Creation Documentation**:
 - Generated documentation in `out/artifacts/docs/`:

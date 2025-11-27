@@ -58,6 +58,43 @@ pip install -r requirements.txt  # if requirements.txt exists
 
 ### ✅ Implemented Features
 
+#### 0. **🆕 Kernel Hardening and UEFI Variable Checks**
+Comprehensive kernel configuration analysis and UEFI security verification:
+- **Kernel Hardening Analyzer** - Check kernel config against DISA STIG standards
+- **UEFI Variable Security** - Verify SecureBoot variables and firmware integrity
+- **Firmware Checksum Database** - Validate firmware against known-good checksums
+- **Kernel Config Remediation** - Fix kernel configs with kexec double-jump technique
+- **DISA STIG Compliance** - Automated checks for security best practices
+- **Configuration Diff** - Compare current kernel config against hardened baseline
+
+**Usage**: 
+```bash
+# Comprehensive security check
+./pf.py secure-env
+
+# Kernel hardening analysis
+./pf.py kernel-hardening-check
+./pf.py kernel-hardening-report
+
+# Generate hardened baseline
+./pf.py kernel-hardening-baseline
+
+# Compare and remediate
+./pf.py kernel-config-diff
+./pf.py kernel-config-remediate
+
+# Check kexec for remediation
+./pf.py kernel-kexec-check
+
+# Firmware checksum management
+./pf.py firmware-checksum-list
+FIRMWARE_PATH=/path/to/bios.bin ./pf.py firmware-checksum-verify
+```
+
+**Documentation**: See [Kernel Hardening Guide](docs/KERNEL_HARDENING_GUIDE.md)
+
+**Status**: ✅ Fully implemented and tested
+
 #### 1. **Nuclear Boot (NuclearBootEdk2)**
 A battle-tested UEFI bootloader with strict security requirements:
 - **Secure Boot enforcement** - Requires Secure Boot to be enabled

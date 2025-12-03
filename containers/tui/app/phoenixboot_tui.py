@@ -11,7 +11,7 @@ import os
 import sys
 import subprocess
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Tuple
 
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical, ScrollableContainer
@@ -64,7 +64,7 @@ class TaskExecutor:
     """Handles execution of PhoenixBoot tasks"""
     
     @staticmethod
-    def run_task(task_name: str, cwd: Path = PHOENIXBOOT_ROOT) -> tuple[int, str, str]:
+    def run_task(task_name: str, cwd: Path = PHOENIXBOOT_ROOT) -> Tuple[int, str, str]:
         """Execute a pf.py task and return exit code, stdout, stderr"""
         try:
             result = subprocess.run(
@@ -404,7 +404,7 @@ Made with 🔥 for a more secure boot process
 """
         return Markdown(content)
     
-    def create_task_list(self, title: str, tasks: List[tuple[str, str]]) -> Container:
+    def create_task_list(self, title: str, tasks: List[Tuple[str, str]]) -> Container:
         """Create a task list container"""
         container = Container()
         container.mount(Static(title, classes="category-title"))

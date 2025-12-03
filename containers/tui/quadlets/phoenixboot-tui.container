@@ -1,0 +1,24 @@
+# Podman Quadlet for PhoenixBoot TUI Container
+
+[Container]
+Image=localhost/phoenixboot-tui:latest
+ContainerName=phoenixboot-tui
+Volume=/home/runner/work/PhoenixBoot/PhoenixBoot:/phoenixboot:Z
+Volume=/home/runner/work/PhoenixBoot/PhoenixBoot/out:/phoenixboot/out:Z
+Environment=PYTHONUNBUFFERED=1
+Environment=TERM=xterm-256color
+Network=host
+SecurityLabelType=container_runtime_t
+Terminal=true
+
+# Enable TTY for interactive TUI
+Tty=true
+Interactive=true
+
+[Service]
+Restart=no
+Type=oneshot
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target default.target

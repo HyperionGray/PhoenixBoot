@@ -1,0 +1,23 @@
+# Podman Quadlet for PhoenixBoot Runtime Container
+
+[Container]
+Image=localhost/phoenixboot-runtime:latest
+ContainerName=phoenixboot-runtime
+Volume=/home/runner/work/PhoenixBoot/PhoenixBoot:/phoenixboot:Z
+Volume=/sys/firmware/efi:/sys/firmware/efi:ro
+Volume=/boot/efi:/boot/efi:Z
+Volume=/lib/modules:/lib/modules:ro
+Environment=PYTHONUNBUFFERED=1
+Network=host
+SecurityLabelType=container_runtime_t
+
+# May need privileged mode for EFI variable access
+# Privileged=true
+
+[Service]
+Restart=no
+Type=oneshot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target default.target

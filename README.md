@@ -27,6 +27,54 @@ This new script solves the confusion around multiple runners and provides:
 
 **See [SecureBoot Bootable Media Guide](docs/SECUREBOOT_BOOTABLE_MEDIA.md) for detailed instructions.**
 
+## 🆕 NEW: Container Architecture & TUI Interface
+
+PhoenixBoot now features a **modular container-based architecture** with an **interactive TUI**!
+
+### Container-Based Architecture
+
+All components now run in isolated, reproducible containers:
+
+```bash
+# Build artifacts
+docker-compose --profile build up
+
+# Run tests
+docker-compose --profile test up
+
+# Launch interactive TUI
+docker-compose --profile tui up
+```
+
+**Benefits**:
+- ✅ **Isolated environments** - Each component in its own container
+- ✅ **Reproducible builds** - Consistent across all systems
+- ✅ **Easy deployment** - Podman quadlet integration for systemd
+- ✅ **Clear organization** - Build, test, installer, runtime, and TUI containers
+
+**See [Container Architecture Guide](docs/CONTAINER_ARCHITECTURE.md) for detailed information.**
+
+### Terminal User Interface (TUI)
+
+Launch the interactive TUI for a modern, user-friendly experience:
+
+```bash
+# Direct launch
+./phoenixboot-tui.sh
+
+# Or via container
+docker-compose --profile tui up
+```
+
+**Features**:
+- 🎯 **Organized task categories** - Tasks grouped by functionality
+- 🚀 **One-click execution** - Run tasks with a button press
+- 📊 **Real-time output** - See task output as it happens
+- 🎨 **Modern design** - Clean, intuitive interface
+- ⌨️ **Keyboard navigation** - Full keyboard support
+
+**See [TUI Guide](docs/TUI_GUIDE.md) for usage instructions.**
+
 ## 🚀 Quick Start
 
 > **🆕 NEW FOR USERS:** PhoenixBoot now includes comprehensive educational output!
@@ -381,9 +429,30 @@ PhoenixBoot/
 │   ├── secure.pf                           # Advanced SecureBoot tasks
 │   ├── workflows.pf                        # Multi-step workflows
 │   ├── maint.pf                            # Maintenance tasks
+│   ├── docker-compose.yml                  # Container orchestration
+│   ├── phoenixboot-tui.sh                  # TUI launcher script
 │   ├── create-secureboot-bootable-media.sh # Standalone: Create bootable media from ISO
 │   ├── sign-kernel-modules.sh              # User-facing: Sign kernel modules easily
 │   └── README.md, QUICKSTART.md, docs/     # Documentation
+│
+├── 🐳 containers/                          # Container-based architecture (NEW!)
+│   ├── build/                              # Build container (EDK2, GCC, artifact creation)
+│   │   ├── dockerfiles/Dockerfile
+│   │   └── quadlets/phoenixboot-build.container
+│   ├── test/                               # Test container (QEMU, validation)
+│   │   ├── dockerfiles/Dockerfile
+│   │   └── quadlets/phoenixboot-test.container
+│   ├── installer/                          # Installer container (ESP, bootable media)
+│   │   ├── dockerfiles/Dockerfile
+│   │   └── quadlets/phoenixboot-installer.container
+│   ├── runtime/                            # Runtime container (on-host operations)
+│   │   ├── dockerfiles/Dockerfile
+│   │   └── quadlets/phoenixboot-runtime.container
+│   ├── tui/                                # TUI container (interactive interface)
+│   │   ├── app/phoenixboot_tui.py
+│   │   ├── dockerfiles/Dockerfile
+│   │   └── quadlets/phoenixboot-tui.container
+│   └── README.md                           # Container documentation
 │
 ├── 🎯 staging/                             # Production-ready code (source for all builds)
 │   ├── src/                                # UEFI application source (NuclearBootEdk2, KeyEnrollEdk2, UUEFI)

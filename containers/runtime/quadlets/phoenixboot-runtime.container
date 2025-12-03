@@ -1,9 +1,10 @@
 # Podman Quadlet for PhoenixBoot Runtime Container
+# Note: Update volume paths to match your installation
 
 [Container]
 Image=localhost/phoenixboot-runtime:latest
 ContainerName=phoenixboot-runtime
-Volume=/home/runner/work/PhoenixBoot/PhoenixBoot:/phoenixboot:Z
+Volume=%h/PhoenixBoot:/phoenixboot:Z
 Volume=/sys/firmware/efi:/sys/firmware/efi:ro
 Volume=/boot/efi:/boot/efi:Z
 Volume=/lib/modules:/lib/modules:ro

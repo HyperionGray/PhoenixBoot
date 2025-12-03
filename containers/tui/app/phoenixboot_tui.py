@@ -25,7 +25,25 @@ from rich.text import Text
 from rich.console import Console
 
 # Get PhoenixBoot root directory
-PHOENIXBOOT_ROOT = Path(__file__).parent.parent.parent.parent.absolute()
+# Try multiple methods to find the root directory
+def find_phoenixboot_root():
+    """Find PhoenixBoot root directory by looking for pf.py marker file"""
+    current = Path(__file__).parent.absolute()
+    
+    # Walk up the directory tree looking for pf.py
+    for _ in range(5):  # Max 5 levels up
+        if (current / "pf.py").exists():
+            return current
+        current = current.parent
+    
+    # Fallback: use environment variable if set
+    if "PHOENIXBOOT_ROOT" in os.environ:
+        return Path(os.environ["PHOENIXBOOT_ROOT"])
+    
+    # Last resort: assume we're in containers/tui/app
+    return Path(__file__).parent.parent.parent.absolute()
+
+PHOENIXBOOT_ROOT = find_phoenixboot_root()
 PF_RUNNER = PHOENIXBOOT_ROOT / "pf.py"
 
 

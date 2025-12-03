@@ -1,11 +1,12 @@
 # Podman Quadlet for PhoenixBoot Installer Container
+# Note: Update volume paths to match your installation
 
 [Container]
 Image=localhost/phoenixboot-installer:latest
 ContainerName=phoenixboot-installer
-Volume=/home/runner/work/PhoenixBoot/PhoenixBoot:/phoenixboot:Z
-Volume=/home/runner/work/PhoenixBoot/PhoenixBoot/out:/phoenixboot/out:Z
-Volume=/home/runner/work/PhoenixBoot/PhoenixBoot/keys:/phoenixboot/keys:Z
+Volume=%h/PhoenixBoot:/phoenixboot:Z
+Volume=%h/PhoenixBoot/out:/phoenixboot/out:Z
+Volume=%h/PhoenixBoot/keys:/phoenixboot/keys:Z
 Environment=PYTHONUNBUFFERED=1
 Environment=ISO_PATH=
 Environment=USB_DEVICE=

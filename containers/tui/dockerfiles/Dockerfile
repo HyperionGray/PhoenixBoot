@@ -38,4 +38,4 @@ ENV PATH="/home/phoenixtui/.venv/bin:$PATH"
 RUN pip install --no-cache-dir textual rich pyyaml
 
 # Default command runs the TUI
-CMD ["python3", "tui/phoenixboot_tui.py"]
+CMD ["python3", "/phoenixboot/tui/phoenixboot_tui.py"]

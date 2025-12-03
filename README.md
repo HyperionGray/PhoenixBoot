@@ -620,6 +620,17 @@ PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 
 Comprehensive documentation is available in the `docs/` directory:
 
+### Container Architecture & TUI (NEW!)
+
+- **[Container Architecture](docs/CONTAINER_ARCHITECTURE.md)** - Complete guide to container-based architecture
+- **[Container Setup](docs/CONTAINER_SETUP.md)** - Getting started with containers
+- **[TUI Guide](docs/TUI_GUIDE.md)** - Interactive terminal interface usage
+- **[Architecture Diagram](docs/ARCHITECTURE_DIAGRAM.md)** - Visual system architecture
+- **[Quick Reference](docs/QUICK_REFERENCE.md)** - Command cheat sheet
+- **[containers/README.md](containers/README.md)** - Container directory overview
+
+### Core Documentation
+
 - `docs/README.md` - Detailed technical documentation
 - `docs/SECURE_BOOT.md` - Secure Boot implementation guide
 - `docs/BOOT_SEQUENCE_AND_ATTACK_SURFACES.md` - Boot security analysis

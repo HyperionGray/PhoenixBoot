@@ -1,8 +1,6 @@
 # PhoenixBoot Container Orchestration
 # Use with Docker Compose or Podman Compose
 
-version: '3.9'
-
 services:
   # Build container - EDK2 compilation and artifact building
   phoenixboot-build:

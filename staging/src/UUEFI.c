@@ -1664,7 +1664,8 @@ DumpVariableData(
     }
     
     // Padding if last line is partial
-    for (UINTN j = DisplaySize - i; j < 16 && i + j >= DisplaySize; j++) {
+    UINTN BytesOnLine = (DisplaySize - i < 16) ? (DisplaySize - i) : 16;
+    for (UINTN j = BytesOnLine; j < 16; j++) {
       Print(L"   ");
     }
     

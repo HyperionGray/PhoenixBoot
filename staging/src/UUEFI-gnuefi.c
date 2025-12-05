@@ -8,7 +8,7 @@
 #include <efi.h>
 #include <efilib.h>
 
-#define UUEFI_VERSION L"2.0.0-gnuefi"
+#define UUEFI_VERSION L"3.1.0-gnuefi"
 #define MAX_BOOT_ENTRIES 10
 #define MAX_VARIABLE_NAME_SIZE 1024
 #define MAX_VARIABLES 500
@@ -331,6 +331,298 @@ ShowInteractiveMenu(VOID)
     }
 }
 
+/**
+  Dump variable data in hex and ASCII format (GNU-EFI version)
+**/
+VOID
+DumpVariableDataGnuefi(CHAR16 *Name, EFI_GUID *Guid, UINTN DataSize)
+{
+    EFI_STATUS Status;
+    UINT8 *Data = NULL;
+    
+    if (DataSize == 0) {
+        Print(L"    [Empty variable]\n");
+        return;
+    }
+    
+    UINTN DisplaySize = DataSize;
+    BOOLEAN Truncated = FALSE;
+    if (DisplaySize > 256) {
+        DisplaySize = 256;
+        Truncated = TRUE;
+    }
+    
+    Data = AllocateZeroPool(DataSize);
+    if (!Data) {
+        Print(L"    [Failed to allocate memory]\n");
+        return;
+    }
+    
+    Status = uefi_call_wrapper(RT->GetVariable, 5, Name, Guid, NULL, &DataSize, Data);
+    
+    if (EFI_ERROR(Status)) {
+        Print(L"    [Failed to read: %r]\n", Status);
+        FreePool(Data);
+        return;
+    }
+    
+    Print(L"    Hex dump (%lu bytes%s):\n", DataSize, Truncated ? L", truncated" : L"");
+    for (UINTN i = 0; i < DisplaySize; i += 16) {
+        Print(L"    %04x: ", i);
+        
+        for (UINTN j = 0; j < 16 && (i + j) < DisplaySize; j++) {
+            Print(L"%02x ", Data[i + j]);
+        }
+        
+        for (UINTN j = DisplaySize - i; j < 16 && i + j >= DisplaySize; j++) {
+            Print(L"   ");
+        }
+        
+        Print(L" |");
+        
+        for (UINTN j = 0; j < 16 && (i + j) < DisplaySize; j++) {
+            UINT8 c = Data[i + j];
+            if (c >= 0x20 && c <= 0x7E) {
+                Print(L"%c", (CHAR16)c);
+            } else {
+                Print(L".");
+            }
+        }
+        
+        Print(L"|\n");
+    }
+    
+    if (Truncated) {
+        Print(L"    ... (%lu more bytes not shown)\n", DataSize - DisplaySize);
+    }
+    
+    FreePool(Data);
+}
+
+/**
+  Show complete variable dump (GNU-EFI version)
+**/
+VOID
+ShowDebugVariableDumpGnuefi(VOID)
+{
+    Print(L"\n");
+    Print(L"╔════════════════════════════════════════════╗\n");
+    Print(L"║    DEBUG: COMPLETE VARIABLE DUMP          ║\n");
+    Print(L"╚════════════════════════════════════════════╝\n");
+    Print(L"\n");
+    Print(L"Dumping ALL %lu variables with full data...\n\n", gVariableCount);
+    
+    for (UINTN i = 0; i < gVariableCount; i++) {
+        VARIABLE_INFO *var = &gVariables[i];
+        
+        Print(L"[%lu] %s\n", i, var->Name);
+        Print(L"  GUID: %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
+              var->VendorGuid.Data1, var->VendorGuid.Data2, var->VendorGuid.Data3,
+              var->VendorGuid.Data4[0], var->VendorGuid.Data4[1],
+              var->VendorGuid.Data4[2], var->VendorGuid.Data4[3],
+              var->VendorGuid.Data4[4], var->VendorGuid.Data4[5],
+              var->VendorGuid.Data4[6], var->VendorGuid.Data4[7]);
+        Print(L"  Size: %lu bytes\n", var->DataSize);
+        Print(L"  Attributes: 0x%08x\n", var->Attributes);
+        
+        DumpVariableDataGnuefi(var->Name, &var->VendorGuid, var->DataSize);
+        Print(L"\n");
+        
+        if ((i + 1) % 5 == 0 && (i + 1) < gVariableCount) {
+            Print(L"--- Showing %lu of %lu. Press any key (Q to quit)... ---\n", i + 1, gVariableCount);
+            EFI_INPUT_KEY Key;
+            UINTN MapKey;
+            uefi_call_wrapper(BS->WaitForEvent, 3, 1, &ST->ConIn->WaitForKey, &MapKey);
+            uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &Key);
+            if (Key.UnicodeChar == L'q' || Key.UnicodeChar == L'Q') {
+                Print(L"Cancelled.\n");
+                return;
+            }
+        }
+    }
+    
+    Print(L"\n✓ Complete variable dump finished.\n");
+}
+
+/**
+  Show protocol database (GNU-EFI version)
+**/
+VOID
+ShowProtocolDatabaseGnuefi(VOID)
+{
+    EFI_STATUS Status;
+    UINTN HandleCount = 0;
+    EFI_HANDLE *HandleBuffer = NULL;
+    
+    Print(L"\n");
+    Print(L"╔════════════════════════════════════════════╗\n");
+    Print(L"║   DEBUG: PROTOCOL DATABASE ENUMERATION    ║\n");
+    Print(L"╚════════════════════════════════════════════╝\n");
+    Print(L"\n");
+    
+    Status = uefi_call_wrapper(BS->LocateHandleBuffer, 5,
+                               AllHandles, NULL, NULL, &HandleCount, &HandleBuffer);
+    
+    if (EFI_ERROR(Status)) {
+        Print(L"Failed to enumerate handles: %r\n", Status);
+        return;
+    }
+    
+    Print(L"Found %lu handles in system\n\n", HandleCount);
+    
+    for (UINTN i = 0; i < HandleCount; i++) {
+        EFI_GUID **ProtocolGuidArray = NULL;
+        UINTN ProtocolCount = 0;
+        
+        Status = uefi_call_wrapper(BS->ProtocolsPerHandle, 3,
+                                   HandleBuffer[i], &ProtocolGuidArray, &ProtocolCount);
+        
+        if (!EFI_ERROR(Status) && ProtocolCount > 0) {
+            Print(L"Handle[%lu]: %p (%lu protocols)\n", i, HandleBuffer[i], ProtocolCount);
+            
+            for (UINTN j = 0; j < ProtocolCount; j++) {
+                Print(L"  Protocol[%lu]: %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
+                      j,
+                      ProtocolGuidArray[j]->Data1, ProtocolGuidArray[j]->Data2,
+                      ProtocolGuidArray[j]->Data3,
+                      ProtocolGuidArray[j]->Data4[0], ProtocolGuidArray[j]->Data4[1],
+                      ProtocolGuidArray[j]->Data4[2], ProtocolGuidArray[j]->Data4[3],
+                      ProtocolGuidArray[j]->Data4[4], ProtocolGuidArray[j]->Data4[5],
+                      ProtocolGuidArray[j]->Data4[6], ProtocolGuidArray[j]->Data4[7]);
+            }
+            
+            FreePool(ProtocolGuidArray);
+        }
+        
+        if ((i + 1) % 10 == 0 && (i + 1) < HandleCount) {
+            Print(L"\n--- Showing %lu of %lu. Press any key (Q to quit)... ---\n", i + 1, HandleCount);
+            EFI_INPUT_KEY Key;
+            UINTN MapKey;
+            uefi_call_wrapper(BS->WaitForEvent, 3, 1, &ST->ConIn->WaitForKey, &MapKey);
+            uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &Key);
+            if (Key.UnicodeChar == L'q' || Key.UnicodeChar == L'Q') {
+                Print(L"Cancelled.\n");
+                break;
+            }
+            Print(L"\n");
+        }
+    }
+    
+    FreePool(HandleBuffer);
+    Print(L"\n✓ Protocol database enumeration complete.\n");
+}
+
+/**
+  Show configuration tables (GNU-EFI version)
+**/
+VOID
+ShowConfigurationTablesGnuefi(VOID)
+{
+    Print(L"\n");
+    Print(L"╔════════════════════════════════════════════╗\n");
+    Print(L"║   DEBUG: CONFIGURATION TABLES             ║\n");
+    Print(L"╚════════════════════════════════════════════╝\n");
+    Print(L"\n");
+    Print(L"Number of Configuration Tables: %lu\n\n", ST->NumberOfTableEntries);
+    
+    for (UINTN i = 0; i < ST->NumberOfTableEntries; i++) {
+        EFI_CONFIGURATION_TABLE *Table = &ST->ConfigurationTable[i];
+        
+        Print(L"[%lu] GUID: %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
+              i,
+              Table->VendorGuid.Data1, Table->VendorGuid.Data2,
+              Table->VendorGuid.Data3,
+              Table->VendorGuid.Data4[0], Table->VendorGuid.Data4[1],
+              Table->VendorGuid.Data4[2], Table->VendorGuid.Data4[3],
+              Table->VendorGuid.Data4[4], Table->VendorGuid.Data4[5],
+              Table->VendorGuid.Data4[6], Table->VendorGuid.Data4[7]);
+        Print(L"    Table Address: %p\n\n", Table->VendorTable);
+    }
+    
+    Print(L"✓ Configuration table enumeration complete.\n");
+}
+
+/**
+  Show debug menu (GNU-EFI version)
+**/
+VOID
+ShowDebugMenuGnuefi(VOID)
+{
+    EFI_INPUT_KEY Key;
+    UINTN MapKey;
+    BOOLEAN exitMenu = FALSE;
+    
+    while (!exitMenu) {
+        Print(L"\n");
+        Print(L"╔════════════════════════════════════════════╗\n");
+        Print(L"║    🔍 DEBUG DIAGNOSTICS MENU 🔍          ║\n");
+        Print(L"║  EVERYTHING - ALL VARS, ALL LOGS, ALL!    ║\n");
+        Print(L"╚════════════════════════════════════════════╝\n");
+        Print(L"\n");
+        Print(L"⚠ WARNING: Debug output is extremely verbose!\n");
+        Print(L"\n");
+        Print(L"1. Complete Variable Dump (ALL variable data)\n");
+        Print(L"2. Protocol Database (Find ALL protocols/IOCTLs)\n");
+        Print(L"3. Configuration Tables (ACPI, SMBIOS, etc.)\n");
+        Print(L"4. Full System Dump (ALL of the above)\n");
+        Print(L"Q. Return to Main Menu\n");
+        Print(L"\nSelect: ");
+        
+        uefi_call_wrapper(BS->WaitForEvent, 3, 1, &ST->ConIn->WaitForKey, &MapKey);
+        uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &Key);
+        Print(L"%c\n", Key.UnicodeChar);
+        
+        switch (Key.UnicodeChar) {
+            case L'1':
+                ShowDebugVariableDumpGnuefi();
+                Print(L"\nPress any key...");
+                uefi_call_wrapper(BS->WaitForEvent, 3, 1, &ST->ConIn->WaitForKey, &MapKey);
+                uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &Key);
+                break;
+            case L'2':
+                ShowProtocolDatabaseGnuefi();
+                Print(L"\nPress any key...");
+                uefi_call_wrapper(BS->WaitForEvent, 3, 1, &ST->ConIn->WaitForKey, &MapKey);
+                uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &Key);
+                break;
+            case L'3':
+                ShowConfigurationTablesGnuefi();
+                Print(L"\nPress any key...");
+                uefi_call_wrapper(BS->WaitForEvent, 3, 1, &ST->ConIn->WaitForKey, &MapKey);
+                uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &Key);
+                break;
+            case L'4':
+                Print(L"\n🔥 FULL SYSTEM DUMP 🔥\n");
+                Print(L"Press 'Y' to confirm: ");
+                uefi_call_wrapper(BS->WaitForEvent, 3, 1, &ST->ConIn->WaitForKey, &MapKey);
+                uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &Key);
+                Print(L"%c\n", Key.UnicodeChar);
+                
+                if (Key.UnicodeChar == L'Y' || Key.UnicodeChar == L'y') {
+                    Print(L"\nStarting full system dump...\n");
+                    ShowDebugVariableDumpGnuefi();
+                    ShowProtocolDatabaseGnuefi();
+                    ShowConfigurationTablesGnuefi();
+                    Print(L"\n✓ Full system dump complete!\n");
+                } else {
+                    Print(L"Cancelled.\n");
+                }
+                
+                Print(L"\nPress any key...");
+                uefi_call_wrapper(BS->WaitForEvent, 3, 1, &ST->ConIn->WaitForKey, &MapKey);
+                uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &Key);
+                break;
+            case L'Q':
+            case L'q':
+                exitMenu = TRUE;
+                break;
+            default:
+                Print(L"Invalid option\n");
+                break;
+        }
+    }
+}
+
 EFI_STATUS
 EFIAPI
 efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
@@ -352,7 +644,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
     Print(L"╔════════════════════════════════════════════╗\n");
     Print(L"║  🔥 PhoenixGuard UUEFI %s    ║\n", UUEFI_VERSION);
     Print(L"║  Universal UEFI Diagnostic Tool           ║\n");
-    Print(L"║  Enhanced: Variable Mgmt & Security        ║\n");
+    Print(L"║  Full BIOS + Debug Everything Mode        ║\n");
     Print(L"╚════════════════════════════════════════════╝\n");
     
     // Display marker for test detection
@@ -505,6 +797,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
     Print(L"\n\nOptions:\n");
     Print(L"  M - Enter Interactive Menu\n");
     Print(L"  R - Show Security Report\n");
+    Print(L"  D - 🔍 Debug Diagnostics (EVERYTHING!)\n");
     Print(L"  Q - Return to Firmware\n");
     Print(L"\nSelect: ");
     
@@ -515,14 +808,17 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
         
         if (Key.UnicodeChar == L'M' || Key.UnicodeChar == L'm') {
             ShowInteractiveMenu();
-            Print(L"\nOptions: M - Menu, R - Report, Q - Quit\nSelect: ");
+            Print(L"\nOptions: M - Menu, R - Report, D - Debug, Q - Quit\nSelect: ");
         } else if (Key.UnicodeChar == L'R' || Key.UnicodeChar == L'r') {
             DisplaySecurityReport();
-            Print(L"\nOptions: M - Menu, R - Report, Q - Quit\nSelect: ");
+            Print(L"\nOptions: M - Menu, R - Report, D - Debug, Q - Quit\nSelect: ");
+        } else if (Key.UnicodeChar == L'D' || Key.UnicodeChar == L'd') {
+            ShowDebugMenuGnuefi();
+            Print(L"\nOptions: M - Menu, R - Report, D - Debug, Q - Quit\nSelect: ");
         } else if (Key.UnicodeChar == L'Q' || Key.UnicodeChar == L'q') {
             break;
         } else {
-            Print(L"Invalid. Try M, R, or Q: ");
+            Print(L"Invalid. Try M, R, D, or Q: ");
         }
     }
     

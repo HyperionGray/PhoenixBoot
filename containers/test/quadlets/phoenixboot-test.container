@@ -1,0 +1,24 @@
+# Podman Quadlet for PhoenixBoot Test Container
+# Note: Update volume paths to match your installation
+
+[Container]
+Image=localhost/phoenixboot-test:latest
+ContainerName=phoenixboot-test
+Volume=%h/PhoenixBoot:/phoenixboot:Z
+Volume=%h/PhoenixBoot/out:/phoenixboot/out:Z
+Volume=%h/PhoenixBoot/ovmf_stuff:/phoenixboot/ovmf_stuff:Z
+Environment=PYTHONUNBUFFERED=1
+Environment=QEMU_TIMEOUT=300
+Network=host
+SecurityLabelType=container_runtime_t
+
+# Allow QEMU to use KVM if available (requires --privileged or device access)
+# Device=/dev/kvm
+
+[Service]
+Restart=no
+Type=oneshot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target default.target

@@ -1,0 +1,25 @@
+# Podman Quadlet for PhoenixBoot Installer Container
+# Note: Update volume paths to match your installation
+
+[Container]
+Image=localhost/phoenixboot-installer:latest
+ContainerName=phoenixboot-installer
+Volume=%h/PhoenixBoot:/phoenixboot:Z
+Volume=%h/PhoenixBoot/out:/phoenixboot/out:Z
+Volume=%h/PhoenixBoot/keys:/phoenixboot/keys:Z
+Environment=PYTHONUNBUFFERED=1
+Environment=ISO_PATH=
+Environment=USB_DEVICE=
+Network=host
+SecurityLabelType=container_runtime_t
+
+# For USB device access, may need privileged mode
+# Privileged=true
+
+[Service]
+Restart=no
+Type=oneshot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target default.target

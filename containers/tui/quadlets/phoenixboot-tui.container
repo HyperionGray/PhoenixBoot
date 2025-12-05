@@ -1,0 +1,25 @@
+# Podman Quadlet for PhoenixBoot TUI Container
+# Note: Update volume paths to match your installation
+
+[Container]
+Image=localhost/phoenixboot-tui:latest
+ContainerName=phoenixboot-tui
+Volume=%h/PhoenixBoot:/phoenixboot:Z
+Volume=%h/PhoenixBoot/out:/phoenixboot/out:Z
+Environment=PYTHONUNBUFFERED=1
+Environment=TERM=xterm-256color
+Network=host
+SecurityLabelType=container_runtime_t
+Terminal=true
+
+# Enable TTY for interactive TUI
+Tty=true
+Interactive=true
+
+[Service]
+Restart=no
+Type=oneshot
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target default.target

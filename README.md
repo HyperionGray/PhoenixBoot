@@ -5,6 +5,17 @@
 
 **PhoenixBoot** (also known as PhoenixGuard) is a production-ready firmware defense system designed to protect against bootkits, rootkits, and supply chain attacks. It provides hardware-level firmware recovery, secure boot enforcement, and a complete UEFI boot chain with cryptographic verification.
 
+## 🚀 New to PhoenixBoot?
+
+**👉 [Start Here: Getting Started Guide](GETTING_STARTED.md) 👈**
+
+The getting started guide provides:
+- 🎯 **Easy options** for beginners
+- 📚 **Clear explanations** of what PhoenixBoot does
+- 🛠️ **Common tasks** with examples
+- 🔍 **Use cases** for real-world scenarios
+- 💡 **Tips** for safe usage
+
 ## 🎯 NEW: Turnkey SecureBoot Bootable Media Creator
 
 **The simplest way to create SecureBoot-enabled boot media from any ISO!**

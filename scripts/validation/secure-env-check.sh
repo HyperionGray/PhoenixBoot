@@ -324,7 +324,7 @@ check_bootkits() {
   local baseline_path="${OUT_DIR}/baseline/firmware_baseline.json"
   if [ ! -f "$baseline_path" ]; then
     print_check "INFO" "No firmware baseline found - bootkit detection limited"
-    print_check "INFO" "Run 'bash scripts/scan-bootkits.sh' to create baseline and perform full scan"
+    print_check "INFO" "Run 'bash scripts/validation/scan-bootkits.sh' to create baseline and perform full scan"
     return
   fi
   
@@ -598,7 +598,7 @@ provide_recommendations() {
   fi
   
   if [ ! -f "${OUT_DIR}/baseline/firmware_baseline.json" ]; then
-    recommendations+=("📊 Create firmware baseline: bash scripts/scan-bootkits.sh")
+    recommendations+=("📊 Create firmware baseline: bash scripts/validation/scan-bootkits.sh")
   fi
   
   recommendations+=("🔐 Generate or update SecureBoot keys: ./pf.py secure-keygen")

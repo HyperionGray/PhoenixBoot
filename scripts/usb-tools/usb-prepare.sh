@@ -76,7 +76,7 @@ fi
 cleanup
 
 # Continue to organization (script will mount as needed)
-bash scripts/organize-usb1.sh
+bash scripts/usb-tools/organize-usb1.sh
 
 ok "Secure USB prepared on ${USB1_DEV}"
 

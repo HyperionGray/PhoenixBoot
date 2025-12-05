@@ -14,7 +14,7 @@ if [ -z "${EFI_DISK:-}" ] || [ -z "${EFI_PART:-}" ]; then
   exit 1
 fi
 
-APP=UUEFI EFI_DISK="$EFI_DISK" EFI_PART="$EFI_PART" bash scripts/uuefi-apply.sh
+APP=UUEFI EFI_DISK="$EFI_DISK" EFI_PART="$EFI_PART" bash scripts/uefi-tools/uuefi-apply.sh
 
 echo "[OK] UUEFI one-shot BootNext set; reboot to test"
 

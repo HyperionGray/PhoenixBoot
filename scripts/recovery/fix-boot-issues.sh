@@ -273,7 +273,7 @@ case "${1:-help}" in
     
     fix)
         echo "☠ Running all fixes..."
-        bash scripts/fix-boot-issues.sh
+        bash scripts/recovery/fix-boot-issues.sh
         ;;
     
     status)

@@ -40,7 +40,7 @@ if [ ! -f "$MOD_PATH" ]; then
 fi
 
 # Try to reuse an enrolled MOK if present (avoid eval on empty)
-if exports=$(bash scripts/mok-pick-existing.sh 2>/dev/null); then
+if exports=$(bash scripts/mok-management/mok-pick-existing.sh 2>/dev/null); then
   eval "$exports"
   echo "Using enrolled MOK: ${KMOD_CERT:-unknown}"
 else
@@ -49,7 +49,7 @@ fi
 
 # Try to auto-select a MOK if none provided
 if [ -z "${KMOD_CERT:-}" ] || [ -z "${KMOD_KEY:-}" ]; then
-  if exports=$(bash scripts/mok-select-key.sh 2>/dev/null); then
+  if exports=$(bash scripts/mok-management/mok-select-key.sh 2>/dev/null); then
     eval "$exports"
     echo "Using MOK cert: ${KMOD_CERT}"
   fi
@@ -66,6 +66,6 @@ sudo install -D -m 0644 "$MOD_PATH" "$DST_DIR/$MOD_NAME.ko"
 sudo depmod -a "$REL"
 
 # Configure autoload
-bash scripts/kmod-autoload.sh "$MOD_NAME"
+bash scripts/mok-management/kmod-autoload.sh "$MOD_NAME"
 
 echo "Done. To load now: sudo modprobe $MOD_NAME"

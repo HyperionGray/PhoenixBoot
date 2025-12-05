@@ -13,7 +13,7 @@ set -euo pipefail
 ./pf.py verify-esp-robust
 
 # Write to USB
-bash scripts/usb-prepare.sh
+bash scripts/usb-tools/usb-prepare.sh
 
 # Sanitize USB
 USB_FORCE=1 ./pf.py usb-sanitize || echo "ℹ☠ Skipping USB sanitization"

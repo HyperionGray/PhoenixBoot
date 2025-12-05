@@ -29,12 +29,6 @@ fi
 if [[ -d "$ESP/EFI/PhoenixGuard" ]]; then
     sudo rm -rf "$ESP/EFI/PhoenixGuard" || true
 fi
-if [[ -f "$ESP/EFI/xen.efi" ]]; then
-    sudo rm -f "$ESP/EFI/xen.efi" || true
-fi
-if [[ -f "$ESP/EFI/xen.cfg" ]]; then
-    sudo rm -f "$ESP/EFI/xen.cfg" || true
-fi
 
 # Remove KVM recovery configuration
 echo "[cleanup] Removing KVM recovery configuration"

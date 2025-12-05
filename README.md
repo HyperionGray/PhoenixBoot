@@ -297,14 +297,7 @@ A powerful UEFI application for system diagnostics and complete firmware-level c
 
 **Status**: 📝 Research phase, scripts exist in `scripts/`
 
-#### 10. **Xen Hypervisor Integration**
-- VM snapshot-based recovery
-- Dom0 firmware audits
-- GPU passthrough for clean boot environments
-
-**Status**: 📝 Documentation and proof-of-concept in `resources/xen/`
-
-#### 11. **Cloud Integration**
+#### 10. **Cloud Integration**
 - Remote attestation API
 - Centralized firmware database
 - Cooperative defense network

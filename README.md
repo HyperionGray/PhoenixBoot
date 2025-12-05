@@ -520,7 +520,7 @@ PhoenixBoot/
 │   └── official_bios_backup/               # BIOS backups (180MB)
 ├── 💡 ideas/                               # Future features and research
 ├── 🌐 web/                                 # Web interfaces (hardware database server)
-└── 📚 resources/                           # Additional resources (Xen, P4X OS ideas)
+└── 📚 resources/                           # Additional resources (KVM, P4X OS ideas, firmware samples)
 ```
 
 ### Key Differences from Before
@@ -741,7 +741,6 @@ The other modes and other stuff - they need a good amount of testing before they
 - [x] UUEFI source code
 - [ ] Build UUEFI binary (requires EDK2)
 - [ ] Hardware firmware recovery automation
-- [ ] Xen hypervisor integration
 - [ ] Cloud attestation API
 - [ ] P4X OS integration
 - [ ] Universal hardware compatibility

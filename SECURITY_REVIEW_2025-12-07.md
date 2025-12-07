@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-This document details the security analysis performed in response to the Amazon Q Code Review issue (#[issue-number]). The review identified and remediated critical security vulnerabilities in the codebase.
+This document details the security analysis performed in response to the Amazon Q Code Review. The review identified and remediated critical security vulnerabilities in the codebase.
 
 ## Findings and Remediation
 

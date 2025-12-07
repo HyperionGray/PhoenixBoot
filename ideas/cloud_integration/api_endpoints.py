@@ -38,7 +38,7 @@ app = Flask(__name__)
 # Generate a secure key with: python -c 'import secrets; print(secrets.token_hex(32))'
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-only-insecure-key-change-in-production')
 if app.secret_key == 'dev-only-insecure-key-change-in-production':
-    logging.warning("⚠️  WARNING: Using insecure development secret key. Set FLASK_SECRET_KEY environment variable!")
+    logging.error("⚠️  CRITICAL: Using insecure development secret key. Set FLASK_SECRET_KEY environment variable!")
 
 CORS(app, origins=["https://*.yourcloudplatform.com", "https://phoenixguard.coop"])
 

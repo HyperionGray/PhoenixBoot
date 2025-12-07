@@ -27,15 +27,13 @@ Commands
     just nuke level3-secure -- --write drivers/G615LPAS.325
   - Level 4 — KVM Snapshot Jump
     just nuke level4-kvm
-  - Level 5 — Xen Snapshot Jump prep
-    just nuke level5-xen dom0_vmlinuz=/boot/vmlinuz-<ver> dom0_initrd=/boot/initrd.img-<ver> [esp=/boot/efi] [uuid=<UUID>] [dom0_root=/dev/nvme0n1p2]
   - Level 6 — Hardware recovery (danger)
     just nuke level6-hw fw=drivers/G615LPAS.325 [verify_only=1] [verbose=1]
 
 Safety gates
 - Level 1–2: Non-destructive; Level 2 can modify host ESP only if PG_HOST_OK=1 and you confirm.
 - Level 3: Requires root; temporarily disables kernel lockdown and re-locks automatically.
-- Level 4–5: Reboot paths; ensure configurations are prepared (KVM/Xen assets).
+- Level 4: Reboot paths; ensure KVM configurations are prepared.
 - Level 6: Dangerous; type-to-confirm inside the tool and ensure you have a programmer backup.
 
 Planfile output
@@ -54,7 +52,7 @@ Baseline and scanning
 Rollback guidance
 - Level 2 (host deploy): Remove /etc/grub.d/42_phoenixguard_recovery and rerun update-grub.
 - Level 3: A second kexec returns to lockdown=integrity; reboot restores kernel defaults.
-- Level 4/5: Reboot back to metal and normal boot order; remove Xen/KVM assets if desired.
+- Level 4: Reboot back to metal and normal boot order; remove KVM assets if desired.
 - Level 6: Reflash prior backup firmware image.
 
 Troubleshooting

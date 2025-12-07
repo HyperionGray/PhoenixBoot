@@ -5,6 +5,17 @@
 
 **PhoenixBoot** (also known as PhoenixGuard) is a production-ready firmware defense system designed to protect against bootkits, rootkits, and supply chain attacks. It provides hardware-level firmware recovery, secure boot enforcement, and a complete UEFI boot chain with cryptographic verification.
 
+## 🚀 New to PhoenixBoot?
+
+**👉 [Start Here: Getting Started Guide](GETTING_STARTED.md) 👈**
+
+The getting started guide provides:
+- 🎯 **Easy options** for beginners
+- 📚 **Clear explanations** of what PhoenixBoot does
+- 🛠️ **Common tasks** with examples
+- 🔍 **Use cases** for real-world scenarios
+- 💡 **Tips** for safe usage
+
 ## 🎯 NEW: Turnkey SecureBoot Bootable Media Creator
 
 **The simplest way to create SecureBoot-enabled boot media from any ISO!**
@@ -298,14 +309,7 @@ A powerful UEFI application for system diagnostics and complete firmware-level c
 
 **Status**: 📝 Research phase, scripts exist in `scripts/`
 
-#### 10. **Xen Hypervisor Integration**
-- VM snapshot-based recovery
-- Dom0 firmware audits
-- GPU passthrough for clean boot environments
-
-**Status**: 📝 Documentation and proof-of-concept in `resources/xen/`
-
-#### 11. **Cloud Integration**
+#### 10. **Cloud Integration**
 - Remote attestation API
 - Centralized firmware database
 - Cooperative defense network
@@ -460,23 +464,40 @@ PhoenixBoot/
 │   ├── boot/                               # Compiled EFI binaries (checked in as prebuilt)
 │   └── tools/                              # Build scripts for EDK2 compilation
 │
-├── 🔧 scripts/                             # ~80 operational scripts
-│   ├── Core Operations:
+├── 🔧 scripts/                             # Organized operational scripts
+│   ├── build/                              # Build scripts
 │   │   ├── build-production.sh             # Build production artifacts
-│   │   ├── esp-package.sh                  # Package bootable ESP
-│   │   ├── toolchain-check.sh              # Bootstrap environment
-│   │   └── generate-sb-keys.sh             # Generate SecureBoot keys
-│   ├── Testing:
+│   │   ├── build-nuclear-cd.sh             # Build Nuclear CD
+│   │   └── iso-prep.sh                     # ISO preparation
+│   ├── testing/                            # Test scripts
 │   │   ├── qemu-test*.sh                   # Various QEMU test scenarios
-│   │   └── validate-*.sh                   # Validation scripts
-│   ├── MOK & Module Signing:
+│   │   └── run-e2e-tests.sh                # End-to-end test runner
+│   ├── mok-management/                     # MOK & Module Signing
 │   │   ├── enroll-mok.sh                   # Enroll MOK certificates
 │   │   ├── mok-*.sh                        # MOK management scripts
 │   │   └── sign-kmods.sh                   # Sign kernel modules
-│   └── Advanced:
-│       ├── install_clean_grub_boot.sh      # Clean GRUB installation
-│       ├── uuefi-*.sh                      # UUEFI operations
-│       └── recovery-*.sh                   # Recovery workflows
+│   ├── esp-packaging/                      # ESP image creation
+│   │   ├── esp-package.sh                  # Package ESP
+│   │   └── install_clean_grub_boot.sh      # Clean GRUB installation
+│   ├── secure-boot/                        # SecureBoot operations
+│   │   ├── generate-sb-keys.sh             # Generate SecureBoot keys
+│   │   └── enroll-secureboot.sh            # Enroll SecureBoot keys
+│   ├── validation/                         # Security validation
+│   │   ├── secure-env-check.sh             # Security environment check
+│   │   ├── validate-*.sh                   # Validation scripts
+│   │   └── scan-bootkits.sh                # Bootkit detection
+│   ├── recovery/                           # Recovery operations
+│   │   ├── hardware-recovery.sh            # Hardware recovery
+│   │   ├── reboot-to-metal.sh              # Return to normal boot
+│   │   └── nuclear-wipe.sh                 # Nuclear system wipe
+│   ├── uefi-tools/                         # UEFI operations
+│   │   ├── uuefi-*.sh                      # UUEFI operations
+│   │   └── uefi_variable_analyzer.py       # UEFI variable analysis
+│   ├── usb-tools/                          # USB media creation
+│   ├── qemu/                               # QEMU runners
+│   └── maintenance/                        # Project maintenance
+│       ├── lint.sh                         # Code linting
+│       └── format.sh                       # Code formatting
 │
 ├── 🐍 utils/                               # Python utilities
 │   ├── pgmodsign.py                        # Kernel module signing (canonical location)
@@ -500,7 +521,7 @@ PhoenixBoot/
 │   └── official_bios_backup/               # BIOS backups (180MB)
 ├── 💡 ideas/                               # Future features and research
 ├── 🌐 web/                                 # Web interfaces (hardware database server)
-└── 📚 resources/                           # Additional resources (Xen, P4X OS ideas)
+└── 📚 resources/                           # Additional resources (KVM, P4X OS ideas, firmware samples)
 ```
 
 ### Key Differences from Before
@@ -721,7 +742,6 @@ The other modes and other stuff - they need a good amount of testing before they
 - [x] UUEFI source code
 - [ ] Build UUEFI binary (requires EDK2)
 - [ ] Hardware firmware recovery automation
-- [ ] Xen hypervisor integration
 - [ ] Cloud attestation API
 - [ ] P4X OS integration
 - [ ] Universal hardware compatibility

@@ -108,7 +108,7 @@ jobs:
       
       - name: Run Basic Boot Test
         run: |
-          chmod +x scripts/qemu-test.sh
+          chmod +x scripts/testing/qemu-test.sh
           ./pf.py test-qemu
       
       - name: Upload Test Logs
@@ -180,7 +180,7 @@ jobs:
       
       - name: Run SecureBoot Positive Test
         run: |
-          chmod +x scripts/qemu-test-secure-positive.sh
+          chmod +x scripts/testing/qemu-test-secure-positive.sh
           ./pf.py test-qemu-secure-positive
       
       - name: Upload SecureBoot Test Logs
@@ -233,7 +233,7 @@ jobs:
       
       - name: Run SecureBoot Strict Test
         run: |
-          chmod +x scripts/qemu-test-secure-strict.sh
+          chmod +x scripts/testing/qemu-test-secure-strict.sh
           ./pf.py test-qemu-secure-strict
       
       - name: Upload Strict Test Logs
@@ -287,7 +287,7 @@ jobs:
       
       - name: Run Negative Attestation Test
         run: |
-          chmod +x scripts/qemu-test-secure-negative-attest.sh
+          chmod +x scripts/testing/qemu-test-secure-negative-attest.sh
           # This test should fail - we expect it to detect corruption
           ./pf.py test-qemu-secure-negative-attest || echo "Test correctly detected corruption"
       
@@ -344,7 +344,7 @@ jobs:
       
       - name: Run UUEFI Test
         run: |
-          chmod +x scripts/qemu-test-uuefi.sh
+          chmod +x scripts/testing/qemu-test-uuefi.sh
           ./pf.py test-qemu-uuefi
       
       - name: Verify UUEFI Output

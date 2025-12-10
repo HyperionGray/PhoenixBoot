@@ -3,12 +3,11 @@
 # Core dependencies for PhoenixBoot task runner and utilities
 
 # Task runner dependencies
-fabric>=3.2.0  # Required by pf_parser.py for remote execution support
-
-# Optional: Development and testing
-# pytest>=7.4.0
-# pytest-asyncio>=0.21.0
+fabric>=3.2.0,<4.0.0  # Required by pf_parser.py for remote execution support
 
 # Note: Many utilities use only standard library modules
 # Additional dependencies for specific features are in subdirectories:
 # - ideas/cloud_integration/requirements.txt - Cloud integration features
+#
+# For development and testing dependencies, see dev-requirements.txt (if it exists)
+# or install: pytest>=7.4.0, pytest-asyncio>=0.21.0

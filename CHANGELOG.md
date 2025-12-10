@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Essential project documentation (LICENSE, CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md)
 - Comprehensive security policy and vulnerability reporting guidelines
 - Contributor guidelines and code of conduct
+- Python requirements.txt with fabric dependency for task runner
 
 ### Changed
 - Repository now includes all standard open-source documentation files
@@ -18,9 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Established formal security reporting process via SECURITY.md
 
-## [0.9.0] - 2024-12-07
-
-### Added
+### Container-Based Architecture
 - **Container-Based Architecture**: Modular container system for build, test, installer, runtime, and TUI
   - Build container with EDK2, GCC, and artifact creation
   - Test container with QEMU validation
@@ -45,21 +44,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Nuclear wipe system for complete sanitization
   - Comprehensive variable descriptions (150+ patterns)
 
-### Improved
+### Kernel Hardening and Security Features
 - Kernel Hardening Analyzer with DISA STIG compliance checks
 - UEFI Variable Security verification
 - Firmware checksum database validation
-- Documentation structure and organization
 - Task runner organization with multiple .pf files
 
-### Fixed
+### Bug Fixes
 - UUEFI.efi no longer crashes (was identical to NuclearBootEdk2.efi)
 - Build process now properly generates distinct binaries
 - ESP packaging workflow
 
-## [0.8.0] - Previous Release
+## Core Features
 
-### Added
+### Boot Security
 - **Nuclear Boot (NuclearBootEdk2)**: Battle-tested UEFI bootloader
   - Secure Boot enforcement
   - Runtime attestation with hash verification

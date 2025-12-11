@@ -2,7 +2,8 @@
 # =====================================================
 
 # FastAPI and dependencies
-fastapi>=0.104.0
+# Updated to fix CVE-2024-24762 (ReDoS vulnerability)
+fastapi>=0.109.1
 uvicorn[standard]>=0.24.0
 python-multipart>=0.0.6
 
@@ -14,7 +15,8 @@ pydantic>=2.4.0
 
 # HTTP clients for scraping
 httpx>=0.25.0
-aiohttp>=3.9.0
+# Updated to fix CVE-2024-27308 (directory traversal) and CVE-2024-30251 (DOS)
+aiohttp>=3.9.4
 
 # Data processing and analysis
 numpy>=1.24.0
@@ -29,7 +31,8 @@ beautifulsoup4>=4.12.0
 lxml>=4.9.0
 
 # Cryptography for secure operations
-cryptography>=41.0.0
+# Updated to fix CVE-2024-26130, CVE-2023-50782, CVE-2023-49083
+cryptography>=42.0.4
 
 # Background task processing
 celery>=5.3.0

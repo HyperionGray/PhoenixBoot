@@ -24,14 +24,14 @@ task workflow-cd-prepare
   shell bash -c "ARTIFACT_DIR=out/artifacts CD_BUILD_DIR=nuclear-cd-build && if [ -f $ARTIFACT_DIR/esp/esp.img ]; then cp $ARTIFACT_DIR/esp/esp.img $CD_BUILD_DIR/boot/; fi"
   shell ARTIFACT_DIR=out/artifacts CD_BUILD_DIR=nuclear-cd-build && cp $ARTIFACT_DIR/esp/*.efi $CD_BUILD_DIR/efi/ || true
   shell bash -c "ARTIFACT_DIR=out/artifacts CD_BUILD_DIR=nuclear-cd-build && if [ -d $ARTIFACT_DIR/keys ]; then cp -r $ARTIFACT_DIR/keys/* $CD_BUILD_DIR/keys/ || true; fi"
-  shell bash scripts/create-secureboot-instructions.sh
+  shell bash scripts/secure-boot/create-secureboot-instructions.sh
   shell CD_BUILD_DIR=nuclear-cd-build && echo '✅ CD structure prepared in' $CD_BUILD_DIR
   shell echo '   Next: Use ISO creation tool to burn to CD'
 end
 
 task workflow-secureboot-instructions
   describe Generate comprehensive secure boot setup instructions
-  shell bash scripts/generate-secureboot-instructions.sh
+  shell bash scripts/secure-boot/generate-secureboot-instructions.sh
 end
 
 task workflow-complete-esp-cd

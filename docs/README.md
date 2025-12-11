@@ -85,17 +85,16 @@ sudo python3 scripts/hardware_firmware_recovery.py clean_firmware.bin
 
 **Integrated VM Recovery:**
 - **KVM Snapshot Jump**: Boot clean snapshot with GPU passthrough and enhanced CPU features
-- **Dom0 Firmware Audits**: Automatic firmware verification from Xen dom0 VMs
 - **Host-to-VM Communication**: SSH-based firmware recovery coordination
 
-### ☠ **Clean GRUB Boot & Xen Snapshot Jump**
+### ☠ **Clean GRUB Boot & KVM Snapshot Jump**
 
-You can chainload a known-clean GRUB from NuclearBoot as an alternative to the Xen jump. This is useful when you want a simple, non‑hypervisor path while still avoiding a potentially compromised on‑disk bootloader.
+You can chainload a known-clean GRUB from NuclearBoot as an alternative path. This is useful when you want a simple, non‑hypervisor path while still avoiding a potentially compromised on‑disk bootloader.
 
 **Install (on a running Linux with the ESP mounted at /boot/efi):**
 - Stage clean GRUB/shim and a minimal grub.cfg on the ESP, substituting your root UUID:
   ```bash
-  sudo ./scripts/install_clean_grub_boot.sh \
+  sudo ./scripts/esp-packaging/install_clean_grub_boot.sh \
     --esp /boot/efi \
     --root-uuid <ROOT_UUID> \
     [--shim /usr/lib/shim/shimx64.efi.signed] \
@@ -106,18 +105,12 @@ You can chainload a known-clean GRUB from NuclearBoot as an alternative to the X
 **Use at boot:**
 - In NuclearBoot menu, press **G** for "Clean GRUB Boot". It tries \\EFI\\PhoenixGuard\\shimx64.efi, then \\EFI\\PhoenixGuard\\grubx64.efi.
 - Press **K** for "KVM Snapshot Jump" to boot your clean VM snapshot with GPU passthrough.
-- Press **X** for "Xen Snapshot Jump" to boot into Xen hypervisor for remediation.
-
-**Validate after boot to detect partition switching:**
-- `sudo EXPECT_UUID=<ROOT_UUID> resources/xen/dom0/validate-clean-os.sh`
 
 **Notes:**
 - Secure Boot: prefer shimx64.efi.signed and ensure grubx64.efi is trusted (MOK/vendor key).
 - The provided grub.cfg pins the root by UUID to avoid "hd" reordering tricks.
 - KVM snapshots use enhanced CPU passthrough with host CPU features and topology detection.
 - All VM solutions use Secure Boot enabled OVMF with Microsoft key templates.
-
-For the Xen-based remediation path and passthrough setup, see resources/xen/README.md.
 
 **"Like the mythical phoenix, your system rises from the ashes of compromise"**
 

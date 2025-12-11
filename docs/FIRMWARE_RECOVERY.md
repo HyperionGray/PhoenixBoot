@@ -81,15 +81,12 @@ recovery.restore_backup("firmware_backup_20250822.bin")
 
 ## Integration with VM Recovery
 
-### Dom0 Remediation Integration
+### KVM Remediation Integration
 
-The hardware firmware recovery system integrates seamlessly with Xen dom0 remediation workflows:
+The hardware firmware recovery system integrates with KVM snapshot jump workflows for safe analysis:
 
 ```bash
-# Dom0 automatically checks host firmware during remediation
-sudo resources/xen/dom0/bootkit-remediate.sh
-
-# Manual firmware check from dom0
+# Manual firmware check from recovery environment
 ssh host-system "sudo python3 /path/to/hardware_firmware_recovery.py --verify-only /dev/null"
 ```
 
@@ -246,7 +243,6 @@ sudo python3 scripts/hardware_firmware_recovery.py --verify-only /dev/null
 make -C Tegrity verify
 
 # Validate boot process
-sudo resources/xen/dom0/validate-clean-os.sh
 ```
 
 ## Advanced Usage

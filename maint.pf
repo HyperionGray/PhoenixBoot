@@ -1,16 +1,16 @@
 task maint-regen-instructions
   describe Generate copilot-instructions.md
-  shell bash scripts/regen-instructions.sh
+  shell bash scripts/maintenance/regen-instructions.sh
 end
 
 task maint-lint
   describe Run static analysis
-  shell bash scripts/lint.sh
+  shell bash scripts/maintenance/lint.sh
 end
 
 task maint-format
   describe Format source code
-  shell bash scripts/format.sh
+  shell bash scripts/maintenance/format.sh
 end
 
 task maint-docs

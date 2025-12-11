@@ -49,3 +49,8 @@ nohup*.out
 *.swp
 *.swo
 .pf_archive/
+
+# Hex dump artifacts
+*.xxd
+*.xxd.xxd
+*.xxd.xxd.xxd

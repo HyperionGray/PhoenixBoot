@@ -4,59 +4,59 @@
 # --- Build Tasks ---
 task build-setup
   describe Bootstrap toolchain & environment
-  shell bash scripts/toolchain-check.sh
+  shell bash scripts/maintenance/toolchain-check.sh
 end
 
 task build-build
   describe Build production artifacts from staging/
-  shell bash scripts/build-production.sh
+  shell bash scripts/build/build-production.sh
 end
 
 task build-package-esp
   describe Package bootable ESP image
-  shell bash scripts/esp-package.sh
+  shell bash scripts/esp-packaging/esp-package.sh
 end
 
 task build-package-esp-neg-attest
   describe Create negative attestation ESP (corrupted hash)
-  shell bash scripts/package-esp-neg-attest.sh
+  shell bash scripts/esp-packaging/package-esp-neg-attest.sh
 end
 
 # --- Testing Tasks ---
 task test-qemu
   describe Main QEMU boot test
-  shell bash scripts/qemu-test.sh
+  shell bash scripts/testing/qemu-test.sh
 end
 
 task test-qemu-secure-positive
   describe Secure Boot positive test
-  shell bash scripts/qemu-test-secure-positive.sh
+  shell bash scripts/testing/qemu-test-secure-positive.sh
 end
 
 task test-qemu-uuefi
   describe UUEFI application test
-  shell bash scripts/qemu-test-uuefi.sh
+  shell bash scripts/testing/qemu-test-uuefi.sh
 end
 
 task test-qemu-secure-strict
   describe Secure Boot strict mode test
-  shell bash scripts/qemu-test-secure-strict.sh
+  shell bash scripts/testing/qemu-test-secure-strict.sh
 end
 
 task test-qemu-secure-negative-attest
   describe NuclearBoot corruption detection test
-  shell bash scripts/qemu-test-secure-negative-attest.sh
+  shell bash scripts/testing/qemu-test-secure-negative-attest.sh
 end
 
 # --- Secure Boot Key Management ---
 task secure-keygen
   describe Generate Secure Boot keypairs (RSA-4096) and X.509 certs
-  shell bash scripts/generate-sb-keys.sh
+  shell bash scripts/secure-boot/generate-sb-keys.sh
 end
 
 task secure-env
   describe Comprehensive security environment check - verify boot integrity, EFI vars, kernel security, and detect bootkits
-  shell bash scripts/secure-env-check.sh
+  shell bash scripts/validation/secure-env-check.sh
 end
 
 task kernel-hardening-check
@@ -117,23 +117,23 @@ end
 
 task secure-make-auth
   describe Create ESL and AUTH for PK/KEK/db
-  shell bash scripts/create-auth-files.sh
+  shell bash scripts/secure-boot/create-auth-files.sh
 end
 
 # --- MOK (Machine Owner Key) Management ---
 task os-mok-enroll
   describe Enroll host MOK for module signing
-  shell bash -lc 'scripts/enroll-mok.sh "${MOK_CERT_PEM:-out/keys/mok/PGMOK.crt}" "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}" ${MOK_DRY_RUN:-0}'
+  shell bash -lc 'scripts/mok-management/enroll-mok.sh "${MOK_CERT_PEM:-out/keys/mok/PGMOK.crt}" "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}" ${MOK_DRY_RUN:-0}'
 end
 
 task os-mok-list-keys
   describe List available MOK certs/keys and enrollment status
-  shell bash scripts/mok-list-keys.sh
+  shell bash scripts/mok-management/mok-list-keys.sh
 end
 
 task secure-mok-new
   describe Generate new PhoenixGuard MOK keypair (use NAME and CN env)
-  shell bash -lc 'scripts/mok-new.sh "${NAME:-PGMOK}" "${CN:-PhoenixGuard Module Key}"'
+  shell bash -lc 'scripts/mok-management/mok-new.sh "${NAME:-PGMOK}" "${CN:-PhoenixGuard Module Key}"'
 end
 
 # --- Module Signing ---
@@ -146,29 +146,29 @@ end
 # --- UUEFI Operations ---
 task uuefi-install
   describe Install UUEFI.efi to system ESP
-  shell bash scripts/uuefi-install.sh
+  shell bash scripts/uefi-tools/uuefi-install.sh
 end
 
 task uuefi-apply
   describe UUEFI apply (set BootNext; optionally create entry)
-  shell bash scripts/uuefi-apply.sh
+  shell bash scripts/uefi-tools/uuefi-apply.sh
 end
 
 task uuefi-report
   describe UUEFI report (read-only)
-  shell bash scripts/uuefi-report.sh
+  shell bash scripts/uefi-tools/uuefi-report.sh
 end
 
 # --- Validation ---
 task validate-all
   describe Run all validations
-  shell bash scripts/validate-keys.sh
-  shell bash scripts/validate-esp.sh
+  shell bash scripts/validation/validate-keys.sh
+  shell bash scripts/validation/validate-esp.sh
 end
 
 task verify-esp-robust
   describe Robust ESP verification
-  shell bash scripts/verify-esp-robust.sh
+  shell bash scripts/validation/verify-esp-robust.sh
 end
 
 # --- SecureBoot Bootable Media ---

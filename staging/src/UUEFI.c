@@ -21,7 +21,7 @@
 #include <Guid/FileInfo.h>
 #include <Guid/GlobalVariable.h>
 
-#define UUEFI_VERSION L"3.0.0"
+#define UUEFI_VERSION L"3.1.0"
 #define MAX_VARIABLE_NAME_SIZE 1024
 #define MAX_VARIABLES 500
 #define MAX_SUSPICIOUS_ITEMS 50
@@ -1607,6 +1607,483 @@ DisplayBuildInfo(
 }
 
 /**
+  Dump variable data in hex and ASCII format
+  
+  @param VarInfo  Variable information including name and GUID
+**/
+VOID
+DumpVariableData(
+  IN VARIABLE_INFO *VarInfo
+  )
+{
+  EFI_STATUS Status;
+  UINT8 *Data = NULL;
+  UINTN DataSize = VarInfo->DataSize;
+  
+  if (DataSize == 0) {
+    Print(L"    [Empty variable]\n");
+    return;
+  }
+  
+  // Limit display size for sanity
+  UINTN DisplaySize = DataSize;
+  BOOLEAN Truncated = FALSE;
+  if (DisplaySize > 256) {
+    DisplaySize = 256;
+    Truncated = TRUE;
+  }
+  
+  Data = AllocateZeroPool(DataSize);
+  if (Data == NULL) {
+    Print(L"    [Failed to allocate memory]\n");
+    return;
+  }
+  
+  Status = gRT->GetVariable(
+    VarInfo->Name,
+    &VarInfo->VendorGuid,
+    NULL,
+    &DataSize,
+    Data
+  );
+  
+  if (EFI_ERROR(Status)) {
+    Print(L"    [Failed to read: %r]\n", Status);
+    FreePool(Data);
+    return;
+  }
+  
+  // Display in hex dump format
+  Print(L"    Hex dump (%lu bytes%s):\n", DataSize, Truncated ? L", truncated" : L"");
+  for (UINTN i = 0; i < DisplaySize; i += 16) {
+    Print(L"    %04x: ", i);
+    
+    // Hex values
+    for (UINTN j = 0; j < 16 && (i + j) < DisplaySize; j++) {
+      Print(L"%02x ", Data[i + j]);
+    }
+    
+    // Padding if last line is partial
+    UINTN BytesOnLine = (DisplaySize - i < 16) ? (DisplaySize - i) : 16;
+    for (UINTN j = BytesOnLine; j < 16; j++) {
+      Print(L"   ");
+    }
+    
+    Print(L" |");
+    
+    // ASCII representation
+    for (UINTN j = 0; j < 16 && (i + j) < DisplaySize; j++) {
+      UINT8 c = Data[i + j];
+      if (c >= 0x20 && c <= 0x7E) {
+        Print(L"%c", (CHAR16)c);
+      } else {
+        Print(L".");
+      }
+    }
+    
+    Print(L"|\n");
+  }
+  
+  if (Truncated) {
+    Print(L"    ... (%lu more bytes not shown)\n", DataSize - DisplaySize);
+  }
+  
+  FreePool(Data);
+}
+
+/**
+  Display all variables with full data dumps
+**/
+VOID
+ShowDebugVariableDump(VOID)
+{
+  Print(L"\n");
+  Print(L"╔════════════════════════════════════════════╗\n");
+  Print(L"║    DEBUG: COMPLETE VARIABLE DUMP          ║\n");
+  Print(L"╚════════════════════════════════════════════╝\n");
+  Print(L"\n");
+  Print(L"Dumping ALL %lu variables with full data...\n", gVariableCount);
+  Print(L"This may take several minutes.\n\n");
+  
+  for (UINTN i = 0; i < gVariableCount; i++) {
+    VARIABLE_INFO *var = &gVariables[i];
+    
+    Print(L"[%lu] %s\n", i, var->Name);
+    Print(L"  GUID: %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
+          var->VendorGuid.Data1,
+          var->VendorGuid.Data2,
+          var->VendorGuid.Data3,
+          var->VendorGuid.Data4[0],
+          var->VendorGuid.Data4[1],
+          var->VendorGuid.Data4[2],
+          var->VendorGuid.Data4[3],
+          var->VendorGuid.Data4[4],
+          var->VendorGuid.Data4[5],
+          var->VendorGuid.Data4[6],
+          var->VendorGuid.Data4[7]);
+    Print(L"  Size: %lu bytes\n", var->DataSize);
+    Print(L"  Attributes: 0x%08x\n", var->Attributes);
+    
+    // Decode attributes
+    Print(L"  Flags: ");
+    if (var->Attributes & EFI_VARIABLE_NON_VOLATILE) Print(L"NV ");
+    if (var->Attributes & EFI_VARIABLE_BOOTSERVICE_ACCESS) Print(L"BS ");
+    if (var->Attributes & EFI_VARIABLE_RUNTIME_ACCESS) Print(L"RT ");
+    if (var->Attributes & EFI_VARIABLE_HARDWARE_ERROR_RECORD) Print(L"HW_ERR ");
+    if (var->Attributes & EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS) Print(L"AUTH_WR ");
+    if (var->Attributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) Print(L"TIME_AUTH ");
+    if (var->Attributes & EFI_VARIABLE_APPEND_WRITE) Print(L"APPEND ");
+    Print(L"\n");
+    
+    if (var->Description[0] != 0) {
+      Print(L"  Description: %s\n", var->Description);
+    }
+    
+    // Dump the actual data
+    DumpVariableData(var);
+    
+    Print(L"\n");
+    
+    // Pause every 5 variables to avoid overwhelming output
+    if ((i + 1) % 5 == 0 && (i + 1) < gVariableCount) {
+      Print(L"--- Showing %lu of %lu variables. Press any key to continue... ---\n", i + 1, gVariableCount);
+      EFI_INPUT_KEY Key;
+      UINTN Index;
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      if (Key.UnicodeChar == L'q' || Key.UnicodeChar == L'Q') {
+        Print(L"Dump cancelled by user.\n");
+        return;
+      }
+    }
+  }
+  
+  Print(L"\n✓ Complete variable dump finished.\n");
+}
+
+/**
+  Enumerate and display all UEFI protocols installed in the system
+**/
+VOID
+ShowProtocolDatabase(VOID)
+{
+  EFI_STATUS Status;
+  UINTN HandleCount = 0;
+  EFI_HANDLE *HandleBuffer = NULL;
+  
+  Print(L"\n");
+  Print(L"╔════════════════════════════════════════════╗\n");
+  Print(L"║   DEBUG: PROTOCOL DATABASE ENUMERATION    ║\n");
+  Print(L"╚════════════════════════════════════════════╝\n");
+  Print(L"\n");
+  
+  // Get all handles
+  Status = gBS->LocateHandleBuffer(
+    AllHandles,
+    NULL,
+    NULL,
+    &HandleCount,
+    &HandleBuffer
+  );
+  
+  if (EFI_ERROR(Status)) {
+    Print(L"Failed to enumerate handles: %r\n", Status);
+    return;
+  }
+  
+  Print(L"Found %lu handles in system\n\n", HandleCount);
+  
+  // For each handle, enumerate its protocols
+  for (UINTN i = 0; i < HandleCount; i++) {
+    EFI_GUID **ProtocolGuidArray = NULL;
+    UINTN ProtocolCount = 0;
+    
+    Status = gBS->ProtocolsPerHandle(
+      HandleBuffer[i],
+      &ProtocolGuidArray,
+      &ProtocolCount
+    );
+    
+    if (!EFI_ERROR(Status) && ProtocolCount > 0) {
+      Print(L"Handle[%lu]: %p (%lu protocols)\n", i, HandleBuffer[i], ProtocolCount);
+      
+      for (UINTN j = 0; j < ProtocolCount; j++) {
+        Print(L"  Protocol[%lu]: %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
+              j,
+              ProtocolGuidArray[j]->Data1,
+              ProtocolGuidArray[j]->Data2,
+              ProtocolGuidArray[j]->Data3,
+              ProtocolGuidArray[j]->Data4[0],
+              ProtocolGuidArray[j]->Data4[1],
+              ProtocolGuidArray[j]->Data4[2],
+              ProtocolGuidArray[j]->Data4[3],
+              ProtocolGuidArray[j]->Data4[4],
+              ProtocolGuidArray[j]->Data4[5],
+              ProtocolGuidArray[j]->Data4[6],
+              ProtocolGuidArray[j]->Data4[7]);
+      }
+      
+      FreePool(ProtocolGuidArray);
+    }
+    
+    // Pause every 10 handles
+    if ((i + 1) % 10 == 0 && (i + 1) < HandleCount) {
+      Print(L"\n--- Showing %lu of %lu handles. Press any key to continue (Q to quit)... ---\n", i + 1, HandleCount);
+      EFI_INPUT_KEY Key;
+      UINTN Index;
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      if (Key.UnicodeChar == L'q' || Key.UnicodeChar == L'Q') {
+        Print(L"Enumeration cancelled by user.\n");
+        break;
+      }
+      Print(L"\n");
+    }
+  }
+  
+  FreePool(HandleBuffer);
+  Print(L"\n✓ Protocol database enumeration complete.\n");
+}
+
+/**
+  Display system configuration tables
+**/
+VOID
+ShowConfigurationTables(VOID)
+{
+  Print(L"\n");
+  Print(L"╔════════════════════════════════════════════╗\n");
+  Print(L"║   DEBUG: CONFIGURATION TABLES             ║\n");
+  Print(L"╚════════════════════════════════════════════╝\n");
+  Print(L"\n");
+  Print(L"Number of Configuration Tables: %lu\n\n", gST->NumberOfTableEntries);
+  
+  for (UINTN i = 0; i < gST->NumberOfTableEntries; i++) {
+    EFI_CONFIGURATION_TABLE *Table = &gST->ConfigurationTable[i];
+    
+    Print(L"[%lu] GUID: %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
+          i,
+          Table->VendorGuid.Data1,
+          Table->VendorGuid.Data2,
+          Table->VendorGuid.Data3,
+          Table->VendorGuid.Data4[0],
+          Table->VendorGuid.Data4[1],
+          Table->VendorGuid.Data4[2],
+          Table->VendorGuid.Data4[3],
+          Table->VendorGuid.Data4[4],
+          Table->VendorGuid.Data4[5],
+          Table->VendorGuid.Data4[6],
+          Table->VendorGuid.Data4[7]);
+    Print(L"    Table Address: %p\n", Table->VendorTable);
+    
+    // Try to identify known tables
+    EFI_GUID AcpiTableGuid = { 0xeb9d2d30, 0x2d88, 0x11d3, { 0x9a, 0x16, 0x00, 0x90, 0x27, 0x3f, 0xc1, 0x4d }};
+    EFI_GUID Acpi20TableGuid = { 0x8868e871, 0xe4f1, 0x11d3, { 0xbc, 0x22, 0x00, 0x80, 0xc7, 0x3c, 0x88, 0x81 }};
+    EFI_GUID SmbiosTableGuid = { 0xeb9d2d31, 0x2d88, 0x11d3, { 0x9a, 0x16, 0x00, 0x90, 0x27, 0x3f, 0xc1, 0x4d }};
+    EFI_GUID Smbios3TableGuid = { 0xf2fd1544, 0x9794, 0x4a2c, { 0x99, 0x2e, 0xe5, 0xbb, 0xcf, 0x20, 0xe3, 0x94 }};
+    
+    if (CompareGuid(&Table->VendorGuid, &AcpiTableGuid)) {
+      Print(L"    Type: ACPI 1.0 Table\n");
+    } else if (CompareGuid(&Table->VendorGuid, &Acpi20TableGuid)) {
+      Print(L"    Type: ACPI 2.0+ Table\n");
+    } else if (CompareGuid(&Table->VendorGuid, &SmbiosTableGuid)) {
+      Print(L"    Type: SMBIOS 2.x Table\n");
+    } else if (CompareGuid(&Table->VendorGuid, &Smbios3TableGuid)) {
+      Print(L"    Type: SMBIOS 3.x Table\n");
+    } else {
+      Print(L"    Type: Unknown/Vendor-Specific\n");
+    }
+    
+    Print(L"\n");
+  }
+  
+  Print(L"✓ Configuration table enumeration complete.\n");
+}
+
+/**
+  Display detailed memory map with all regions
+**/
+VOID
+ShowDetailedMemoryMap(VOID)
+{
+  EFI_STATUS Status;
+  UINTN MemMapSize = 0;
+  EFI_MEMORY_DESCRIPTOR *MemMap = NULL;
+  UINTN MapKey;
+  UINTN DescriptorSize;
+  UINT32 DescriptorVersion;
+  
+  Print(L"\n");
+  Print(L"╔════════════════════════════════════════════╗\n");
+  Print(L"║   DEBUG: DETAILED MEMORY MAP              ║\n");
+  Print(L"╚════════════════════════════════════════════╝\n");
+  Print(L"\n");
+  
+  // Get memory map size
+  Status = gBS->GetMemoryMap(&MemMapSize, MemMap, &MapKey, &DescriptorSize, &DescriptorVersion);
+  if (Status == EFI_BUFFER_TOO_SMALL) {
+    MemMapSize += 2 * DescriptorSize;
+    MemMap = AllocatePool(MemMapSize);
+    if (MemMap != NULL) {
+      Status = gBS->GetMemoryMap(&MemMapSize, MemMap, &MapKey, &DescriptorSize, &DescriptorVersion);
+      if (!EFI_ERROR(Status)) {
+        UINTN EntryCount = MemMapSize / DescriptorSize;
+        
+        Print(L"Memory Map Entries: %lu\n", EntryCount);
+        Print(L"Descriptor Version: 0x%x\n", DescriptorVersion);
+        Print(L"Descriptor Size: %lu bytes\n\n", DescriptorSize);
+        
+        Print(L"Type                      PhysicalStart       VirtualStart        Pages       Attributes\n");
+        Print(L"═════════════════════════════════════════════════════════════════════════════════════════\n");
+        
+        for (UINTN i = 0; i < EntryCount; i++) {
+          EFI_MEMORY_DESCRIPTOR *Entry = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemMap + (i * DescriptorSize));
+          
+          CHAR16 *TypeStr;
+          switch (Entry->Type) {
+            case EfiReservedMemoryType: TypeStr = L"Reserved"; break;
+            case EfiLoaderCode: TypeStr = L"LoaderCode"; break;
+            case EfiLoaderData: TypeStr = L"LoaderData"; break;
+            case EfiBootServicesCode: TypeStr = L"BSCode"; break;
+            case EfiBootServicesData: TypeStr = L"BSData"; break;
+            case EfiRuntimeServicesCode: TypeStr = L"RTCode"; break;
+            case EfiRuntimeServicesData: TypeStr = L"RTData"; break;
+            case EfiConventionalMemory: TypeStr = L"Conventional"; break;
+            case EfiUnusableMemory: TypeStr = L"Unusable"; break;
+            case EfiACPIReclaimMemory: TypeStr = L"ACPIReclaim"; break;
+            case EfiACPIMemoryNVS: TypeStr = L"ACPINVS"; break;
+            case EfiMemoryMappedIO: TypeStr = L"MMIO"; break;
+            case EfiMemoryMappedIOPortSpace: TypeStr = L"MMIOPort"; break;
+            case EfiPalCode: TypeStr = L"PalCode"; break;
+            case EfiPersistentMemory: TypeStr = L"Persistent"; break;
+            default: TypeStr = L"Unknown"; break;
+          }
+          
+          Print(L"%-20s %016lx %016lx %8lu %016lx\n",
+                TypeStr,
+                Entry->PhysicalStart,
+                Entry->VirtualStart,
+                Entry->NumberOfPages,
+                Entry->Attribute);
+          
+          // Pause every 20 entries
+          if ((i + 1) % 20 == 0 && (i + 1) < EntryCount) {
+            Print(L"\n--- Showing %lu of %lu entries. Press any key to continue (Q to quit)... ---\n\n", i + 1, EntryCount);
+            EFI_INPUT_KEY Key;
+            UINTN Index;
+            gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+            gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+            if (Key.UnicodeChar == L'q' || Key.UnicodeChar == L'Q') {
+              Print(L"Memory map display cancelled by user.\n");
+              break;
+            }
+          }
+        }
+        
+        Print(L"\n✓ Memory map enumeration complete.\n");
+      }
+      FreePool(MemMap);
+    }
+  }
+}
+
+/**
+  Show comprehensive debug menu with all diagnostic options
+**/
+VOID
+ShowDebugMenu(VOID)
+{
+  EFI_INPUT_KEY Key;
+  UINTN Index;
+  BOOLEAN exitMenu = FALSE;
+  
+  while (!exitMenu) {
+    Print(L"\n");
+    Print(L"╔════════════════════════════════════════════╗\n");
+    Print(L"║    🔍 DEBUG DIAGNOSTICS MENU 🔍          ║\n");
+    Print(L"║  EVERYTHING - ALL VARS, ALL LOGS, ALL!    ║\n");
+    Print(L"╚════════════════════════════════════════════╝\n");
+    Print(L"\n");
+    Print(L"⚠ WARNING: Debug output is extremely verbose!\n");
+    Print(L"   These dumps may take several minutes.\n");
+    Print(L"\n");
+    Print(L"1. Complete Variable Dump (ALL variable data in hex)\n");
+    Print(L"2. Protocol Database (Find ALL protocols/IOCTLs)\n");
+    Print(L"3. Configuration Tables (ACPI, SMBIOS, etc.)\n");
+    Print(L"4. Detailed Memory Map (ALL memory regions)\n");
+    Print(L"5. Full System Dump (ALL of the above)\n");
+    Print(L"Q. Return to Main Menu\n");
+    Print(L"\nSelect option: ");
+    
+    gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+    gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+    Print(L"%c\n", Key.UnicodeChar);
+    
+    switch (Key.UnicodeChar) {
+      case L'1':
+        ShowDebugVariableDump();
+        Print(L"\nPress any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+        
+      case L'2':
+        ShowProtocolDatabase();
+        Print(L"\nPress any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+        
+      case L'3':
+        ShowConfigurationTables();
+        Print(L"\nPress any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+        
+      case L'4':
+        ShowDetailedMemoryMap();
+        Print(L"\nPress any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+        
+      case L'5':
+        Print(L"\n🔥 FULL SYSTEM DUMP - This will take several minutes! 🔥\n");
+        Print(L"Press 'Y' to confirm, any other key to cancel: ");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        Print(L"%c\n", Key.UnicodeChar);
+        
+        if (Key.UnicodeChar == L'Y' || Key.UnicodeChar == L'y') {
+          Print(L"\nStarting full system dump...\n");
+          ShowDebugVariableDump();
+          ShowProtocolDatabase();
+          ShowConfigurationTables();
+          ShowDetailedMemoryMap();
+          Print(L"\n✓ Full system dump complete!\n");
+        } else {
+          Print(L"Cancelled.\n");
+        }
+        
+        Print(L"\nPress any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+        
+      case L'Q':
+      case L'q':
+        exitMenu = TRUE;
+        break;
+        
+      default:
+        Print(L"Invalid option\n");
+        break;
+    }
+  }
+}
+
+/**
   Main entry point for UUEFI
   
   @param ImageHandle  The firmware allocated handle for the EFI image.
@@ -1635,7 +2112,7 @@ UefiMain (
   Print(L"╔════════════════════════════════════════════╗\n");
   Print(L"║  🔥 PhoenixGuard UUEFI %s         ║\n", UUEFI_VERSION);
   Print(L"║  Universal UEFI Diagnostic Tool           ║\n");
-  Print(L"║  Full BIOS Features + Nuclear Wipe        ║\n");
+  Print(L"║  Full BIOS + Debug Everything Mode        ║\n");
   Print(L"╚════════════════════════════════════════════╝\n");
 
   // Display marker for test detection
@@ -1671,6 +2148,7 @@ UefiMain (
   Print(L"\n\nOptions:\n");
   Print(L"  M - Enter Interactive Menu (View & Manage Variables)\n");
   Print(L"  R - Show Security Report\n");
+  Print(L"  D - 🔍 Debug Diagnostics (EVERYTHING - ALL vars, logs, protocols!)\n");
   Print(L"  N - ☢ Nuclear Wipe Menu (EXTREME)\n");
   Print(L"  Q - Return to Firmware\n");
   Print(L"\nSelect option: ");
@@ -1685,17 +2163,20 @@ UefiMain (
     
     if (Key.UnicodeChar == L'M' || Key.UnicodeChar == L'm') {
       ShowInteractiveMenu();
-      Print(L"\nOptions: M - Menu, R - Report, N - Nuclear Wipe, Q - Quit\nSelect: ");
+      Print(L"\nOptions: M - Menu, R - Report, D - Debug, N - Nuclear Wipe, Q - Quit\nSelect: ");
     } else if (Key.UnicodeChar == L'R' || Key.UnicodeChar == L'r') {
       DisplaySecurityReport();
-      Print(L"\nOptions: M - Menu, R - Report, N - Nuclear Wipe, Q - Quit\nSelect: ");
+      Print(L"\nOptions: M - Menu, R - Report, D - Debug, N - Nuclear Wipe, Q - Quit\nSelect: ");
+    } else if (Key.UnicodeChar == L'D' || Key.UnicodeChar == L'd') {
+      ShowDebugMenu();
+      Print(L"\nOptions: M - Menu, R - Report, D - Debug, N - Nuclear Wipe, Q - Quit\nSelect: ");
     } else if (Key.UnicodeChar == L'N' || Key.UnicodeChar == L'n') {
       ShowNuclearWipeMenu();
-      Print(L"\nOptions: M - Menu, R - Report, N - Nuclear Wipe, Q - Quit\nSelect: ");
+      Print(L"\nOptions: M - Menu, R - Report, D - Debug, N - Nuclear Wipe, Q - Quit\nSelect: ");
     } else if (Key.UnicodeChar == L'Q' || Key.UnicodeChar == L'q') {
       break;
     } else {
-      Print(L"Invalid option. Try M, R, or Q: ");
+      Print(L"Invalid option. Try M, R, D, N, or Q: ");
     }
   }
 

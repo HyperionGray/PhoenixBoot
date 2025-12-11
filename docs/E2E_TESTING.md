@@ -173,7 +173,7 @@ Tests look for specific markers in serial output:
 
 ## Excluded Tests
 
-Per the issue requirements, Xen boot tests are **not included** in the workflow. The Xen hypervisor integration remains as proof-of-concept code in `resources/xen/`.
+Per the issue requirements, Xen boot tests are **not included** in the workflow. Xen hypervisor integration has been removed from the repository.
 
 ## Troubleshooting
 

@@ -82,3 +82,23 @@ task workflow-test-uuefi
   shell bash -c "if [ -f out/qemu/serial-uuefi.log ]; then echo '  Log: out/qemu/serial-uuefi.log'; wc -l out/qemu/serial-uuefi.log; else echo '  No log file generated'; fi"
   shell bash -c "if [ -f out/qemu/report-uuefi.xml ]; then echo '  Report: out/qemu/report-uuefi.xml'; grep -o 'failures=\"[0-9]*\"' out/qemu/report-uuefi.xml; fi"
 end
+
+task workflow-usb-prepare
+  describe Prepare USB media structure (requires USB_DEVICE)
+  shell bash scripts/usb-tools/usb-prepare.sh
+end
+
+task workflow-usb-write-dd
+  describe Write image to USB using dd (DESTRUCTIVE - requires USB_DEVICE and IMG_PATH)
+  shell bash scripts/usb-tools/usb-write-dd.sh
+end
+
+task workflow-recovery-reboot-metal
+  describe Reboot to normal metal boot (exit recovery environment)
+  shell bash scripts/recovery/reboot-to-metal.sh
+end
+
+task workflow-recovery-reboot-vm
+  describe Reboot to VM/recovery environment
+  shell bash scripts/recovery/reboot-to-vm.sh
+end

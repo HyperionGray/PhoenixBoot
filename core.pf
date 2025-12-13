@@ -159,6 +159,12 @@ task uuefi-report
   shell bash scripts/uefi-tools/uuefi-report.sh
 end
 
+# --- Boot Management ---
+task os-boot-clean
+  describe Clean stale UEFI boot entries (set OS_BOOT_RM, OS_BOOT_ORDER, OS_BOOT_NEXT)
+  shell bash scripts/maintenance/os-boot-clean.sh
+end
+
 # --- Validation ---
 task validate-all
   describe Run all validations

@@ -1,1 +1,0 @@
-Don't submit bad things.

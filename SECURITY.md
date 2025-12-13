@@ -1,4 +1,0 @@
-Tell us about security issues. Or exploit them and let us know how. We don't care which order. If we screw up, we and anyone else you want to tell should know whenever you want.
-But just to be clear, we're not taking responsibility, it says right there in the license. So like, follow that first. But after that, do whatever you need to do and think is
-right. "Responsible" disclosure is a fake misnomer that lets enterprises get away with some bullshit, we're not enforcing that nor do we encourage it. Be responsible, do what
-you think is right, have actual ethics, do that. It's our job to fix this shit. Still not taking responsibility though, remember, license and such. Not liable either, etc.

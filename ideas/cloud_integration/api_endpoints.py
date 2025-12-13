@@ -11,6 +11,12 @@ Integrates with:
 - Redis for task queues and user sessions
 - Tailscale VPN multi-tenant isolation
 - Credit/billing system
+
+SECURITY WARNING: This is example/demo code. DO NOT use in production without:
+1. Setting SECRET_KEY from environment variable
+2. Implementing proper authentication
+3. Using secure session management
+4. Adding rate limiting and input validation
 """
 
 from flask import Flask, request, jsonify, session
@@ -20,13 +26,20 @@ import json
 import redis
 import hashlib
 import uuid
+import os
 from typing import Dict, List, Optional
 import logging
 from cooperative_phoenixguard import CooperativePhoenixGuard, CooperativeTask
 
 # Initialize Flask app for integration
 app = Flask(__name__)
-app.secret_key = "phoenixguard_cooperative_secret_key_change_in_production"
+
+# SECURITY: Use environment variable for secret key in production
+# Generate a secure key with: python -c 'import secrets; print(secrets.token_hex(32))'
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-only-insecure-key-change-in-production')
+if app.secret_key == 'dev-only-insecure-key-change-in-production':
+    logging.error("⚠️  CRITICAL: Using insecure development secret key. Set FLASK_SECRET_KEY environment variable!")
+
 CORS(app, origins=["https://*.yourcloudplatform.com", "https://phoenixguard.coop"])
 
 # Redis connection for your cloud platform

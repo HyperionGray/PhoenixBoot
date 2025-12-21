@@ -54,3 +54,7 @@ nohup*.out
 *.xxd
 *.xxd.xxd
 *.xxd.xxd.xxd
+
+# Generated documentation files
+copilot-instructions.md
+WARP.md

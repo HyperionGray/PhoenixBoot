@@ -640,45 +640,48 @@ PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 
 ## 📚 Documentation
 
-Comprehensive documentation is available in the `docs/` directory:
+### Getting Started
 
-### Container Architecture & TUI (NEW!)
+- **[Getting Started Guide](GETTING_STARTED.md)** - 👈 **START HERE** for new users
+- **[Quick Reference](QUICKSTART.md)** - Common commands and workflows
+- **[System Architecture](ARCHITECTURE.md)** - Complete architectural overview
 
-- **[Container Architecture](docs/CONTAINER_ARCHITECTURE.md)** - Complete guide to container-based architecture
+### Container Architecture & TUI
+
+- **[Container Architecture](docs/CONTAINER_ARCHITECTURE.md)** - Container-based architecture guide
 - **[Container Setup](docs/CONTAINER_SETUP.md)** - Getting started with containers
-- **[TUI Guide](docs/TUI_GUIDE.md)** - Interactive terminal interface usage
+- **[TUI Guide](docs/TUI_GUIDE.md)** - Interactive terminal interface
 - **[Architecture Diagram](docs/ARCHITECTURE_DIAGRAM.md)** - Visual system architecture
+
+### Technical Documentation
+
+- **[Secure Boot Implementation](docs/SECURE_BOOT.md)** - Secure Boot guide
+- **[Boot Security Analysis](docs/BOOT_SEQUENCE_AND_ATTACK_SURFACES.md)** - Attack surface analysis
+- **[Firmware Recovery](docs/FIRMWARE_RECOVERY.md)** - Recovery procedures
+- **[Hardware Access Deep Dive](docs/HARDWARE_ACCESS_DEEP_DIVE.md)** - Hardware-level operations
+- **[Security Environment Command](docs/SECURE_ENV_COMMAND.md)** - Security scanning guide
+- **[Kernel Hardening Guide](docs/KERNEL_HARDENING_GUIDE.md)** - Kernel security configuration
+
+### UUEFI Documentation
+
+- **[UUEFI v3.1 Features](docs/UUEFI_DEBUG_MODE.md)** - Latest debug diagnostics mode
+- **[UUEFI v3.0 Guide](docs/UUEFI_V3_GUIDE.md)** - Complete user guide
+- **[UUEFI Enhanced Features](docs/UUEFI_ENHANCED.md)** - Technical reference
+- **[Understanding Boot Artifacts](docs/UNDERSTANDING_BOOT_ARTIFACTS.md)** - Keys, shims, and boot concepts
+
+### Testing Documentation
+
+- **[E2E Testing](docs/E2E_TESTING.md)** - End-to-end test guide
+- **[Testing Guide](docs/TESTING_GUIDE.md)** - Comprehensive testing documentation
+- **[Testing Summary](TESTING_SUMMARY.md)** - Current test status
+
+### Additional Resources
+
+- **[Feature Status](FEATURES.md)** - Complete feature implementation status
+- **[Security Review](SECURITY_REVIEW_2025-12-07.md)** - Latest security audit
+- **[SecureBoot Bootable Media](docs/SECUREBOOT_BOOTABLE_MEDIA.md)** - Create bootable media guide
+- **[Container README](containers/README.md)** - Container directory overview
 - **[Quick Reference](docs/QUICK_REFERENCE.md)** - Command cheat sheet
-- **[containers/README.md](containers/README.md)** - Container directory overview
-
-### Core Documentation
-
-- `docs/README.md` - Detailed technical documentation
-- `docs/SECURE_BOOT.md` - Secure Boot implementation guide
-- `docs/BOOT_SEQUENCE_AND_ATTACK_SURFACES.md` - Boot security analysis
-- `docs/FIRMWARE_RECOVERY.md` - Firmware recovery procedures
-- `docs/HARDWARE_ACCESS_DEEP_DIVE.md` - Hardware-level access documentation
-- `docs/UUEFI_INVESTIGATION.md` - UUEFI crash investigation and resolution
-- `docs/UUEFI_ENHANCED.md` - **🆕 NEW**: UUEFI v2.0 enhanced features and usage guide
-- `docs/UNDERSTANDING_BOOT_ARTIFACTS.md` - **🆕 NEW**: Beginner-friendly guide to keys, shims, and boot artifacts
-
-**Key and Artifact Documentation**:
-- `keys/README.md` - **🆕 NEW**: Explains SecureBoot keys (PK, KEK, db) hierarchy and usage
-- `out/keys/mok/README.md` - **🆕 NEW**: MOK (Machine Owner Key) guide for kernel module signing
-- Quick reference: Run any key generation command to see educational output!
-- `docs/UUEFI_V3_GUIDE.md` - **🆕 NEW**: UUEFI v3.0 complete user guide with use cases
-- `docs/UUEFI_ENHANCED.md` - **🆕 NEW**: UUEFI v3.0 enhanced features and technical reference
-
-**Artifact Creation Documentation**:
-- Generated documentation in `out/artifacts/docs/`:
-  - `SECURE_BOOT_SETUP.md` - Comprehensive secure boot setup guide
-  - `README_CD.txt` - Quick start for CD/ISO users
-  - `CHECKSUMS.txt` - Artifact verification checksums
-
-Generate artifact documentation with:
-```bash
-./pf.py workflow-secureboot-instructions
-```
 
 ## 🤝 Contributing
 

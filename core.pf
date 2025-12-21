@@ -159,6 +159,12 @@ task uuefi-report
   shell bash scripts/uefi-tools/uuefi-report.sh
 end
 
+# --- Boot Management ---
+task os-boot-clean
+  describe Clean stale UEFI boot entries (set OS_BOOT_RM, OS_BOOT_ORDER, OS_BOOT_NEXT)
+  shell bash scripts/maintenance/os-boot-clean.sh
+end
+
 # --- Validation ---
 task validate-all
   describe Run all validations
@@ -208,6 +214,5 @@ end
 
 task cleanup
   describe Clean build artifacts (DEEP_CLEAN=1 for full ESP clean)
-  shell bash -lc 'rm -rf out/staging/* out/qemu/* out/lint/*'
-  shell bash -lc '[ "${DEEP_CLEAN:-0}" = "1" ] && rm -rf out/esp/* || true'
+  shell bash scripts/maintenance/cleanup.sh
 end

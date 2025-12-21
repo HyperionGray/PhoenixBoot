@@ -20,8 +20,7 @@ end
 
 task maint-clean
   describe Clean build artifacts (DEEP_CLEAN=1 for full ESP clean)
-  shell bash -lc 'rm -rf out/staging/* out/qemu/* out/lint/*'
-  shell bash -lc '[ "${DEEP_CLEAN:-0}" = "1" ] && rm -rf out/esp/* || true'
+  shell bash scripts/maintenance/cleanup.sh
 end
 
 task maint-install-git-hooks

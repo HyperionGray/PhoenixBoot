@@ -141,7 +141,13 @@ stage1_menu() {
         echo "  1. Write the image to USB: sudo dd if=out/esp/secureboot-bootable.img of=/dev/sdX bs=4M"
         echo "  2. Boot from the media and install your OS (Stage 2)"
         echo ""
-        cat FIRST_BOOT_INSTRUCTIONS.txt 2>/dev/null || true
+        if [ -f FIRST_BOOT_INSTRUCTIONS.txt ]; then
+            echo ""
+            print_info "First Boot Instructions:"
+            cat FIRST_BOOT_INSTRUCTIONS.txt
+        else
+            print_info "For detailed first boot instructions, see the file on the bootable media"
+        fi
     else
         print_error "Failed to create bootable media"
         print_info "Check the error messages above for details"
@@ -229,19 +235,19 @@ stage3_menu() {
         2)
             echo ""
             print_info "Installing UUEFI diagnostic tool..."
-            ./pf.py uuefi-install 2>/dev/null || {
-                print_error "Failed to install UUEFI"
+            if ! ./pf.py uuefi-install; then
+                print_error "Failed to install UUEFI - check output above for details"
                 read -p "Press Enter to continue..."
                 return
-            }
+            fi
             
             print_success "UUEFI installed to ESP"
             print_info "Setting up one-time boot..."
-            ./pf.py uuefi-apply 2>/dev/null || {
-                print_error "Failed to set boot entry"
+            if ! ./pf.py uuefi-apply; then
+                print_error "Failed to set boot entry - check output above for details"
                 read -p "Press Enter to continue..."
                 return
-            }
+            fi
             
             print_success "UUEFI configured for next boot"
             echo ""
@@ -330,7 +336,9 @@ run_security_check() {
     
     echo ""
     if [ -f scripts/validation/secure-env-check.sh ]; then
-        bash scripts/validation/secure-env-check.sh || true
+        if ! bash scripts/validation/secure-env-check.sh; then
+            print_warning "Security check completed with warnings - review output above"
+        fi
     else
         print_error "Security check script not found"
     fi
@@ -361,32 +369,42 @@ advanced_menu() {
         case "$REPLY" in
             1)
                 echo ""
-                bash ./sign-kernel-modules.sh 2>/dev/null || {
-                    print_error "Failed to sign kernel modules"
-                }
+                if ! bash ./sign-kernel-modules.sh; then
+                    print_error "Failed to sign kernel modules - check output above for details"
+                fi
                 read -p "Press Enter to continue..."
                 ;;
             2)
                 echo ""
                 print_info "Generating SecureBoot keys..."
-                ./pf.py secure-keygen 2>/dev/null && print_success "Keys generated in keys/" || print_error "Failed to generate keys"
+                if ./pf.py secure-keygen; then
+                    print_success "Keys generated in keys/"
+                else
+                    print_error "Failed to generate keys - check output above for details"
+                fi
                 read -p "Press Enter to continue..."
                 ;;
             3)
                 echo ""
                 print_info "Enrolling MOK certificate..."
-                ./pf.py os-mok-enroll 2>/dev/null || print_error "Failed to enroll MOK"
+                if ! ./pf.py os-mok-enroll; then
+                    print_error "Failed to enroll MOK - check output above for details"
+                fi
                 read -p "Press Enter to continue..."
                 ;;
             4)
                 echo ""
                 print_info "Running QEMU tests..."
-                ./pf.py test-qemu 2>/dev/null || print_error "QEMU test failed"
+                if ! ./pf.py test-qemu; then
+                    print_error "QEMU test failed - check output above for details"
+                fi
                 read -p "Press Enter to continue..."
                 ;;
             5)
                 echo ""
-                ./pf.py list 2>/dev/null || print_error "Failed to list tasks"
+                if ! ./pf.py list; then
+                    print_error "Failed to list tasks"
+                fi
                 read -p "Press Enter to continue..."
                 ;;
             6)

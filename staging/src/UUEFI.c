@@ -27,6 +27,7 @@
 #define MAX_SUSPICIOUS_ITEMS 50
 #define MAX_DESCRIPTION_SIZE 512
 #define MAX_DISPLAYED_DELETIONS 10
+#define MAX_WARNING_MESSAGE_SIZE 256
 
 // Variable categories
 typedef enum {
@@ -841,7 +842,7 @@ ToggleVariable(
   )
 {
   BOOLEAN AllowModification = FALSE;
-  CHAR16 WarningMessage[256];
+  CHAR16 WarningMessage[MAX_WARNING_MESSAGE_SIZE];
   
   if (VarIndex >= gVariableCount) {
     return EFI_INVALID_PARAMETER;
@@ -1256,7 +1257,7 @@ ShowInteractiveMenu(VOID)
   while (!exitMenu) {
     Print(L"\n");
     Print(L"╔════════════════════════════════════════════╗\n");
-    Print(L"║    UUEFI INTERACTIVE MENU v3.2            ║\n");
+    Print(L"║    UUEFI INTERACTIVE MENU v%s            ║\n", UUEFI_VERSION);
     Print(L"║    Full BIOS-like Configuration           ║\n");
     Print(L"╚════════════════════════════════════════════╝\n");
     Print(L"\n");
@@ -1368,7 +1369,7 @@ ShowInteractiveMenu(VOID)
         UINT8 SetupMode = 0;
         BOOLEAN HasDbKey = FALSE;
         BOOLEAN IsConfigured = FALSE;
-        CHAR16 ConfigMessage[256];
+        CHAR16 ConfigMessage[MAX_WARNING_MESSAGE_SIZE];
         
         GetSecureBootStatus(&SecureBoot, &SetupMode);
         ValidateDbKeys(&HasDbKey);
@@ -1533,11 +1534,11 @@ ValidateDbKeys(
   // First check if db variable exists and get its size
   Status = gRT->GetVariable(L"db", &GlobalVar, NULL, &DbSize, NULL);
   if (Status == EFI_BUFFER_TOO_SMALL && DbSize > 0) {
-    // Variable exists and has data
+    // Variable exists and has data - allocate buffer and read it
     DbData = AllocatePool(DbSize);
     if (DbData != NULL) {
       Status = gRT->GetVariable(L"db", &GlobalVar, NULL, &DbSize, DbData);
-      if (!EFI_ERROR(Status)) {
+      if (!EFI_ERROR(Status) && DbSize > 0) {
         // db exists and has data - we'll consider this valid
         // A more sophisticated check would parse the signature list format
         // but for safety, just checking existence and size is sufficient
@@ -1545,6 +1546,9 @@ ValidateDbKeys(
       }
       FreePool(DbData);
     }
+  } else if (Status == EFI_SUCCESS && DbSize == 0) {
+    // Variable exists but is empty
+    *HasValidKey = FALSE;
   } else if (Status == EFI_NOT_FOUND) {
     // db variable doesn't exist at all
     *HasValidKey = FALSE;
@@ -1577,6 +1581,7 @@ CheckSecureBootConfiguration(
   BOOLEAN HasDbKey = FALSE;
   
   *IsProperlyConfigured = FALSE;
+  StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"");
   
   // Get secure boot status
   GetSecureBootStatus(&SecureBoot, &SetupMode);
@@ -1590,23 +1595,23 @@ CheckSecureBootConfiguration(
   if (SecureBoot && !SetupMode && HasDbKey) {
     // Ideal state: SecureBoot on, not in setup mode, and has keys
     *IsProperlyConfigured = TRUE;
-    StrCpyS(DiagnosticMessage, 256, L"✓ Secure Boot properly configured and active");
+    StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"✓ Secure Boot properly configured and active");
   } else if (SecureBoot && !HasDbKey) {
     // PROBLEM: SecureBoot appears enabled but no keys in db
     *IsProperlyConfigured = FALSE;
-    StrCpyS(DiagnosticMessage, 256, L"⚠ WARNING: SecureBoot enabled but no valid keys in db!");
+    StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"⚠ WARNING: SecureBoot enabled but no valid keys in db!");
   } else if (SecureBoot && SetupMode) {
     // In setup mode - keys not properly enrolled yet
     *IsProperlyConfigured = FALSE;
-    StrCpyS(DiagnosticMessage, 256, L"⚠ Secure Boot in setup mode - keys not enrolled");
+    StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"⚠ Secure Boot in setup mode - keys not enrolled");
   } else if (!SecureBoot && HasDbKey) {
     // SecureBoot disabled but keys present - valid state
     *IsProperlyConfigured = TRUE;
-    StrCpyS(DiagnosticMessage, 256, L"ℹ Secure Boot disabled (keys present but not active)");
+    StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"ℹ Secure Boot disabled (keys present but not active)");
   } else {
     // SecureBoot disabled and no keys
     *IsProperlyConfigured = TRUE;
-    StrCpyS(DiagnosticMessage, 256, L"ℹ Secure Boot disabled (no keys enrolled)");
+    StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"ℹ Secure Boot disabled (no keys enrolled)");
   }
   
   return EFI_SUCCESS;
@@ -1632,17 +1637,17 @@ GuardVariableModification(
   )
 {
   BOOLEAN IsConfigured = FALSE;
-  CHAR16 ConfigMessage[256];
+  CHAR16 ConfigMessage[MAX_WARNING_MESSAGE_SIZE];
   
   *AllowModification = FALSE;
-  WarningMessage[0] = 0;
+  StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, L"");
   
   // Check secure boot configuration first
   CheckSecureBootConfiguration(&IsConfigured, ConfigMessage);
   
   // Never allow modification of critical security variables
   if (VarInfo->Category == VAR_CAT_SECURITY) {
-    StrCpyS(WarningMessage, 256, L"⚠ BLOCKED: Security variables are protected from modification");
+    StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, L"⚠ BLOCKED: Security variables are protected from modification");
     *AllowModification = FALSE;
     return EFI_SUCCESS;
   }
@@ -1657,7 +1662,7 @@ GuardVariableModification(
   
   if (SecureBoot && !HasDbKey) {
     // System is in a dangerous state - don't allow any modifications
-    StrCpyS(WarningMessage, 256, 
+    StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, 
             L"⚠ BLOCKED: System in unsafe state (SecureBoot on but no keys). "
             L"Fix secure boot configuration first.");
     *AllowModification = FALSE;
@@ -1666,7 +1671,7 @@ GuardVariableModification(
   
   // Don't allow modification of boot variables if system is unstable
   if (VarInfo->Category == VAR_CAT_BOOT && SecureBoot && SetupMode) {
-    StrCpyS(WarningMessage, 256, 
+    StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, 
             L"⚠ BLOCKED: Cannot modify boot variables in setup mode with SecureBoot enabled");
     *AllowModification = FALSE;
     return EFI_SUCCESS;
@@ -1679,7 +1684,7 @@ GuardVariableModification(
   }
   
   // Default: block modification with generic warning
-  StrCpyS(WarningMessage, 256, L"⚠ BLOCKED: Variable modification not safe in current state");
+  StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, L"⚠ BLOCKED: Variable modification not safe in current state");
   *AllowModification = FALSE;
   
   return EFI_SUCCESS;
@@ -1789,7 +1794,7 @@ DisplaySecurityInfo(VOID)
   UINT8 SetupMode = 0;
   BOOLEAN HasDbKey = FALSE;
   BOOLEAN IsConfigured = FALSE;
-  CHAR16 ConfigMessage[256];
+  CHAR16 ConfigMessage[MAX_WARNING_MESSAGE_SIZE];
 
   Print(L"\n=== Security Status ===\n");
 

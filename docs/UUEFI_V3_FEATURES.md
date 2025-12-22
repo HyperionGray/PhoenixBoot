@@ -516,6 +516,18 @@ if (StrStr(VarInfo->Name, L"VendorFeature") != NULL) {
 
 ## Changelog
 
+### v3.2.0 (2025-12-22)
+- 🔒 **Added Secure Boot Variable Guarding** - Prevents hardware lockouts and system bricking
+- ✨ Added `ValidateDbKeys()` - Validates at least one key exists in db signature database
+- ✨ Added `CheckSecureBootConfiguration()` - Comprehensive secure boot state validation
+- ✨ Added `GuardVariableModification()` - Guards variables from unsafe modifications
+- ⚠ **Critical Detection**: Detects when SecureBoot enabled but db database is empty (broken state)
+- 🛡️ **Protection**: Blocks ALL variable modifications when system is in unsafe state
+- 📊 Added menu option 9: "Validate Secure Boot Configuration" with comprehensive report
+- 📝 Enhanced `DisplaySecurityInfo()` with detailed validation and warnings
+- 🔒 Updated variable modification to use new guarding mechanism
+- 📚 Created comprehensive secure boot guarding documentation
+
 ### v3.0.0 (2025-11-26)
 - ✨ Added comprehensive variable descriptions (150+ patterns)
 - ✨ Added editability indicators and safety checks
@@ -553,6 +565,8 @@ See main LICENSE file.
 - [EDK2 Documentation](https://github.com/tianocore/tianocore.github.io/wiki/EDK-II)
 - [PhoenixBoot Main Documentation](../README.md)
 - [UEFI Variable Services](https://uefi.org/specs/UEFI/2.10/08_Services_Runtime_Services.html#variable-services)
+- [UEFI Secure Boot Specification](https://uefi.org/specs/UEFI/2.10/32_Secure_Boot.html)
+- [Secure Boot Variable Guarding Guide](SECURE_BOOT_GUARDING.md)
 - [nwipe Documentation](https://github.com/martijnvanbrummelen/nwipe)
 - [ATA Secure Erase](https://ata.wiki.kernel.org/index.php/ATA_Secure_Erase)
 
@@ -567,4 +581,4 @@ For issues, questions, or contributions:
 
 **⚠ WARNING**: Nuclear Wipe options are EXTREMELY DESTRUCTIVE. Only use when absolutely necessary and when you fully understand the consequences. ALL DATA WILL BE PERMANENTLY LOST. Always maintain backups of important data.
 
-**🔥 PhoenixGuard UUEFI v3.0.0 - The Real Full-On BIOS That Happens After The BIOS!**
+**🔥 PhoenixGuard UUEFI v3.2.0 - The Real Full-On BIOS That Happens After The BIOS - Now With Secure Boot Guarding!**

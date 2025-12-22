@@ -21,7 +21,7 @@
 #include <Guid/FileInfo.h>
 #include <Guid/GlobalVariable.h>
 
-#define UUEFI_VERSION L"3.1.0"
+#define UUEFI_VERSION L"3.2.0"
 #define MAX_VARIABLE_NAME_SIZE 1024
 #define MAX_VARIABLES 500
 #define MAX_SUSPICIOUS_ITEMS 50
@@ -45,6 +45,11 @@ typedef struct {
   VOID *Data;
   BOOLEAN IsValid;
 } VARIABLE_BACKUP;
+#define MAX_WARNING_MESSAGE_SIZE 256
+
+// Error messages for variable guarding
+#define MSG_UNSAFE_STATE L"⚠ BLOCKED: System in unsafe state (SecureBoot on but no keys). Fix secure boot configuration first."
+#define MSG_BOOT_VAR_SETUP_MODE L"⚠ BLOCKED: Cannot modify boot variables in setup mode with SecureBoot enabled"
 
 // Variable categories
 typedef enum {
@@ -858,29 +863,20 @@ ToggleVariable(
   IN UINTN VarIndex
   )
 {
+  BOOLEAN AllowModification = FALSE;
+  CHAR16 WarningMessage[MAX_WARNING_MESSAGE_SIZE];
+  
   if (VarIndex >= gVariableCount) {
     return EFI_INVALID_PARAMETER;
   }
   
   VARIABLE_INFO *var = &gVariables[VarIndex];
   
-  // Safety check - don't allow toggling critical security or boot variables
-  if (var->Category == VAR_CAT_SECURITY) {
-    Print(L"⚠ Cannot toggle security variables for safety\n");
-    return EFI_ACCESS_DENIED;
-  }
+  // Use the new guarding mechanism
+  GuardVariableModification(var, &AllowModification, WarningMessage);
   
-  if (var->Category == VAR_CAT_BOOT && 
-      (StrCmp(var->Name, L"BootOrder") == 0 || 
-       StrCmp(var->Name, L"BootCurrent") == 0)) {
-    Print(L"⚠ Cannot toggle critical boot variables\n");
-    return EFI_ACCESS_DENIED;
-  }
-  
-  // Only allow toggling vendor variables
-  if (var->Category != VAR_CAT_VENDOR) {
-    Print(L"⚠ Only vendor-specific variables can be toggled\n");
-    Print(L"  (For safety, boot and security variables are protected)\n");
+  if (!AllowModification) {
+    Print(L"%s\n", WarningMessage);
     return EFI_ACCESS_DENIED;
   }
   
@@ -929,6 +925,1124 @@ ToggleVariable(
   This provides a "nuclear option" for complete system reset:
   - Warns user about data loss
   - Optionally wipes all n\n", var->DataSize);
+  - Optionally wipes all non-essential NVRAM variables
+  - Provides info about disk wiping tools (nwipe)
+  - Resets firmware to defaults
+**/
+VOID
+ShowNuclearWipeMenu(VOID)
+{
+  EFI_INPUT_KEY Key;
+  UINTN Index;
+  
+  Print(L"\n");
+  Print(L"╔════════════════════════════════════════════╗\n");
+  Print(L"║      ☢ NUCLEAR WIPE MENU ☢               ║\n");
+  Print(L"║  COMPLETE SYSTEM RESET & SANITIZATION     ║\n");
+  Print(L"╚════════════════════════════════════════════╝\n");
+  Print(L"\n");
+  Print(L"⚠⚠⚠ EXTREME WARNING ⚠⚠⚠\n");
+  Print(L"This menu provides options for complete system sanitization.\n");
+  Print(L"Use these options ONLY when:\n");
+  Print(L"  • You have serious malware/rootkit infection\n");
+  Print(L"  • You need to completely wipe and reset the system\n");
+  Print(L"  • You want to return firmware to factory defaults\n");
+  Print(L"\n");
+  Print(L"Available Options:\n");
+  Print(L"══════════════════\n");
+  Print(L"\n");
+  Print(L"1. NVRAM Variable Wipe (Vendor Variables Only)\n");
+  Print(L"   - Deletes all non-critical vendor-specific variables\n");
+  Print(L"   - Preserves boot configuration and security keys\n");
+  Print(L"   - Useful for removing vendor bloatware/malware\n");
+  Print(L"   ⚠ Risk Level: MEDIUM - May affect vendor features\n");
+  Print(L"\n");
+  Print(L"2. Full NVRAM Reset (Factory Defaults)\n");
+  Print(L"   - Resets ALL variables including boot order\n");
+  Print(L"   - Preserves only critical security variables (PK, KEK, db, dbx)\n");
+  Print(L"   - System will boot to firmware setup on next boot\n");
+  Print(L"   ⚠ Risk Level: HIGH - Will reset all BIOS settings\n");
+  Print(L"\n");
+  Print(L"3. Disk Wiping Information\n");
+  Print(L"   - Shows information about secure disk wiping\n");
+  Print(L"   - Recommends nwipe and other tools\n");
+  Print(L"   - No data is modified\n");
+  Print(L"   ⚠ Risk Level: NONE - Information only\n");
+  Print(L"\n");
+  Print(L"4. Complete Nuclear Wipe (NVRAM + Disk Instructions)\n");
+  Print(L"   - Combination of options 2 & 3\n");
+  Print(L"   - Full firmware reset + disk wipe guidance\n");
+  Print(L"   - Maximum sanitization for critical situations\n");
+  Print(L"   ⚠ Risk Level: EXTREME - Complete system reset\n");
+  Print(L"\n");
+  Print(L"Q. Return to Main Menu (Recommended)\n");
+  Print(L"\n");
+  Print(L"Select option (or Q to cancel): ");
+  
+  gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+  gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+  Print(L"%c\n", Key.UnicodeChar);
+  
+  switch (Key.UnicodeChar) {
+    case L'1':
+      // Wipe vendor variables only
+      Print(L"\n☢ VENDOR VARIABLE WIPE ☢\n");
+      Print(L"═══════════════════════════\n");
+      Print(L"This will DELETE all vendor-specific variables that are\n");
+      Print(L"marked as safe to remove (excluding critical system variables).\n");
+      Print(L"\n");
+      Print(L"Variables to be removed: ");
+      
+      // Count editable vendor variables
+      UINTN vendorCount = 0;
+      for (UINTN i = 0; i < gVariableCount; i++) {
+        if (gVariables[i].Category == VAR_CAT_VENDOR && gVariables[i].IsEditable) {
+          vendorCount++;
+        }
+      }
+      Print(L"%lu\n", vendorCount);
+      
+      if (vendorCount == 0) {
+        Print(L"\n✓ No vendor variables found that are safe to remove.\n");
+        Print(L"Press any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+      }
+      
+      Print(L"\nType 'WIPE' to confirm (or anything else to cancel): ");
+      
+      // NOTE: Full string input is complex in UEFI without additional libraries.
+      // This implementation checks first character only. For production use,
+      // consider implementing full string comparison or using UEFI Forms Browser.
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      Print(L"%c...\n", Key.UnicodeChar);
+      
+      // Check first character as simplified confirmation
+      if (Key.UnicodeChar == L'W' || Key.UnicodeChar == L'w') {
+        Print(L"\n⚠ Wiping vendor variables...\n");
+        
+        UINTN deletedCount = 0;
+        for (UINTN i = 0; i < gVariableCount; i++) {
+          if (gVariables[i].Category == VAR_CAT_VENDOR && gVariables[i].IsEditable) {
+            EFI_STATUS Status = gRT->SetVariable(
+              gVariables[i].Name,
+              &gVariables[i].VendorGuid,
+              0,  // Clear attributes
+              0,  // Zero size = delete
+              NULL
+            );
+            
+            if (!EFI_ERROR(Status)) {
+              deletedCount++;
+              Print(L"  ✓ Deleted: %s\n", gVariables[i].Name);
+            }
+          }
+        }
+        
+        Print(L"\n✓ Deleted %lu vendor variables\n", deletedCount);
+        Print(L"  Reboot required for changes to take effect.\n");
+      } else {
+        Print(L"✗ Cancelled\n");
+      }
+      
+      Print(L"\nPress any key to continue...");
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      break;
+      
+    case L'2':
+      // Full NVRAM reset
+      Print(L"\n☢☢☢ FULL NVRAM RESET ☢☢☢\n");
+      Print(L"═════════════════════════════\n");
+      Print(L"This will DELETE ALL non-security variables!\n");
+      Print(L"Your system will:\n");
+      Print(L"  • Lose all boot configuration\n");
+      Print(L"  • Reset all BIOS settings to defaults\n");
+      Print(L"  • Boot to firmware setup on next boot\n");
+      Print(L"  • Preserve only Secure Boot keys (PK, KEK, db, dbx)\n");
+      Print(L"\n");
+      Print(L"This is EXTREME and should ONLY be used if you have\n");
+      Print(L"serious firmware malware or corruption.\n");
+      Print(L"\n");
+      Print(L"Type 'RESET' to confirm (or anything else to cancel): ");
+      
+      // NOTE: Full string input is complex in UEFI without additional libraries.
+      // This implementation checks first character only. For production use,
+      // consider implementing full string comparison or using UEFI Forms Browser.
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      Print(L"%c...\n", Key.UnicodeChar);
+      
+      // Check first character as simplified confirmation
+      if (Key.UnicodeChar == L'R' || Key.UnicodeChar == L'r') {
+        Print(L"\n⚠⚠⚠ Performing full NVRAM reset...\n");
+        
+        UINTN resetCount = 0;
+        for (UINTN i = 0; i < gVariableCount; i++) {
+          // Skip security variables
+          if (gVariables[i].Category == VAR_CAT_SECURITY) {
+            continue;
+          }
+          
+          EFI_STATUS Status = gRT->SetVariable(
+            gVariables[i].Name,
+            &gVariables[i].VendorGuid,
+            0,
+            0,
+            NULL
+          );
+          
+          if (!EFI_ERROR(Status)) {
+            resetCount++;
+            if (resetCount <= MAX_DISPLAYED_DELETIONS) {
+              Print(L"  ✓ Deleted: %s\n", gVariables[i].Name);
+            } else if (resetCount == MAX_DISPLAYED_DELETIONS + 1) {
+              Print(L"  ... (continuing)\n");
+            }
+          }
+        }
+        
+        Print(L"\n✓ Reset complete: %lu variables deleted\n", resetCount);
+        Print(L"  Security keys preserved\n");
+        Print(L"  System will boot to firmware setup\n");
+        Print(L"  REBOOT IMMEDIATELY\n");
+      } else {
+        Print(L"✗ Cancelled\n");
+      }
+      
+      Print(L"\nPress any key to continue...");
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      break;
+      
+    case L'3':
+      // Disk wiping information
+      Print(L"\n💾 SECURE DISK WIPING INFORMATION 💾\n");
+      Print(L"═════════════════════════════════════\n");
+      Print(L"\n");
+      Print(L"For complete system sanitization, you need to securely\n");
+      Print(L"wipe all disk drives in addition to NVRAM reset.\n");
+      Print(L"\n");
+      Print(L"🔧 Recommended Tool: nwipe\n");
+      Print(L"─────────────────────────────────\n");
+      Print(L"nwipe is a secure disk eraser that:\n");
+      Print(L"  • Supports multiple wipe methods (DoD, Gutmann, PRNG, etc.)\n");
+      Print(L"  • Works with HDDs, SSDs, and NVMe drives\n");
+      Print(L"  • Provides verification and progress tracking\n");
+      Print(L"  • Available on most Linux live systems\n");
+      Print(L"\n");
+      Print(L"📋 How to use nwipe:\n");
+      Print(L"─────────────────────\n");
+      Print(L"1. Boot from a Linux live USB (Ubuntu, SystemRescue, etc.)\n");
+      Print(L"2. Install nwipe: sudo apt install nwipe\n");
+      Print(L"3. Run as root: sudo nwipe\n");
+      Print(L"4. Select drives to wipe\n");
+      Print(L"5. Choose wipe method (DoD Short is usually sufficient)\n");
+      Print(L"6. Start wipe and wait for completion\n");
+      Print(L"\n");
+      Print(L"⚠ WARNING: This permanently destroys ALL data!\n");
+      Print(L"    There is NO RECOVERY after wiping!\n");
+      Print(L"\n");
+      Print(L"🔐 For SSDs with hardware encryption:\n");
+      Print(L"──────────────────────────────────────\n");
+      Print(L"  • Use 'hdparm --security-erase' for instant secure erase\n");
+      Print(L"  • Or use manufacturer's tools (Samsung Magician, etc.)\n");
+      Print(L"  • ATA Secure Erase is faster and more thorough for SSDs\n");
+      Print(L"\n");
+      Print(L"🔥 Nuclear Option Workflow:\n");
+      Print(L"───────────────────────────\n");
+      Print(L"1. Use UUEFI option 2 (Full NVRAM Reset) first\n");
+      Print(L"2. Reboot to firmware setup\n");
+      Print(L"3. Verify all settings reset to defaults\n");
+      Print(L"4. Boot to Linux live USB\n");
+      Print(L"5. Run nwipe on all drives\n");
+      Print(L"6. Reinstall OS from trusted media\n");
+      Print(L"7. Re-enroll Secure Boot keys if desired\n");
+      Print(L"\n");
+      Print(L"Press any key to continue...");
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      break;
+      
+    case L'4':
+      // Complete nuclear wipe
+      Print(L"\n☢☢☢ COMPLETE NUCLEAR WIPE ☢☢☢\n");
+      Print(L"═════════════════════════════════\n");
+      Print(L"This option provides a complete workflow for maximum\n");
+      Print(L"system sanitization when dealing with serious malware,\n");
+      Print(L"rootkits, or firmware-level infections.\n");
+      Print(L"\n");
+      Print(L"📋 Nuclear Wipe Procedure:\n");
+      Print(L"──────────────────────────\n");
+      Print(L"\n");
+      Print(L"STEP 1: NVRAM Reset (Done in UUEFI)\n");
+      Print(L"  → Use Option 2 to perform Full NVRAM Reset\n");
+      Print(L"  → This will happen now if you confirm\n");
+      Print(L"\n");
+      Print(L"STEP 2: Firmware Reset\n");
+      Print(L"  → After NVRAM reset, system will boot to firmware setup\n");
+      Print(L"  → Verify all settings are at factory defaults\n");
+      Print(L"  → Optionally: Update firmware/BIOS to latest version\n");
+      Print(L"\n");
+      Print(L"STEP 3: Disk Sanitization (External Tool)\n");
+      Print(L"  → Boot Linux live USB (Ubuntu, SystemRescue, etc.)\n");
+      Print(L"  → Run: sudo nwipe\n");
+      Print(L"  → Select all drives and wipe with DoD method\n");
+      Print(L"  → Wait for completion (may take hours)\n");
+      Print(L"\n");
+      Print(L"STEP 4: Clean Reinstall\n");
+      Print(L"  → Install OS from verified trusted media\n");
+      Print(L"  → Enable Secure Boot with your own keys\n");
+      Print(L"  → Install PhoenixGuard for ongoing protection\n");
+      Print(L"\n");
+      Print(L"⚠⚠⚠ THIS IS THE NUCLEAR OPTION ⚠⚠⚠\n");
+      Print(L"ALL DATA WILL BE PERMANENTLY DESTROYED\n");
+      Print(L"ONLY USE IF ABSOLUTELY NECESSARY\n");
+      Print(L"\n");
+      Print(L"Proceed with NVRAM reset now? (Y/N): ");
+      
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      Print(L"%c\n", Key.UnicodeChar);
+      
+      if (Key.UnicodeChar == L'Y' || Key.UnicodeChar == L'y') {
+        Print(L"\n🔥 INITIATING NUCLEAR WIPE SEQUENCE 🔥\n");
+        Print(L"\nStep 1/4: NVRAM Reset\n");
+        Print(L"═══════════════════════\n");
+        
+        // Perform the same operation as option 2
+        UINTN resetCount = 0;
+        for (UINTN i = 0; i < gVariableCount; i++) {
+          if (gVariables[i].Category == VAR_CAT_SECURITY) {
+            continue;
+          }
+          
+          EFI_STATUS Status = gRT->SetVariable(
+            gVariables[i].Name,
+            &gVariables[i].VendorGuid,
+            0,
+            0,
+            NULL
+          );
+          
+          if (!EFI_ERROR(Status)) {
+            resetCount++;
+          }
+        }
+        
+        Print(L"✓ NVRAM reset complete: %lu variables deleted\n", resetCount);
+        Print(L"✓ Security keys preserved\n\n");
+        Print(L"Next Steps:\n");
+        Print(L"──────────\n");
+        Print(L"1. System will reboot to firmware setup\n");
+        Print(L"2. Verify settings are at defaults\n");
+        Print(L"3. Boot Linux live USB\n");
+        Print(L"4. Run: sudo nwipe\n");
+        Print(L"5. Wipe all drives\n");
+        Print(L"6. Reinstall OS from trusted media\n");
+        Print(L"\n");
+        Print(L"⚠ REBOOT NOW TO COMPLETE THE PROCESS ⚠\n");
+      } else {
+        Print(L"✗ Nuclear wipe cancelled\n");
+      }
+      
+      Print(L"\nPress any key to continue...");
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      break;
+      
+    case L'Q':
+    case L'q':
+      // Return to menu
+      break;
+      
+    default:
+      Print(L"Invalid option\n");
+      Print(L"Press any key to continue...");
+      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+      break;
+  }
+}
+
+/**
+  Interactive menu system
+**/
+VOID
+ShowInteractiveMenu(VOID)
+{
+  EFI_INPUT_KEY Key;
+  UINTN Index;
+  BOOLEAN exitMenu = FALSE;
+  
+  while (!exitMenu) {
+    Print(L"\n");
+    Print(L"╔════════════════════════════════════════════╗\n");
+    Print(L"║    UUEFI INTERACTIVE MENU v%s            ║\n", UUEFI_VERSION);
+    Print(L"║    Full BIOS-like Configuration           ║\n");
+    Print(L"╚════════════════════════════════════════════╝\n");
+    Print(L"\n");
+    Print(L"═══ Variable Management ═══\n");
+    Print(L"1. View All Variables\n");
+    Print(L"2. View Boot Configuration Variables\n");
+    Print(L"3. View Security Variables\n");
+    Print(L"4. View Vendor-Specific Variables\n");
+    Print(L"5. Show Security Report (Suspicious Activity)\n");
+    Print(L"6. Edit Variable (Advanced)\n");
+    Print(L"7. Re-scan Variables\n");
+    Print(L"8. ☢ Nuclear Wipe Menu (EXTREME)\n");
+    Print(L"9. 🔒 Validate Secure Boot Configuration\n");
+    Print(L"Q. Return to Firmware\n");
+    Print(L"\nSelect option: ");
+    
+    gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+    gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+    Print(L"%c\n", Key.UnicodeChar);
+    
+    switch (Key.UnicodeChar) {
+      case L'1':
+        DisplayVariablesByCategory(-1);
+        Print(L"\nPress any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+        
+      case L'2':
+        DisplayVariablesByCategory(VAR_CAT_BOOT);
+        Print(L"\nPress any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+        
+      case L'3':
+        DisplayVariablesByCategory(VAR_CAT_SECURITY);
+        Print(L"\nPress any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+        
+      case L'4':
+        DisplayVariablesByCategory(VAR_CAT_VENDOR);
+        Print(L"\nPress any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+        
+      case L'5':
+        DisplaySecurityReport();
+        Print(L"\nPress any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+        
+      case L'6':
+        Print(L"\n╔════════════════════════════════════════════╗\n");
+        Print(L"║           VARIABLE EDITING                ║\n");
+        Print(L"╚════════════════════════════════════════════╝\n");
+        Print(L"\nShowing editable variables:\n\n");
+        
+        // Show editable variables
+        UINTN editableCount = 0;
+        for (UINTN i = 0; i < gVariableCount; i++) {
+          if (gVariables[i].IsEditable) {
+            Print(L"  [%lu] %s\n", i, gVariables[i].Name);
+            Print(L"      %s\n", gVariables[i].Description);
+            editableCount++;
+            if (editableCount >= 20) {
+              Print(L"  ... and more\n");
+              break;
+            }
+          }
+        }
+        
+        if (editableCount == 0) {
+          Print(L"  No safely editable variables found\n");
+        } else {
+          Print(L"\n⚠ Note: Variable indices shown in brackets []\n");
+          Print(L"  To edit: note the index number\n");
+          Print(L"  Feature requires additional implementation for index input\n");
+        }
+        
+        Print(L"\nPress any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+        
+      case L'7':
+        EnumerateAllVariables();
+        Print(L"\nPress any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+        
+      case L'8':
+        ShowNuclearWipeMenu();
+        break;
+        
+      case L'9':
+        Print(L"\n");
+        Print(L"╔════════════════════════════════════════════╗\n");
+        Print(L"║    SECURE BOOT VALIDATION REPORT          ║\n");
+        Print(L"╚════════════════════════════════════════════╝\n");
+        Print(L"\n");
+        
+        UINT8 SecureBoot = 0;
+        UINT8 SetupMode = 0;
+        BOOLEAN HasDbKey = FALSE;
+        BOOLEAN IsConfigured = FALSE;
+        CHAR16 ConfigMessage[MAX_WARNING_MESSAGE_SIZE];
+        
+        GetSecureBootStatus(&SecureBoot, &SetupMode);
+        ValidateDbKeys(&HasDbKey);
+        CheckSecureBootConfiguration(&IsConfigured, ConfigMessage);
+        
+        Print(L"Current Status:\n");
+        Print(L"───────────────\n");
+        Print(L"SecureBoot Variable: %s\n", SecureBoot ? L"Enabled" : L"Disabled");
+        Print(L"SetupMode Variable: %s\n", SetupMode ? L"Yes (Setup)" : L"No (User)");
+        Print(L"db Keys Present: %s\n", HasDbKey ? L"Yes" : L"No");
+        Print(L"\n");
+        Print(L"Overall Assessment:\n");
+        Print(L"───────────────────\n");
+        Print(L"%s\n", ConfigMessage);
+        Print(L"\n");
+        
+        if (SecureBoot && !HasDbKey) {
+          Print(L"⚠⚠⚠ CRITICAL ISSUE DETECTED ⚠⚠⚠\n");
+          Print(L"\n");
+          Print(L"Your system has SecureBoot enabled but no keys in the\n");
+          Print(L"db signature database. This indicates a broken or\n");
+          Print(L"incomplete secure boot implementation.\n");
+          Print(L"\n");
+          Print(L"Possible causes:\n");
+          Print(L"  • Firmware bug or incomplete UEFI implementation\n");
+          Print(L"  • Keys were manually deleted while SecureBoot was on\n");
+          Print(L"  • Factory reset didn't properly disable SecureBoot\n");
+          Print(L"  • Hardware or NVRAM corruption\n");
+          Print(L"\n");
+          Print(L"Recommended actions:\n");
+          Print(L"  1. Enter firmware setup (usually DEL or F2 at boot)\n");
+          Print(L"  2. Find 'Secure Boot' in security settings\n");
+          Print(L"  3. Either:\n");
+          Print(L"     a) Properly disable Secure Boot, OR\n");
+          Print(L"     b) Enroll keys (use 'Restore Factory Keys' if available)\n");
+          Print(L"  4. Save settings and reboot\n");
+          Print(L"  5. Run UUEFI again to verify the fix\n");
+          Print(L"\n");
+          Print(L"⚠ DO NOT modify other UEFI variables until this is fixed!\n");
+          Print(L"  The system is in an unsafe state and modifications\n");
+          Print(L"  could potentially brick your hardware.\n");
+        } else if (SecureBoot && SetupMode) {
+          Print(L"ℹ INFO: Ready for Key Enrollment\n");
+          Print(L"\n");
+          Print(L"Your system is in Setup Mode with SecureBoot enabled.\n");
+          Print(L"This is a normal intermediate state during key enrollment.\n");
+          Print(L"\n");
+          Print(L"To complete setup:\n");
+          Print(L"  1. Use KeyEnrollEdk2.efi to enroll custom keys, OR\n");
+          Print(L"  2. Enter firmware setup and enroll manufacturer keys\n");
+          Print(L"  3. System will exit Setup Mode once PK is enrolled\n");
+        } else if (SecureBoot && HasDbKey && !SetupMode) {
+          Print(L"✓ SECURE BOOT PROPERLY CONFIGURED\n");
+          Print(L"\n");
+          Print(L"Your system has:\n");
+          Print(L"  ✓ SecureBoot enabled\n");
+          Print(L"  ✓ Valid keys in db database\n");
+          Print(L"  ✓ Not in setup mode\n");
+          Print(L"\n");
+          Print(L"This is the ideal secure boot configuration.\n");
+          Print(L"Your system will only boot signed bootloaders and kernels.\n");
+        } else if (!SecureBoot && HasDbKey) {
+          Print(L"ℹ INFO: Secure Boot Disabled (Keys Present)\n");
+          Print(L"\n");
+          Print(L"Your system has keys enrolled but SecureBoot is disabled.\n");
+          Print(L"This is a valid configuration if you intentionally disabled it.\n");
+          Print(L"\n");
+          Print(L"To enable SecureBoot:\n");
+          Print(L"  1. Enter firmware setup\n");
+          Print(L"  2. Enable 'Secure Boot'\n");
+          Print(L"  3. Save and reboot\n");
+        } else {
+          Print(L"ℹ INFO: Secure Boot Not Configured\n");
+          Print(L"\n");
+          Print(L"Your system has SecureBoot disabled and no keys enrolled.\n");
+          Print(L"This is a valid configuration for maximum compatibility.\n");
+          Print(L"\n");
+          Print(L"To enable SecureBoot:\n");
+          Print(L"  1. Enter firmware setup\n");
+          Print(L"  2. Enable 'Secure Boot'\n");
+          Print(L"  3. Enroll keys (usually automatic with factory keys)\n");
+          Print(L"  4. Save and reboot\n");
+        }
+        
+        Print(L"\nPress any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+        
+      case L'Q':
+      case L'q':
+        exitMenu = TRUE;
+        break;
+        
+      default:
+        Print(L"Invalid option\n");
+        break;
+    }
+  }
+}
+
+/**
+  Get Secure Boot status without failing if unavailable
+  
+  @param SecureBoot  Pointer to store Secure Boot status (1=enabled, 0=disabled)
+  @param SetupMode   Pointer to store Setup Mode status (1=setup, 0=user)
+  
+  @retval EFI_SUCCESS  Status retrieved successfully
+  @retval Other        Error occurred, values set to 0
+**/
+EFI_STATUS
+GetSecureBootStatus(
+  OUT UINT8 *SecureBoot,
+  OUT UINT8 *SetupMode
+  )
+{
+  EFI_STATUS Status;
+  UINT8 Value;
+  UINTN Size;
+  EFI_GUID GlobalVar = EFI_GLOBAL_VARIABLE;
+
+  *SecureBoot = 0;
+  *SetupMode = 0;
+
+  // Check SecureBoot variable
+  Size = sizeof(Value);
+  Status = gRT->GetVariable(L"SecureBoot", &GlobalVar, NULL, &Size, &Value);
+  if (!EFI_ERROR(Status)) {
+    *SecureBoot = Value;
+  }
+
+  // Check SetupMode variable
+  Size = sizeof(Value);
+  Status = gRT->GetVariable(L"SetupMode", &GlobalVar, NULL, &Size, &Value);
+  if (!EFI_ERROR(Status)) {
+    *SetupMode = Value;
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Validate that at least one key exists in the db signature database
+  
+  @param HasValidKey  Pointer to store result (TRUE if valid key found)
+  
+  @retval EFI_SUCCESS  Validation completed (check HasValidKey for result)
+  @retval Other        Error occurred during validation
+**/
+EFI_STATUS
+ValidateDbKeys(
+  OUT BOOLEAN *HasValidKey
+  )
+{
+  EFI_STATUS Status;
+  VOID *DbData = NULL;
+  UINTN DbSize = 0;
+  EFI_GUID GlobalVar = EFI_GLOBAL_VARIABLE;
+  
+  *HasValidKey = FALSE;
+  
+  // First check if db variable exists and get its size
+  Status = gRT->GetVariable(L"db", &GlobalVar, NULL, &DbSize, NULL);
+  if (Status == EFI_BUFFER_TOO_SMALL && DbSize > 0) {
+    // Variable exists and has data - allocate buffer and read it
+    DbData = AllocatePool(DbSize);
+    if (DbData != NULL) {
+      Status = gRT->GetVariable(L"db", &GlobalVar, NULL, &DbSize, DbData);
+      if (!EFI_ERROR(Status) && DbSize > 0) {
+        // db exists and has data - we'll consider this valid
+        // 
+        // Note: A more sophisticated implementation would parse the EFI_SIGNATURE_LIST
+        // format to validate individual signatures. However, for the security goal of
+        // preventing hardware lockouts (the issue's "don't brick peoples shit" requirement),
+        // simply checking that db exists and contains data is sufficient. This approach:
+        // - Detects the critical broken state: SecureBoot enabled but db empty
+        // - Prevents variable modifications that could brick the system
+        // - Avoids complex signature parsing that could introduce bugs
+        // - Works with any keys (MOK, custom, or factory) as requested
+        // 
+        // If db has any data, the firmware can attempt to validate signatures. If those
+        // signatures are invalid, boot will fail but the system won't be locked. Our goal
+        // is to prevent the dangerous state where SecureBoot is on but db is completely empty.
+        *HasValidKey = TRUE;
+      }
+      FreePool(DbData);
+    }
+  } else if (Status == EFI_SUCCESS && DbSize == 0) {
+    // Variable exists but is empty
+    *HasValidKey = FALSE;
+  } else if (Status == EFI_NOT_FOUND) {
+    // db variable doesn't exist at all
+    *HasValidKey = FALSE;
+  }
+  
+  return EFI_SUCCESS;
+}
+
+/**
+  Check if secure boot is properly configured and functioning
+  
+  This validates that:
+  - SecureBoot variable exists and is readable
+  - If SecureBoot is enabled, at least one key exists in db
+  - System is not in a broken state where SecureBoot appears on but isn't
+  
+  @param IsProperlyConfigured  TRUE if secure boot is properly set up
+  @param DiagnosticMessage     Human-readable status message
+  
+  @retval EFI_SUCCESS  Check completed successfully
+**/
+EFI_STATUS
+CheckSecureBootConfiguration(
+  OUT BOOLEAN *IsProperlyConfigured,
+  OUT CHAR16 *DiagnosticMessage
+  )
+{
+  UINT8 SecureBoot = 0;
+  UINT8 SetupMode = 0;
+  BOOLEAN HasDbKey = FALSE;
+  
+  *IsProperlyConfigured = FALSE;
+  StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"");
+  
+  // Get secure boot status
+  GetSecureBootStatus(&SecureBoot, &SetupMode);
+  
+  // Validate db keys if secure boot is enabled
+  if (SecureBoot) {
+    ValidateDbKeys(&HasDbKey);
+  }
+  
+  // Determine configuration state
+  if (SecureBoot && !SetupMode && HasDbKey) {
+    // Ideal state: SecureBoot on, not in setup mode, and has keys
+    *IsProperlyConfigured = TRUE;
+    StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"✓ Secure Boot properly configured and active");
+  } else if (SecureBoot && !HasDbKey) {
+    // PROBLEM: SecureBoot appears enabled but no keys in db
+    *IsProperlyConfigured = FALSE;
+    StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"⚠ WARNING: SecureBoot enabled but no valid keys in db!");
+  } else if (SecureBoot && SetupMode) {
+    // In setup mode - keys not properly enrolled yet
+    *IsProperlyConfigured = FALSE;
+    StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"⚠ Secure Boot in setup mode - keys not enrolled");
+  } else if (!SecureBoot && HasDbKey) {
+    // SecureBoot disabled but keys present - valid state
+    *IsProperlyConfigured = TRUE;
+    StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"ℹ Secure Boot disabled (keys present but not active)");
+  } else {
+    // SecureBoot disabled and no keys
+    *IsProperlyConfigured = TRUE;
+    StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"ℹ Secure Boot disabled (no keys enrolled)");
+  }
+  
+  return EFI_SUCCESS;
+}
+
+/**
+  Guard critical UEFI variables from modification during UUEFI operation
+  
+  This function checks if modifying a variable would be safe and prevents
+  operations that could brick the system or leave it in an inconsistent state.
+  
+  @param VarInfo  Variable to check for safety
+  @param AllowModification  TRUE if modification is safe
+  @param WarningMessage     Warning message if modification is unsafe
+  
+  @retval EFI_SUCCESS  Check completed
+**/
+EFI_STATUS
+GuardVariableModification(
+  IN VARIABLE_INFO *VarInfo,
+  OUT BOOLEAN *AllowModification,
+  OUT CHAR16 *WarningMessage
+  )
+{
+  BOOLEAN IsConfigured = FALSE;
+  CHAR16 ConfigMessage[MAX_WARNING_MESSAGE_SIZE];
+  
+  *AllowModification = FALSE;
+  StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, L"");
+  
+  // Check secure boot configuration first
+  CheckSecureBootConfiguration(&IsConfigured, ConfigMessage);
+  
+  // Never allow modification of critical security variables
+  if (VarInfo->Category == VAR_CAT_SECURITY) {
+    StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, L"⚠ BLOCKED: Security variables are protected from modification");
+    *AllowModification = FALSE;
+    return EFI_SUCCESS;
+  }
+  
+  // Check if SecureBoot appears broken (enabled but no keys)
+  UINT8 SecureBoot = 0;
+  UINT8 SetupMode = 0;
+  BOOLEAN HasDbKey = FALSE;
+  
+  GetSecureBootStatus(&SecureBoot, &SetupMode);
+  ValidateDbKeys(&HasDbKey);
+  
+  if (SecureBoot && !HasDbKey) {
+    // System is in a dangerous state - don't allow any modifications
+    StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, MSG_UNSAFE_STATE);
+    *AllowModification = FALSE;
+    return EFI_SUCCESS;
+  }
+  
+  // Don't allow modification of boot variables if system is unstable
+  if (VarInfo->Category == VAR_CAT_BOOT && SecureBoot && SetupMode) {
+    StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, MSG_BOOT_VAR_SETUP_MODE);
+    *AllowModification = FALSE;
+    return EFI_SUCCESS;
+  }
+  
+  // Allow modification of editable vendor variables if system is stable
+  if (VarInfo->IsEditable && IsConfigured) {
+    *AllowModification = TRUE;
+    return EFI_SUCCESS;
+  }
+  
+  // Default: block modification with generic warning
+  StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, L"⚠ BLOCKED: Variable modification not safe in current state");
+  *AllowModification = FALSE;
+  
+  return EFI_SUCCESS;
+}
+
+/**
+  Display firmware vendor and version information
+**/
+VOID
+DisplayFirmwareInfo(
+  IN EFI_SYSTEM_TABLE *SystemTable
+  )
+{
+  Print(L"\n=== Firmware Information ===\n");
+  Print(L"Vendor: %s\n", SystemTable->FirmwareVendor);
+  Print(L"Revision: 0x%08x\n", SystemTable->FirmwareRevision);
+  Print(L"UEFI Version: %d.%d\n", 
+    (SystemTable->Hdr.Revision >> 16) & 0xFFFF,
+    SystemTable->Hdr.Revision & 0xFFFF);
+}
+
+/**
+  Display memory map summary
+**/
+VOID
+DisplayMemoryInfo(VOID)
+{
+  EFI_STATUS Status;
+  UINTN MemMapSize = 0;
+  EFI_MEMORY_DESCRIPTOR *MemMap = NULL;
+  UINTN MapKey;
+  UINTN DescriptorSize;
+  UINT32 DescriptorVersion;
+  UINT64 TotalMemory = 0;
+  UINT64 AvailableMemory = 0;
+
+  Print(L"\n=== Memory Information ===\n");
+
+  // Get memory map size
+  Status = gBS->GetMemoryMap(&MemMapSize, MemMap, &MapKey, &DescriptorSize, &DescriptorVersion);
+  if (Status == EFI_BUFFER_TOO_SMALL) {
+    MemMapSize += 2 * DescriptorSize; // Add extra space
+    MemMap = AllocatePool(MemMapSize);
+    if (MemMap != NULL) {
+      Status = gBS->GetMemoryMap(&MemMapSize, MemMap, &MapKey, &DescriptorSize, &DescriptorVersion);
+      if (!EFI_ERROR(Status)) {
+        EFI_MEMORY_DESCRIPTOR *Entry;
+        UINTN EntryCount = MemMapSize / DescriptorSize;
+        
+        for (UINTN i = 0; i < EntryCount; i++) {
+          Entry = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)MemMap + (i * DescriptorSize));
+          TotalMemory += Entry->NumberOfPages * 4096; // 4KB pages
+          
+          // Count conventional memory as available
+          if (Entry->Type == EfiConventionalMemory || Entry->Type == EfiBootServicesData || Entry->Type == EfiBootServicesCode) {
+            AvailableMemory += Entry->NumberOfPages * 4096;
+          }
+        }
+        
+        Print(L"Total Memory: %lu MB\n", TotalMemory / (1024 * 1024));
+        Print(L"Available Memory: %lu MB\n", AvailableMemory / (1024 * 1024));
+      }
+      FreePool(MemMap);
+    }
+  }
+}
+
+/**
+  Display boot configuration information
+**/
+VOID
+DisplayBootInfo(VOID)
+{
+  EFI_STATUS Status;
+  UINT16 *BootOrder = NULL;
+  UINTN Size = 0;
+  EFI_GUID GlobalVar = EFI_GLOBAL_VARIABLE;
+
+  Print(L"\n=== Boot Configuration ===\n");
+
+  // Get BootOrder variable
+  Status = gRT->GetVariable(L"BootOrder", &GlobalVar, NULL, &Size, NULL);
+  if (Status == EFI_BUFFER_TOO_SMALL) {
+    BootOrder = AllocatePool(Size);
+    if (BootOrder != NULL) {
+      Status = gRT->GetVariable(L"BootOrder", &GlobalVar, NULL, &Size, BootOrder);
+      if (!EFI_ERROR(Status)) {
+        UINTN Count = Size / sizeof(UINT16);
+        Print(L"Boot Order: ");
+        for (UINTN i = 0; i < Count; i++) {
+          Print(L"%04x ", BootOrder[i]);
+        }
+        Print(L"\n");
+      }
+      FreePool(BootOrder);
+    }
+  }
+}
+
+/**
+  Display security status with detailed secure boot validation
+**/
+VOID
+DisplaySecurityInfo(VOID)
+{
+  UINT8 SecureBoot = 0;
+  UINT8 SetupMode = 0;
+  BOOLEAN HasDbKey = FALSE;
+  BOOLEAN IsConfigured = FALSE;
+  CHAR16 ConfigMessage[MAX_WARNING_MESSAGE_SIZE];
+
+  Print(L"\n=== Security Status ===\n");
+
+  GetSecureBootStatus(&SecureBoot, &SetupMode);
+  ValidateDbKeys(&HasDbKey);
+  CheckSecureBootConfiguration(&IsConfigured, ConfigMessage);
+  
+  Print(L"Secure Boot: %s\n", SecureBoot ? L"Enabled" : L"Disabled");
+  Print(L"Setup Mode: %s\n", SetupMode ? L"Yes" : L"No");
+  Print(L"db Keys Present: %s\n", HasDbKey ? L"Yes" : L"No");
+  
+  Print(L"Configuration: %s\n", ConfigMessage);
+  
+  // Additional warnings for problematic states
+  if (SecureBoot && !HasDbKey) {
+    Print(L"\n⚠⚠⚠ CRITICAL WARNING ⚠⚠⚠\n");
+    Print(L"SecureBoot appears enabled but no keys are in the db database!\n");
+    Print(L"This may indicate:\n");
+    Print(L"  - Firmware bug or incomplete secure boot implementation\n");
+    Print(L"  - Keys were deleted but SecureBoot wasn't properly disabled\n");
+    Print(L"  - System is in an inconsistent state\n");
+    Print(L"\nRecommended actions:\n");
+    Print(L"  1. Enter firmware setup and verify secure boot settings\n");
+    Print(L"  2. Either enroll keys or properly disable secure boot\n");
+    Print(L"  3. Do NOT modify other UEFI variables until this is resolved\n");
+  } else if (SecureBoot && SetupMode) {
+    Print(L"\nℹ INFO: System is ready for key enrollment\n");
+    Print(L"Use KeyEnrollEdk2.efi or firmware setup to enroll keys.\n");
+  }
+}
+
+/**
+  Read and display ESP UUID if available
+**/
+VOID
+DisplayBuildInfo(
+  IN EFI_HANDLE ImageHandle
+  )
+{
+  EFI_STATUS Status;
+  EFI_LOADED_IMAGE_PROTOCOL *LoadedImage = NULL;
+  EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *Fs = NULL;
+  EFI_FILE_PROTOCOL *Root = NULL;
+  EFI_FILE_PROTOCOL *UuidFile = NULL;
+
+  Print(L"\n=== Build Information ===\n");
+
+  Status = gBS->HandleProtocol(ImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&LoadedImage);
+  if (EFI_ERROR(Status) || LoadedImage == NULL) {
+    Print(L"Could not read build information\n");
+    return;
+  }
+
+  // Check if DeviceHandle is valid before using it
+  if (LoadedImage->DeviceHandle == NULL) {
+    Print(L"ESP UUID: Not available (no device handle)\n");
+    return;
+  }
+
+  Status = gBS->HandleProtocol(LoadedImage->DeviceHandle, &gEfiSimpleFileSystemProtocolGuid, (VOID **)&Fs);
+  if (EFI_ERROR(Status) || Fs == NULL) {
+    Print(L"Could not access file system\n");
+    return;
+  }
+
+  Status = Fs->OpenVolume(Fs, &Root);
+  if (EFI_ERROR(Status) || Root == NULL) {
+    Print(L"Could not open volume\n");
+    return;
+  }
+
+  // Try to read ESP_UUID.txt
+  Status = Root->Open(Root, &UuidFile, L"\\EFI\\PhoenixGuard\\ESP_UUID.txt", EFI_FILE_MODE_READ, 0);
+  if (!EFI_ERROR(Status) && UuidFile) {
+    UINTN BufSize = 256;
+    UINT8 *RawBuf = AllocateZeroPool(BufSize);
+    if (RawBuf) {
+      UINTN ReadSize = BufSize - 1;
+      Status = UuidFile->Read(UuidFile, &ReadSize, RawBuf);
+      if (!EFI_ERROR(Status) && ReadSize > 0) {
+        // Convert ASCII to CHAR16
+        CHAR16 *Buf = AllocateZeroPool((ReadSize + 1) * sizeof(CHAR16));
+        if (Buf) {
+          for (UINTN i = 0; i < ReadSize; i++) {
+            Buf[i] = (CHAR16)RawBuf[i];
+          }
+          Buf[ReadSize] = 0;
+          Print(L"ESP UUID: %s\n", Buf);
+          FreePool(Buf);
+        }
+      }
+      FreePool(RawBuf);
+    }
+    UuidFile->Close(UuidFile);
+  } else {
+    Print(L"ESP UUID: Not available\n");
+  }
+
+  if (Root) Root->Close(Root);
+}
+
+/**
+  Dump variable data in hex and ASCII format
+  
+  @param VarInfo  Variable information including name and GUID
+**/
+VOID
+DumpVariableData(
+  IN VARIABLE_INFO *VarInfo
+  )
+{
+  EFI_STATUS Status;
+  UINT8 *Data = NULL;
+  UINTN DataSize = VarInfo->DataSize;
+  
+  if (DataSize == 0) {
+    Print(L"    [Empty variable]\n");
+    return;
+  }
+  
+  // Limit display size for sanity
+  UINTN DisplaySize = DataSize;
+  BOOLEAN Truncated = FALSE;
+  if (DisplaySize > 256) {
+    DisplaySize = 256;
+    Truncated = TRUE;
+  }
+  
+  Data = AllocateZeroPool(DataSize);
+  if (Data == NULL) {
+    Print(L"    [Failed to allocate memory]\n");
+    return;
+  }
+  
+  Status = gRT->GetVariable(
+    VarInfo->Name,
+    &VarInfo->VendorGuid,
+    NULL,
+    &DataSize,
+    Data
+  );
+  
+  if (EFI_ERROR(Status)) {
+    Print(L"    [Failed to read: %r]\n", Status);
+    FreePool(Data);
+    return;
+  }
+  
+  // Display in hex dump format
+  Print(L"    Hex dump (%lu bytes%s):\n", DataSize, Truncated ? L", truncated" : L"");
+  for (UINTN i = 0; i < DisplaySize; i += 16) {
+    Print(L"    %04x: ", i);
+    
+    // Hex values
+    for (UINTN j = 0; j < 16 && (i + j) < DisplaySize; j++) {
+      Print(L"%02x ", Data[i + j]);
+    }
+    
+    // Padding if last line is partial
+    UINTN BytesOnLine = (DisplaySize - i < 16) ? (DisplaySize - i) : 16;
+    for (UINTN j = BytesOnLine; j < 16; j++) {
+      Print(L"   ");
+    }
+    
+    Print(L" |");
+    
+    // ASCII representation
+    for (UINTN j = 0; j < 16 && (i + j) < DisplaySize; j++) {
+      UINT8 c = Data[i + j];
+      if (c >= 0x20 && c <= 0x7E) {
+        Print(L"%c", (CHAR16)c);
+      } else {
+        Print(L".");
+      }
+    }
+    
+    Print(L"|\n");
+  }
+  
+  if (Truncated) {
+    Print(L"    ... (%lu more bytes not shown)\n", DataSize - DisplaySize);
+  }
+  
+  FreePool(Data);
+}
+
+/**
+  Display all variables with full data dumps
+**/
+VOID
+ShowDebugVariableDump(VOID)
+{
+  Print(L"\n");
+  Print(L"╔════════════════════════════════════════════╗\n");
+  Print(L"║    DEBUG: COMPLETE VARIABLE DUMP          ║\n");
+  Print(L"╚════════════════════════════════════════════╝\n");
+  Print(L"\n");
+  Print(L"Dumping ALL %lu variables with full data...\n", gVariableCount);
+  Print(L"This may take several minutes.\n\n");
+  
+  for (UINTN i = 0; i < gVariableCount; i++) {
+    VARIABLE_INFO *var = &gVariables[i];
+    
+    Print(L"[%lu] %s\n", i, var->Name);
+    Print(L"  GUID: %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
+          var->VendorGuid.Data1,
+          var->VendorGuid.Data2,
+          var->VendorGuid.Data3,
+          var->VendorGuid.Data4[0],
+          var->VendorGuid.Data4[1],
+          var->VendorGuid.Data4[2],
+          var->VendorGuid.Data4[3],
+          var->VendorGuid.Data4[4],
+          var->VendorGuid.Data4[5],
+          var->VendorGuid.Data4[6],
+          var->VendorGuid.Data4[7]);
+    Print(L"  Size: %lu bytes\n", var->DataSize);
     Print(L"  Attributes: 0x%08x\n", var->Attributes);
     
     // Decode attributes

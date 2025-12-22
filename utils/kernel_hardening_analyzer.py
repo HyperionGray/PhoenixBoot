@@ -54,8 +54,15 @@ class ConfigCheck:
     remediation: Optional[str] = None
 
 
+class ConfigProfile(Enum):
+    """Kernel configuration security profiles"""
+    HARDENED = "HARDENED"           # Maximum security, prevents kexec exploitation
+    PERMISSIVE = "PERMISSIVE"       # Temporarily reduced security for BIOS access
+    TRANSITION = "TRANSITION"       # Intermediate profile for safe transitions
+
+
 class KernelHardeningAnalyzer:
-    """Analyzer for kernel configuration security"""
+    """Analyzer for kernel configuration security with multiple profiles"""
     
     # DISA STIG and security best practice checks
     HARDENING_CHECKS = [
@@ -571,6 +578,136 @@ class KernelHardeningAnalyzer:
                 lines.append("")
         
         return '\n'.join(lines)
+    
+    def get_profile_config(self, profile: ConfigProfile) -> Dict[str, str]:
+        """Get kernel configuration for a specific security profile"""
+        config = {}
+        
+        if profile == ConfigProfile.HARDENED:
+            # Maximum security configuration - prevents kexec exploitation
+            for check in self.HARDENING_CHECKS:
+                config[check.name] = check.expected_value
+            
+            # Additional hardening for kexec prevention
+            config.update({
+                "CONFIG_KEXEC": "n",                    # Disable kexec completely
+                "CONFIG_KEXEC_FILE": "n",               # Disable file-based kexec
+                "CONFIG_HIBERNATION": "n",              # Disable hibernation
+                "CONFIG_LOCK_DOWN_KERNEL_FORCE_INTEGRITY": "y",  # Force lockdown
+                "CONFIG_MODULE_SIG_FORCE": "y",         # Force module signatures
+                "CONFIG_SECURITY_LOCKDOWN_LSM": "y",    # Enable lockdown LSM
+            })
+            
+        elif profile == ConfigProfile.PERMISSIVE:
+            # Temporarily reduced security for BIOS/firmware access
+            # Start with hardened base but selectively disable protections
+            for check in self.HARDENING_CHECKS:
+                config[check.name] = check.expected_value
+            
+            # Disable protections that block firmware access
+            config.update({
+                "CONFIG_KEXEC": "y",                    # Enable kexec for transitions
+                "CONFIG_KEXEC_FILE": "y",               # Enable file-based kexec
+                "CONFIG_LOCK_DOWN_KERNEL_FORCE_INTEGRITY": "n",  # Disable forced lockdown
+                "CONFIG_MODULE_SIG_FORCE": "n",         # Allow unsigned modules temporarily
+                "CONFIG_SECURITY_LOCKDOWN_LSM": "n",    # Disable lockdown LSM
+                "CONFIG_STRICT_DEVMEM": "n",            # Allow /dev/mem access for flashrom
+                "CONFIG_IO_STRICT_DEVMEM": "n",         # Allow I/O memory access
+                "CONFIG_DEVKMEM": "y",                  # Enable /dev/kmem for firmware tools
+            })
+            
+        elif profile == ConfigProfile.TRANSITION:
+            # Intermediate profile for safe transitions between permissive and hardened
+            for check in self.HARDENING_CHECKS:
+                config[check.name] = check.expected_value
+            
+            # Enable kexec but keep other protections
+            config.update({
+                "CONFIG_KEXEC": "y",                    # Enable kexec for final transition
+                "CONFIG_KEXEC_FILE": "y",               # Enable file-based kexec
+                "CONFIG_LOCK_DOWN_KERNEL_FORCE_INTEGRITY": "n",  # Allow transition
+                "CONFIG_MODULE_SIG_FORCE": "y",         # Keep module signature enforcement
+                "CONFIG_SECURITY_LOCKDOWN_LSM": "y",    # Keep lockdown LSM
+            })
+        
+        return config
+    
+    def generate_profile_config_file(self, profile: ConfigProfile, output_path: Path) -> bool:
+        """Generate a kernel config file for a specific profile"""
+        try:
+            config = self.get_profile_config(profile)
+            
+            lines = [
+                f"# PhoenixBoot Kernel Configuration - {profile.value} Profile",
+                f"# Generated on {datetime.now().isoformat()}",
+                f"# Profile: {profile.value}",
+                "",
+            ]
+            
+            # Add profile description
+            if profile == ConfigProfile.HARDENED:
+                lines.extend([
+                    "# HARDENED PROFILE: Maximum security configuration",
+                    "# - Prevents kexec exploitation",
+                    "# - Enforces module signatures",
+                    "# - Enables all security features",
+                    "# - Suitable for production systems",
+                    "",
+                ])
+            elif profile == ConfigProfile.PERMISSIVE:
+                lines.extend([
+                    "# PERMISSIVE PROFILE: Temporarily reduced security",
+                    "# - Allows firmware/BIOS access",
+                    "# - Enables kexec for transitions",
+                    "# - Disables some protections",
+                    "# - FOR TEMPORARY USE ONLY",
+                    "",
+                ])
+            elif profile == ConfigProfile.TRANSITION:
+                lines.extend([
+                    "# TRANSITION PROFILE: Safe transition configuration",
+                    "# - Enables kexec for final hardening",
+                    "# - Maintains most security features",
+                    "# - Used during double kexec workflow",
+                    "",
+                ])
+            
+            # Add configuration options
+            for option, value in sorted(config.items()):
+                if value == 'n':
+                    lines.append(f"# {option} is not set")
+                else:
+                    lines.append(f"{option}={value}")
+            
+            # Write to file
+            with open(output_path, 'w') as f:
+                f.write('\n'.join(lines))
+            
+            return True
+            
+        except Exception as e:
+            print(f"✗ Error generating profile config: {e}", file=sys.stderr)
+            return False
+    
+    def validate_profile_transition(self, from_profile: ConfigProfile, 
+                                   to_profile: ConfigProfile) -> Tuple[bool, str]:
+        """Validate if a profile transition is safe and allowed"""
+        
+        # Define allowed transitions
+        allowed_transitions = {
+            ConfigProfile.HARDENED: [ConfigProfile.PERMISSIVE],
+            ConfigProfile.PERMISSIVE: [ConfigProfile.TRANSITION, ConfigProfile.HARDENED],
+            ConfigProfile.TRANSITION: [ConfigProfile.HARDENED],
+        }
+        
+        if to_profile not in allowed_transitions.get(from_profile, []):
+            return False, f"Transition from {from_profile.value} to {to_profile.value} not allowed"
+        
+        # Additional safety checks
+        if from_profile == ConfigProfile.PERMISSIVE and to_profile == ConfigProfile.HARDENED:
+            return False, "Direct transition from PERMISSIVE to HARDENED not safe - use TRANSITION profile first"
+        
+        return True, f"Transition from {from_profile.value} to {to_profile.value} is safe"
 
 
 def main():
@@ -585,6 +722,10 @@ def main():
                        help='Automatically find and analyze current kernel config')
     parser.add_argument('--generate-baseline', action='store_true',
                        help='Generate hardened kernel config baseline')
+    parser.add_argument('--generate-profile', choices=['HARDENED', 'PERMISSIVE', 'TRANSITION'],
+                       help='Generate kernel config for specific security profile')
+    parser.add_argument('--validate-transition', nargs=2, metavar=('FROM', 'TO'),
+                       help='Validate profile transition safety (FROM TO)')
     parser.add_argument('--format', choices=['text', 'json'], default='text',
                        help='Output format (default: text)')
     parser.add_argument('--output', type=str,

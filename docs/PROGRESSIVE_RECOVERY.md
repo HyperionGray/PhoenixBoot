@@ -1,61 +1,223 @@
-# Progressive Recovery
+# 🔥 PhoenixBoot: Progressive Recovery System (NuclearBoot)
 
-This document describes the PhoenixGuard progressive recovery ladder and how to operate it safely in production.
+## Overview
 
-Principles
-- Safe-by-default: No host modifications unless you opt in (PG_HOST_OK=1).
-- No demo contamination: Only production assets from staging/ and scripts/ are used.
-- Auditability: Every run can produce a JSON planfile under plans/.
-- Clear safety gates: Destructive steps require explicit confirmation.
+PhoenixBoot's **Progressive Recovery System** (also known as NuclearBoot) provides an intelligent, escalating approach to clearing bootkit infections and malicious EFI variables. Instead of immediately nuking your system, it tries the safest methods first and only escalates when necessary.
 
-Commands
-- Interactive (safe defaults):
-  just nuke progressive
+**Key Principle:** Start with the least invasive method, escalate only when needed.
 
-- Dry run (planfile only, no changes):
-  just nuke progressive-dry-run
+---
 
-- Individual levels:
-  - Level 1 — Detect (read-only)
-    just nuke level1-scan
-  - Level 2 — ESP build (optional host deploy)
-    just nuke level2-esp
-    PG_HOST_OK=1 ISO_PATH=/path/to.iso just nuke level2-esp
-  - Level 3 — Secure firmware access (double-kexec)
-    just nuke level3-secure -- --backup current.bin
-    just nuke level3-secure -- --read suspect.bin
-    just nuke level3-secure -- --write drivers/G615LPAS.325
-  - Level 4 — KVM Snapshot Jump
-    just nuke level4-kvm
-  - Level 6 — Hardware recovery (danger)
-    just nuke level6-hw fw=drivers/G615LPAS.325 [verify_only=1] [verbose=1]
+## Why Progressive Escalation?
 
-Safety gates
-- Level 1–2: Non-destructive; Level 2 can modify host ESP only if PG_HOST_OK=1 and you confirm.
-- Level 3: Requires root; temporarily disables kernel lockdown and re-locks automatically.
-- Level 4: Reboot paths; ensure KVM configurations are prepared.
-- Level 6: Dangerous; type-to-confirm inside the tool and ensure you have a programmer backup.
+**The Problem with "Nuclear" Approaches:**
+- Most recovery tools jump straight to the most destructive option
+- Users lose data unnecessarily
+- Overkill for 90% of infections
 
-Planfile output
-- Written to plans/phoenix_progressive_<timestamp>.json, includes:
-  - run metadata: run_id, created_utc, environment
-  - levels attempted with ok/err details
-  - outputs: logs_dir and plan_path
-  - errors: top-level unexpected errors
+**PhoenixBoot's Solution:**
+- Start with safe, non-destructive detection
+- Escalate step-by-step based on threat level
+- Users stay in control at every step
+- Minimize data loss and downtime
 
-Baseline and scanning
-- The scanner script (scripts/scan-bootkits.sh) will:
-  - Use /home/punk/.venv/bin/python3 if present
-  - Create baseline at out/baseline/firmware_baseline.json (unless overridden via BASELINE_JSON)
-  - Save scan results to out/logs/bootkit_scan_results.json (unless overridden via SCAN_OUT)
+**Result:** Most infections are cleared at Level 1-3 (software-based, non-destructive). Only severe infections require Level 4-6 (reboot/hardware).
 
-Rollback guidance
-- Level 2 (host deploy): Remove /etc/grub.d/42_phoenixguard_recovery and rerun update-grub.
-- Level 3: A second kexec returns to lockdown=integrity; reboot restores kernel defaults.
-- Level 4: Reboot back to metal and normal boot order; remove KVM assets if desired.
-- Level 6: Reflash prior backup firmware image.
+---
 
-Troubleshooting
-- OVMF not found: run just build setup then just build package-esp.
-- ESP verification fails: inspect out/logs/esp-normalize-secure.log and ensure keys exist.
-- Baseline analyzer missing: add dev/tools/analyze_firmware_baseline.py or specify BASELINE_JSON to an existing baseline.
+## The Six Escalation Levels
+
+### Level 1: DETECT (Software-Based Scanning)
+**What it does:** Comprehensive bootkit detection with zero system changes
+
+**Risk:** ✅ None (read-only)  
+**Time:** ~2 minutes  
+**When to use:** Always start here
+
+**Command:**
+```bash
+./pf.py secure-env
+```
+
+**Output:**
+```
+Risk Level: CLEAN | LOW | MEDIUM | HIGH | CRITICAL
+```
+
+---
+
+### Level 2: SOFT (ESP Nuclear Boot ISO)
+**What it does:** Deploys Nuclear Boot recovery environment to ESP
+
+**Risk:** ⚠️ Low (modifies ESP, but reversible)  
+**Time:** ~5-10 minutes  
+**When to use:** MEDIUM threat level
+
+**Command:**
+```bash
+./pf.py workflow-cd-prepare
+sudo reboot
+```
+
+---
+
+### Level 3: SECURE (Double-kexec Firmware Access)
+**What it does:** Temporary firmware access using kexec
+
+**Risk:** ⚠️ Medium (temporary security reduction)  
+**Time:** ~10-15 minutes  
+**When to use:** HIGH threat level
+
+**Command:**
+```bash
+./pf.py kernel-kexec-check
+./pf.py kernel-config-remediate
+sudo bash out/remediation/kernel_remediation.sh
+```
+
+---
+
+### Level 4: VM (Reboot to KVM Recovery Environment)
+**What it does:** Reboots into isolated KVM recovery environment
+
+**Risk:** ⚠️⚠️ Medium-High (system reboot required)  
+**Time:** ~30-60 minutes  
+**When to use:** HIGH threat level, need isolation
+
+**Command:**
+```bash
+bash scripts/recovery/install_kvm_snapshot_jump.sh
+bash scripts/recovery/reboot-to-vm.sh
+```
+
+---
+
+### Level 5: XEN (Reboot to Xen dom0)
+**What it does:** Ultimate isolation with Xen hypervisor
+
+**Risk:** ⚠️⚠️⚠️ High (hypervisor reboot required)  
+**Time:** ~1-2 hours  
+**When to use:** CRITICAL threat level
+
+---
+
+### Level 6: HARDWARE (Direct SPI Flash Recovery)
+**What it does:** Bypasses all software, directly programs firmware chip
+
+**Risk:** ⚠️⚠️⚠️⚠️ Very High (can brick system)  
+**Time:** ~2-4 hours  
+**When to use:** All software methods failed
+
+**Command:**
+```bash
+bash scripts/recovery/hardware-recovery.sh
+```
+
+⚠️ **WARNING:** This is the nuclear option. Only use if all other methods fail.
+
+---
+
+## Quick Start: Automatic Progressive Recovery
+
+**The easy way - let PhoenixBoot decide:**
+
+```bash
+python3 scripts/recovery/phoenix_progressive.py
+```
+
+This intelligent system:
+1. Detects threat level
+2. Recommends appropriate escalation
+3. Asks for user confirmation
+4. Executes recovery steps
+5. Verifies success
+6. Escalates if needed
+
+---
+
+## Manual Recovery with UUEFI
+
+For users who prefer manual inspection:
+
+```bash
+# Install UUEFI diagnostic tool
+./pf.py uuefi-install
+
+# Set as next boot
+./pf.py uuefi-apply
+
+# Reboot
+sudo reboot
+```
+
+**UUEFI provides:**
+- View ALL EFI variables
+- Edit tweakable variables
+- Security analysis
+- Nuclear wipe options
+
+See [UUEFI v3 Guide](UUEFI_V3_GUIDE.md) for details.
+
+---
+
+## Nuclear Wipe Script (Emergency)
+
+For severe infections:
+
+```bash
+sudo bash scripts/recovery/nuclear-wipe.sh
+```
+
+**Four Options:**
+1. **Vendor variable wipe** - Remove bloatware (safe)
+2. **Full NVRAM reset** - Factory defaults
+3. **Disk wiping guide** - Instructions for nwipe
+4. **Complete nuclear wipe** - NVRAM + disk (EXTREME)
+
+⚠️ **WARNING:** Options 3 and 4 are PERMANENT!
+
+---
+
+## Decision Tree: Which Level Do I Need?
+
+```
+Start: Run Level 1 (DETECT)
+  ↓
+Risk Level?
+  ↓
+├─ CLEAN/LOW → ✅ Done (schedule next scan)
+├─ MEDIUM → Level 2 (ESP cleanup)
+├─ HIGH → Level 3 (kexec) or Level 4 (VM)
+└─ CRITICAL → Level 5 (Xen) or Level 6 (Hardware)
+```
+
+---
+
+## Success Criteria
+
+After recovery, verify:
+
+```bash
+./pf.py secure-env
+# Should show: Risk Level: CLEAN
+```
+
+---
+
+## Technical Reference
+
+For technical details, command syntax, and advanced usage:
+- **[Technical Reference](PROGRESSIVE_RECOVERY_TECHNICAL.md)** - Detailed commands and planfile format
+- **[Complete Workflow](../BOOTKIT_DEFENSE_WORKFLOW.md)** - All three stages
+- **[UUEFI Guide](UUEFI_V3_GUIDE.md)** - Interactive variable management
+
+---
+
+## Community Support
+
+- **GitHub Issues**: https://github.com/P4X-ng/PhoenixBoot/issues
+- **Documentation**: `docs/` directory
+
+---
+
+**Made with 🔥 by PhoenixBoot - Progressive recovery from safest to most extreme**

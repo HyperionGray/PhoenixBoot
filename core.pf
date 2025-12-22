@@ -97,6 +97,45 @@ task kernel-kexec-guide
   shell bash -lc '"${PYTHON:-python3}" utils/kernel_config_remediation.py --kexec-guide'
 end
 
+task kernel-profile-list
+  describe List available kernel configuration profiles (permissive/hardened/balanced)
+  shell bash -lc '"${PYTHON:-python3}" utils/kernel_config_profiles.py --list'
+end
+
+task kernel-profile-permissive
+  describe Generate permissive kernel config for BIOS flashing
+  shell bash -lc 'mkdir -p out/kernel-profiles && "${PYTHON:-python3}" utils/kernel_config_profiles.py --profile permissive --output out/kernel-profiles/permissive.config'
+  shell bash -lc 'echo "Profile generated: out/kernel-profiles/permissive.config"'
+end
+
+task kernel-profile-hardened
+  describe Generate hardened kernel config (maximum security)
+  shell bash -lc 'mkdir -p out/kernel-profiles && "${PYTHON:-python3}" utils/kernel_config_profiles.py --profile hardened --output out/kernel-profiles/hardened.config'
+  shell bash -lc 'echo "Profile generated: out/kernel-profiles/hardened.config"'
+end
+
+task kernel-profile-balanced
+  describe Generate balanced kernel config (security + flexibility)
+  shell bash -lc 'mkdir -p out/kernel-profiles && "${PYTHON:-python3}" utils/kernel_config_profiles.py --profile balanced --output out/kernel-profiles/balanced.config'
+  shell bash -lc 'echo "Profile generated: out/kernel-profiles/balanced.config"'
+end
+
+task kernel-profile-compare
+  describe Compare current kernel config with profile (set PROFILE=permissive/hardened/balanced)
+  shell bash -lc '[ -n "${PROFILE:-}" ] || { echo "Usage: PROFILE=<profile> ./pf.py kernel-profile-compare"; exit 1; }'
+  shell bash -lc '"${PYTHON:-python3}" utils/kernel_config_profiles.py --profile "${PROFILE}" --compare /boot/config-$(uname -r)'
+end
+
+task secureboot-check
+  describe Check Secure Boot status and capability to enable it
+  shell bash scripts/secure-boot/check-secureboot-status.sh
+end
+
+task secureboot-enable-kexec
+  describe Enable Secure Boot via double kexec method (requires root)
+  shell bash scripts/secure-boot/enable-secureboot-kexec.sh
+end
+
 task firmware-checksum-list
   describe List all firmware checksums in database
   shell bash -lc '"${PYTHON:-python3}" utils/firmware_checksum_db.py --list'

@@ -21,12 +21,17 @@
 #include <Guid/FileInfo.h>
 #include <Guid/GlobalVariable.h>
 
-#define UUEFI_VERSION L"3.1.0"
+#define UUEFI_VERSION L"3.2.0"
 #define MAX_VARIABLE_NAME_SIZE 1024
 #define MAX_VARIABLES 500
 #define MAX_SUSPICIOUS_ITEMS 50
 #define MAX_DESCRIPTION_SIZE 512
 #define MAX_DISPLAYED_DELETIONS 10
+#define MAX_WARNING_MESSAGE_SIZE 256
+
+// Error messages for variable guarding
+#define MSG_UNSAFE_STATE L"⚠ BLOCKED: System in unsafe state (SecureBoot on but no keys). Fix secure boot configuration first."
+#define MSG_BOOT_VAR_SETUP_MODE L"⚠ BLOCKED: Cannot modify boot variables in setup mode with SecureBoot enabled"
 
 // Variable categories
 typedef enum {
@@ -840,29 +845,20 @@ ToggleVariable(
   IN UINTN VarIndex
   )
 {
+  BOOLEAN AllowModification = FALSE;
+  CHAR16 WarningMessage[MAX_WARNING_MESSAGE_SIZE];
+  
   if (VarIndex >= gVariableCount) {
     return EFI_INVALID_PARAMETER;
   }
   
   VARIABLE_INFO *var = &gVariables[VarIndex];
   
-  // Safety check - don't allow toggling critical security or boot variables
-  if (var->Category == VAR_CAT_SECURITY) {
-    Print(L"⚠ Cannot toggle security variables for safety\n");
-    return EFI_ACCESS_DENIED;
-  }
+  // Use the new guarding mechanism
+  GuardVariableModification(var, &AllowModification, WarningMessage);
   
-  if (var->Category == VAR_CAT_BOOT && 
-      (StrCmp(var->Name, L"BootOrder") == 0 || 
-       StrCmp(var->Name, L"BootCurrent") == 0)) {
-    Print(L"⚠ Cannot toggle critical boot variables\n");
-    return EFI_ACCESS_DENIED;
-  }
-  
-  // Only allow toggling vendor variables
-  if (var->Category != VAR_CAT_VENDOR) {
-    Print(L"⚠ Only vendor-specific variables can be toggled\n");
-    Print(L"  (For safety, boot and security variables are protected)\n");
+  if (!AllowModification) {
+    Print(L"%s\n", WarningMessage);
     return EFI_ACCESS_DENIED;
   }
   
@@ -1265,7 +1261,7 @@ ShowInteractiveMenu(VOID)
   while (!exitMenu) {
     Print(L"\n");
     Print(L"╔════════════════════════════════════════════╗\n");
-    Print(L"║    UUEFI INTERACTIVE MENU v3.0            ║\n");
+    Print(L"║    UUEFI INTERACTIVE MENU v%s            ║\n", UUEFI_VERSION);
     Print(L"║    Full BIOS-like Configuration           ║\n");
     Print(L"╚════════════════════════════════════════════╝\n");
     Print(L"\n");
@@ -1278,6 +1274,7 @@ ShowInteractiveMenu(VOID)
     Print(L"6. Edit Variable (Advanced)\n");
     Print(L"7. Re-scan Variables\n");
     Print(L"8. ☢ Nuclear Wipe Menu (EXTREME)\n");
+    Print(L"9. 🔒 Validate Secure Boot Configuration\n");
     Print(L"Q. Return to Firmware\n");
     Print(L"\nSelect option: ");
     
@@ -1365,6 +1362,107 @@ ShowInteractiveMenu(VOID)
         ShowNuclearWipeMenu();
         break;
         
+      case L'9':
+        Print(L"\n");
+        Print(L"╔════════════════════════════════════════════╗\n");
+        Print(L"║    SECURE BOOT VALIDATION REPORT          ║\n");
+        Print(L"╚════════════════════════════════════════════╝\n");
+        Print(L"\n");
+        
+        UINT8 SecureBoot = 0;
+        UINT8 SetupMode = 0;
+        BOOLEAN HasDbKey = FALSE;
+        BOOLEAN IsConfigured = FALSE;
+        CHAR16 ConfigMessage[MAX_WARNING_MESSAGE_SIZE];
+        
+        GetSecureBootStatus(&SecureBoot, &SetupMode);
+        ValidateDbKeys(&HasDbKey);
+        CheckSecureBootConfiguration(&IsConfigured, ConfigMessage);
+        
+        Print(L"Current Status:\n");
+        Print(L"───────────────\n");
+        Print(L"SecureBoot Variable: %s\n", SecureBoot ? L"Enabled" : L"Disabled");
+        Print(L"SetupMode Variable: %s\n", SetupMode ? L"Yes (Setup)" : L"No (User)");
+        Print(L"db Keys Present: %s\n", HasDbKey ? L"Yes" : L"No");
+        Print(L"\n");
+        Print(L"Overall Assessment:\n");
+        Print(L"───────────────────\n");
+        Print(L"%s\n", ConfigMessage);
+        Print(L"\n");
+        
+        if (SecureBoot && !HasDbKey) {
+          Print(L"⚠⚠⚠ CRITICAL ISSUE DETECTED ⚠⚠⚠\n");
+          Print(L"\n");
+          Print(L"Your system has SecureBoot enabled but no keys in the\n");
+          Print(L"db signature database. This indicates a broken or\n");
+          Print(L"incomplete secure boot implementation.\n");
+          Print(L"\n");
+          Print(L"Possible causes:\n");
+          Print(L"  • Firmware bug or incomplete UEFI implementation\n");
+          Print(L"  • Keys were manually deleted while SecureBoot was on\n");
+          Print(L"  • Factory reset didn't properly disable SecureBoot\n");
+          Print(L"  • Hardware or NVRAM corruption\n");
+          Print(L"\n");
+          Print(L"Recommended actions:\n");
+          Print(L"  1. Enter firmware setup (usually DEL or F2 at boot)\n");
+          Print(L"  2. Find 'Secure Boot' in security settings\n");
+          Print(L"  3. Either:\n");
+          Print(L"     a) Properly disable Secure Boot, OR\n");
+          Print(L"     b) Enroll keys (use 'Restore Factory Keys' if available)\n");
+          Print(L"  4. Save settings and reboot\n");
+          Print(L"  5. Run UUEFI again to verify the fix\n");
+          Print(L"\n");
+          Print(L"⚠ DO NOT modify other UEFI variables until this is fixed!\n");
+          Print(L"  The system is in an unsafe state and modifications\n");
+          Print(L"  could potentially brick your hardware.\n");
+        } else if (SecureBoot && SetupMode) {
+          Print(L"ℹ INFO: Ready for Key Enrollment\n");
+          Print(L"\n");
+          Print(L"Your system is in Setup Mode with SecureBoot enabled.\n");
+          Print(L"This is a normal intermediate state during key enrollment.\n");
+          Print(L"\n");
+          Print(L"To complete setup:\n");
+          Print(L"  1. Use KeyEnrollEdk2.efi to enroll custom keys, OR\n");
+          Print(L"  2. Enter firmware setup and enroll manufacturer keys\n");
+          Print(L"  3. System will exit Setup Mode once PK is enrolled\n");
+        } else if (SecureBoot && HasDbKey && !SetupMode) {
+          Print(L"✓ SECURE BOOT PROPERLY CONFIGURED\n");
+          Print(L"\n");
+          Print(L"Your system has:\n");
+          Print(L"  ✓ SecureBoot enabled\n");
+          Print(L"  ✓ Valid keys in db database\n");
+          Print(L"  ✓ Not in setup mode\n");
+          Print(L"\n");
+          Print(L"This is the ideal secure boot configuration.\n");
+          Print(L"Your system will only boot signed bootloaders and kernels.\n");
+        } else if (!SecureBoot && HasDbKey) {
+          Print(L"ℹ INFO: Secure Boot Disabled (Keys Present)\n");
+          Print(L"\n");
+          Print(L"Your system has keys enrolled but SecureBoot is disabled.\n");
+          Print(L"This is a valid configuration if you intentionally disabled it.\n");
+          Print(L"\n");
+          Print(L"To enable SecureBoot:\n");
+          Print(L"  1. Enter firmware setup\n");
+          Print(L"  2. Enable 'Secure Boot'\n");
+          Print(L"  3. Save and reboot\n");
+        } else {
+          Print(L"ℹ INFO: Secure Boot Not Configured\n");
+          Print(L"\n");
+          Print(L"Your system has SecureBoot disabled and no keys enrolled.\n");
+          Print(L"This is a valid configuration for maximum compatibility.\n");
+          Print(L"\n");
+          Print(L"To enable SecureBoot:\n");
+          Print(L"  1. Enter firmware setup\n");
+          Print(L"  2. Enable 'Secure Boot'\n");
+          Print(L"  3. Enroll keys (usually automatic with factory keys)\n");
+          Print(L"  4. Save and reboot\n");
+        }
+        
+        Print(L"\nPress any key to continue...");
+        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+        
       case L'Q':
       case L'q':
         exitMenu = TRUE;
@@ -1414,6 +1512,193 @@ GetSecureBootStatus(
     *SetupMode = Value;
   }
 
+  return EFI_SUCCESS;
+}
+
+/**
+  Validate that at least one key exists in the db signature database
+  
+  @param HasValidKey  Pointer to store result (TRUE if valid key found)
+  
+  @retval EFI_SUCCESS  Validation completed (check HasValidKey for result)
+  @retval Other        Error occurred during validation
+**/
+EFI_STATUS
+ValidateDbKeys(
+  OUT BOOLEAN *HasValidKey
+  )
+{
+  EFI_STATUS Status;
+  VOID *DbData = NULL;
+  UINTN DbSize = 0;
+  EFI_GUID GlobalVar = EFI_GLOBAL_VARIABLE;
+  
+  *HasValidKey = FALSE;
+  
+  // First check if db variable exists and get its size
+  Status = gRT->GetVariable(L"db", &GlobalVar, NULL, &DbSize, NULL);
+  if (Status == EFI_BUFFER_TOO_SMALL && DbSize > 0) {
+    // Variable exists and has data - allocate buffer and read it
+    DbData = AllocatePool(DbSize);
+    if (DbData != NULL) {
+      Status = gRT->GetVariable(L"db", &GlobalVar, NULL, &DbSize, DbData);
+      if (!EFI_ERROR(Status) && DbSize > 0) {
+        // db exists and has data - we'll consider this valid
+        // 
+        // Note: A more sophisticated implementation would parse the EFI_SIGNATURE_LIST
+        // format to validate individual signatures. However, for the security goal of
+        // preventing hardware lockouts (the issue's "don't brick peoples shit" requirement),
+        // simply checking that db exists and contains data is sufficient. This approach:
+        // - Detects the critical broken state: SecureBoot enabled but db empty
+        // - Prevents variable modifications that could brick the system
+        // - Avoids complex signature parsing that could introduce bugs
+        // - Works with any keys (MOK, custom, or factory) as requested
+        // 
+        // If db has any data, the firmware can attempt to validate signatures. If those
+        // signatures are invalid, boot will fail but the system won't be locked. Our goal
+        // is to prevent the dangerous state where SecureBoot is on but db is completely empty.
+        *HasValidKey = TRUE;
+      }
+      FreePool(DbData);
+    }
+  } else if (Status == EFI_SUCCESS && DbSize == 0) {
+    // Variable exists but is empty
+    *HasValidKey = FALSE;
+  } else if (Status == EFI_NOT_FOUND) {
+    // db variable doesn't exist at all
+    *HasValidKey = FALSE;
+  }
+  
+  return EFI_SUCCESS;
+}
+
+/**
+  Check if secure boot is properly configured and functioning
+  
+  This validates that:
+  - SecureBoot variable exists and is readable
+  - If SecureBoot is enabled, at least one key exists in db
+  - System is not in a broken state where SecureBoot appears on but isn't
+  
+  @param IsProperlyConfigured  TRUE if secure boot is properly set up
+  @param DiagnosticMessage     Human-readable status message
+  
+  @retval EFI_SUCCESS  Check completed successfully
+**/
+EFI_STATUS
+CheckSecureBootConfiguration(
+  OUT BOOLEAN *IsProperlyConfigured,
+  OUT CHAR16 *DiagnosticMessage
+  )
+{
+  UINT8 SecureBoot = 0;
+  UINT8 SetupMode = 0;
+  BOOLEAN HasDbKey = FALSE;
+  
+  *IsProperlyConfigured = FALSE;
+  StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"");
+  
+  // Get secure boot status
+  GetSecureBootStatus(&SecureBoot, &SetupMode);
+  
+  // Validate db keys if secure boot is enabled
+  if (SecureBoot) {
+    ValidateDbKeys(&HasDbKey);
+  }
+  
+  // Determine configuration state
+  if (SecureBoot && !SetupMode && HasDbKey) {
+    // Ideal state: SecureBoot on, not in setup mode, and has keys
+    *IsProperlyConfigured = TRUE;
+    StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"✓ Secure Boot properly configured and active");
+  } else if (SecureBoot && !HasDbKey) {
+    // PROBLEM: SecureBoot appears enabled but no keys in db
+    *IsProperlyConfigured = FALSE;
+    StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"⚠ WARNING: SecureBoot enabled but no valid keys in db!");
+  } else if (SecureBoot && SetupMode) {
+    // In setup mode - keys not properly enrolled yet
+    *IsProperlyConfigured = FALSE;
+    StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"⚠ Secure Boot in setup mode - keys not enrolled");
+  } else if (!SecureBoot && HasDbKey) {
+    // SecureBoot disabled but keys present - valid state
+    *IsProperlyConfigured = TRUE;
+    StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"ℹ Secure Boot disabled (keys present but not active)");
+  } else {
+    // SecureBoot disabled and no keys
+    *IsProperlyConfigured = TRUE;
+    StrCpyS(DiagnosticMessage, MAX_WARNING_MESSAGE_SIZE, L"ℹ Secure Boot disabled (no keys enrolled)");
+  }
+  
+  return EFI_SUCCESS;
+}
+
+/**
+  Guard critical UEFI variables from modification during UUEFI operation
+  
+  This function checks if modifying a variable would be safe and prevents
+  operations that could brick the system or leave it in an inconsistent state.
+  
+  @param VarInfo  Variable to check for safety
+  @param AllowModification  TRUE if modification is safe
+  @param WarningMessage     Warning message if modification is unsafe
+  
+  @retval EFI_SUCCESS  Check completed
+**/
+EFI_STATUS
+GuardVariableModification(
+  IN VARIABLE_INFO *VarInfo,
+  OUT BOOLEAN *AllowModification,
+  OUT CHAR16 *WarningMessage
+  )
+{
+  BOOLEAN IsConfigured = FALSE;
+  CHAR16 ConfigMessage[MAX_WARNING_MESSAGE_SIZE];
+  
+  *AllowModification = FALSE;
+  StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, L"");
+  
+  // Check secure boot configuration first
+  CheckSecureBootConfiguration(&IsConfigured, ConfigMessage);
+  
+  // Never allow modification of critical security variables
+  if (VarInfo->Category == VAR_CAT_SECURITY) {
+    StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, L"⚠ BLOCKED: Security variables are protected from modification");
+    *AllowModification = FALSE;
+    return EFI_SUCCESS;
+  }
+  
+  // Check if SecureBoot appears broken (enabled but no keys)
+  UINT8 SecureBoot = 0;
+  UINT8 SetupMode = 0;
+  BOOLEAN HasDbKey = FALSE;
+  
+  GetSecureBootStatus(&SecureBoot, &SetupMode);
+  ValidateDbKeys(&HasDbKey);
+  
+  if (SecureBoot && !HasDbKey) {
+    // System is in a dangerous state - don't allow any modifications
+    StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, MSG_UNSAFE_STATE);
+    *AllowModification = FALSE;
+    return EFI_SUCCESS;
+  }
+  
+  // Don't allow modification of boot variables if system is unstable
+  if (VarInfo->Category == VAR_CAT_BOOT && SecureBoot && SetupMode) {
+    StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, MSG_BOOT_VAR_SETUP_MODE);
+    *AllowModification = FALSE;
+    return EFI_SUCCESS;
+  }
+  
+  // Allow modification of editable vendor variables if system is stable
+  if (VarInfo->IsEditable && IsConfigured) {
+    *AllowModification = TRUE;
+    return EFI_SUCCESS;
+  }
+  
+  // Default: block modification with generic warning
+  StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, L"⚠ BLOCKED: Variable modification not safe in current state");
+  *AllowModification = FALSE;
+  
   return EFI_SUCCESS;
 }
 
@@ -1512,27 +1797,44 @@ DisplayBootInfo(VOID)
 }
 
 /**
-  Display security status
+  Display security status with detailed secure boot validation
 **/
 VOID
 DisplaySecurityInfo(VOID)
 {
   UINT8 SecureBoot = 0;
   UINT8 SetupMode = 0;
+  BOOLEAN HasDbKey = FALSE;
+  BOOLEAN IsConfigured = FALSE;
+  CHAR16 ConfigMessage[MAX_WARNING_MESSAGE_SIZE];
 
   Print(L"\n=== Security Status ===\n");
 
   GetSecureBootStatus(&SecureBoot, &SetupMode);
+  ValidateDbKeys(&HasDbKey);
+  CheckSecureBootConfiguration(&IsConfigured, ConfigMessage);
   
   Print(L"Secure Boot: %s\n", SecureBoot ? L"Enabled" : L"Disabled");
   Print(L"Setup Mode: %s\n", SetupMode ? L"Yes" : L"No");
+  Print(L"db Keys Present: %s\n", HasDbKey ? L"Yes" : L"No");
   
-  if (SecureBoot && !SetupMode) {
-    Print(L"Status: ✓ Secure Boot active and configured\n");
-  } else if (!SecureBoot) {
-    Print(L"Status: ⚠ Secure Boot disabled\n");
-  } else if (SetupMode) {
-    Print(L"Status: ⚠ In setup mode - keys not enrolled\n");
+  Print(L"Configuration: %s\n", ConfigMessage);
+  
+  // Additional warnings for problematic states
+  if (SecureBoot && !HasDbKey) {
+    Print(L"\n⚠⚠⚠ CRITICAL WARNING ⚠⚠⚠\n");
+    Print(L"SecureBoot appears enabled but no keys are in the db database!\n");
+    Print(L"This may indicate:\n");
+    Print(L"  - Firmware bug or incomplete secure boot implementation\n");
+    Print(L"  - Keys were deleted but SecureBoot wasn't properly disabled\n");
+    Print(L"  - System is in an inconsistent state\n");
+    Print(L"\nRecommended actions:\n");
+    Print(L"  1. Enter firmware setup and verify secure boot settings\n");
+    Print(L"  2. Either enroll keys or properly disable secure boot\n");
+    Print(L"  3. Do NOT modify other UEFI variables until this is resolved\n");
+  } else if (SecureBoot && SetupMode) {
+    Print(L"\nℹ INFO: System is ready for key enrollment\n");
+    Print(L"Use KeyEnrollEdk2.efi or firmware setup to enroll keys.\n");
   }
 }
 

@@ -1,8 +1,37 @@
 # Secure Boot Enablement via Double Kexec Method
 
+> **⚠️ IMPORTANT: Framework Implementation**
+> 
+> This feature provides a **framework** for the double kexec method and demonstrates
+> the workflow, but does **NOT** include hardware-specific Secure Boot enablement code.
+> 
+> Actual Secure Boot enablement is hardware-specific and typically requires:
+> - Manufacturer-specific tools
+> - Firmware-specific knowledge
+> - UEFI variable manipulation (complex)
+> - **OR traditional BIOS/UEFI setup method (RECOMMENDED)**
+> 
+> The framework can be extended with hardware-specific code as needed.
+
 ## Overview
 
-PhoenixBoot provides an advanced method to enable Secure Boot from the operating system using the "double kexec" technique. This allows enabling Secure Boot without requiring multiple reboots, even when the kernel has hardened security protections that normally prevent BIOS/firmware modifications.
+PhoenixBoot provides an advanced **framework** for enabling Secure Boot from the operating system using the "double kexec" technique. This demonstrates how to enable Secure Boot without requiring multiple reboots, even when the kernel has hardened security protections that normally prevent BIOS/firmware modifications.
+
+### Framework vs. Complete Implementation
+
+**What this provides:**
+- ✅ Complete double kexec workflow orchestration
+- ✅ Kernel configuration profiles (permissive, hardened, balanced)
+- ✅ Status detection and analysis tools
+- ✅ Prerequisites checking and validation
+- ✅ Educational demonstration of the technique
+
+**What this does NOT provide:**
+- ❌ Hardware-specific Secure Boot enablement code
+- ❌ Automatic firmware modification
+- ❌ Universal UEFI variable manipulation
+
+**Recommended for most users:** Enable Secure Boot through BIOS/UEFI setup (traditional method).
 
 ## The Problem
 

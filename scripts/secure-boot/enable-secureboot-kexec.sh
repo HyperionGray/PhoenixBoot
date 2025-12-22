@@ -1,6 +1,19 @@
 #!/bin/bash
-# PhoenixBoot - Enable Secure Boot via Double Kexec Method
-# Enables Secure Boot without rebooting by using kexec to temporarily use a permissive kernel
+# PhoenixBoot - Enable Secure Boot via Double Kexec Method (FRAMEWORK)
+# 
+# ⚠️  IMPORTANT: This is a FRAMEWORK implementation
+# 
+# This script provides the infrastructure and workflow for the double kexec method,
+# but does NOT include hardware-specific Secure Boot enablement code.
+# 
+# Actual Secure Boot enablement (Phase 2) is hardware-specific and requires:
+# - Manufacturer-specific tools
+# - Firmware-specific knowledge  
+# - UEFI variable manipulation (complex)
+# - OR traditional BIOS/UEFI setup method (RECOMMENDED)
+#
+# This framework demonstrates the double kexec workflow and can be extended
+# with hardware-specific enablement code as needed.
 
 set -euo pipefail
 
@@ -16,8 +29,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║    PhoenixBoot - Enable Secure Boot via Double Kexec Method       ║${NC}"
+echo -e "${BLUE}║    PhoenixBoot - Double Kexec Framework (DEMONSTRATION)           ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════════════╝${NC}"
+echo
+echo -e "${YELLOW}⚠️  FRAMEWORK IMPLEMENTATION${NC}"
+echo "This script demonstrates the double kexec workflow but does NOT"
+echo "include hardware-specific Secure Boot enablement code."
+echo
+echo "For actual Secure Boot enablement, use BIOS/UEFI setup (recommended)."
 echo
 
 # Safety check - must run as root
@@ -205,8 +224,12 @@ TEMP_SCRIPT="/tmp/phoenixboot_secureboot_enable_phase2.sh"
 
 cat > "$TEMP_SCRIPT" << 'EOF'
 #!/bin/bash
-# PhoenixBoot - Secure Boot Enablement Phase 2
+# PhoenixBoot - Secure Boot Enablement Phase 2 (FRAMEWORK)
 # This runs after the first kexec, in the alternate kernel
+#
+# ⚠️  FRAMEWORK IMPLEMENTATION - Hardware-specific code needed
+# This demonstrates the Phase 2 workflow but actual Secure Boot enablement
+# requires hardware-specific implementation.
 
 set -euo pipefail
 
@@ -217,8 +240,12 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo -e "${BLUE}═══════════════════════════════════════════════════════════════════${NC}"
-echo -e "${BLUE}    PhoenixBoot - Secure Boot Enablement Phase 2                   ${NC}"
+echo -e "${BLUE}    PhoenixBoot - Secure Boot Framework Phase 2                    ${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════════════════${NC}"
+echo
+echo -e "${YELLOW}⚠️  FRAMEWORK DEMONSTRATION${NC}"
+echo "This script demonstrates Phase 2 workflow. Actual Secure Boot enablement"
+echo "requires hardware-specific implementation."
 echo
 echo -e "${GREEN}✓ Successfully kexec'd into alternate kernel${NC}"
 echo "  Current kernel: $(uname -r)"
@@ -236,12 +263,18 @@ echo -e "${GREEN}✓ /dev/mem is available${NC}"
 # Enable Secure Boot
 echo -e "\n${YELLOW}Attempting to enable Secure Boot...${NC}"
 
-# TODO: Implement actual Secure Boot enablement
-# This is a placeholder for the actual implementation
-# Methods could include:
+# ═══════════════════════════════════════════════════════════════════
+# FRAMEWORK NOTE: Hardware-specific implementation required here
+# ═══════════════════════════════════════════════════════════════════
+# This is where hardware-specific Secure Boot enablement code would go.
+# Implementation methods vary by hardware and may include:
 #   1. UEFI variable modification via efivar
 #   2. Firmware modification via flashrom (advanced)
 #   3. Direct memory/register manipulation (very advanced)
+#
+# Each hardware platform has different requirements. Consult your
+# hardware documentation or use BIOS/UEFI setup (recommended).
+# ═══════════════════════════════════════════════════════════════════
 
 echo -e "${YELLOW}⚠ Secure Boot enablement via OS is highly hardware-specific${NC}"
 echo

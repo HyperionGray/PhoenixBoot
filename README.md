@@ -131,8 +131,12 @@ Comprehensive kernel configuration analysis and UEFI security verification:
 - **Kernel Config Remediation** - Fix kernel configs with kexec double-jump technique
 - **DISA STIG Compliance** - Automated checks for security best practices
 - **Configuration Diff** - Compare current kernel config against hardened baseline
-- **🔥 NEW: Secure Boot Enablement via Double Kexec** - Enable Secure Boot from OS without rebooting
+- **🔥 NEW: Secure Boot Enablement Framework** - Double kexec method framework (educational)
 - **🔥 NEW: Kernel Configuration Profiles** - Pre-configured profiles (permissive/hardened/balanced)
+
+> **Note**: The Secure Boot enablement feature provides a framework and workflow demonstration.
+> Hardware-specific enablement code is not included. Most users should enable Secure Boot
+> through BIOS/UEFI setup (traditional method).
 
 **Usage**: 
 ```bash

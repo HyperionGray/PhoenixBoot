@@ -1,6 +1,6 @@
 # SecureBoot Scripts
 
-Scripts for managing SecureBoot keys and enrollment.
+Scripts for managing SecureBoot keys, enrollment, and enablement.
 
 ## Key Generation
 
@@ -14,6 +14,52 @@ Scripts for managing SecureBoot keys and enrollment.
 - `enroll-secureboot.sh` - Enroll SecureBoot keys
 - `enroll-secureboot-nosudo.sh` - Enroll SecureBoot keys (no sudo)
 
+## 🆕 Secure Boot Enablement (Double Kexec Method)
+
+- `check-secureboot-status.sh` - **NEW**: Check Secure Boot status and enablement capability
+- `enable-secureboot-kexec.sh` - **NEW**: Enable Secure Boot via double kexec method
+
+### Features
+
+**check-secureboot-status.sh** checks:
+- UEFI system compatibility
+- Current Secure Boot state (enabled/disabled)
+- Setup Mode status (can enroll custom keys)
+- Kernel configuration for BIOS flashing
+- Kexec availability
+- Provides actionable recommendations
+
+**enable-secureboot-kexec.sh** implements:
+- Double kexec workflow (no power cycle reboots)
+- Kernel switching without rebooting
+- Framework for Secure Boot enablement
+- Safety checks and prerequisites validation
+
+### Usage
+
+```bash
+# Check Secure Boot status
+./pf.py secureboot-check
+
+# Or run directly
+./scripts/secure-boot/check-secureboot-status.sh
+
+# Enable Secure Boot via double kexec (advanced)
+sudo ./pf.py secureboot-enable-kexec
+
+# Or run directly
+sudo ./scripts/secure-boot/enable-secureboot-kexec.sh
+```
+
+### Documentation
+
+See [Secure Boot Enablement via Kexec Guide](../../docs/SECUREBOOT_ENABLEMENT_KEXEC.md) for:
+- Complete workflow explanation
+- Step-by-step instructions
+- Kernel configuration profiles
+- Troubleshooting guide
+- Security considerations
+
 ## Key Management
 
 - `keys-centralize.sh` - Centralize key management
@@ -23,7 +69,7 @@ Scripts for managing SecureBoot keys and enrollment.
 - `generate-secureboot-instructions.sh` - Generate SecureBoot instructions
 - `create-secureboot-instructions.sh` - Create SecureBoot setup guide
 
-## Usage
+## Traditional Usage
 
 ```bash
 # Generate SecureBoot keys
@@ -35,3 +81,4 @@ Scripts for managing SecureBoot keys and enrollment.
 # Create authentication files
 ./pf.py secure-make-auth
 ```
+

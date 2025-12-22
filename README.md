@@ -131,6 +131,12 @@ Comprehensive kernel configuration analysis and UEFI security verification:
 - **Kernel Config Remediation** - Fix kernel configs with kexec double-jump technique
 - **DISA STIG Compliance** - Automated checks for security best practices
 - **Configuration Diff** - Compare current kernel config against hardened baseline
+- **🔥 NEW: Secure Boot Enablement Framework** - Double kexec method framework (educational)
+- **🔥 NEW: Kernel Configuration Profiles** - Pre-configured profiles (permissive/hardened/balanced)
+
+> **Note**: The Secure Boot enablement feature provides a framework and workflow demonstration.
+> Hardware-specific enablement code is not included. Most users should enable Secure Boot
+> through BIOS/UEFI setup (traditional method).
 
 **Usage**: 
 ```bash
@@ -151,12 +157,25 @@ Comprehensive kernel configuration analysis and UEFI security verification:
 # Check kexec for remediation
 ./pf.py kernel-kexec-check
 
+# Secure Boot enablement (NEW!)
+./pf.py secureboot-check
+sudo ./pf.py secureboot-enable-kexec
+
+# Kernel config profiles (NEW!)
+./pf.py kernel-profile-list
+./pf.py kernel-profile-permissive
+./pf.py kernel-profile-hardened
+./pf.py kernel-profile-balanced
+PROFILE=hardened ./pf.py kernel-profile-compare
+
 # Firmware checksum management
 ./pf.py firmware-checksum-list
 FIRMWARE_PATH=/path/to/bios.bin ./pf.py firmware-checksum-verify
 ```
 
-**Documentation**: See [Kernel Hardening Guide](docs/KERNEL_HARDENING_GUIDE.md)
+**Documentation**: 
+- See [Kernel Hardening Guide](docs/KERNEL_HARDENING_GUIDE.md)
+- See [Secure Boot Enablement via Kexec](docs/SECUREBOOT_ENABLEMENT_KEXEC.md) 🆕
 
 **Status**: ✅ Fully implemented and tested
 

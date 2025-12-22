@@ -29,6 +29,10 @@
 #define MAX_DISPLAYED_DELETIONS 10
 #define MAX_WARNING_MESSAGE_SIZE 256
 
+// Error messages for variable guarding
+#define MSG_UNSAFE_STATE L"⚠ BLOCKED: System in unsafe state (SecureBoot on but no keys). Fix secure boot configuration first."
+#define MSG_BOOT_VAR_SETUP_MODE L"⚠ BLOCKED: Cannot modify boot variables in setup mode with SecureBoot enabled"
+
 // Variable categories
 typedef enum {
   VAR_CAT_BOOT,
@@ -1540,8 +1544,19 @@ ValidateDbKeys(
       Status = gRT->GetVariable(L"db", &GlobalVar, NULL, &DbSize, DbData);
       if (!EFI_ERROR(Status) && DbSize > 0) {
         // db exists and has data - we'll consider this valid
-        // A more sophisticated check would parse the signature list format
-        // but for safety, just checking existence and size is sufficient
+        // 
+        // Note: A more sophisticated implementation would parse the EFI_SIGNATURE_LIST
+        // format to validate individual signatures. However, for the security goal of
+        // preventing hardware lockouts (the issue's "don't brick peoples shit" requirement),
+        // simply checking that db exists and contains data is sufficient. This approach:
+        // - Detects the critical broken state: SecureBoot enabled but db empty
+        // - Prevents variable modifications that could brick the system
+        // - Avoids complex signature parsing that could introduce bugs
+        // - Works with any keys (MOK, custom, or factory) as requested
+        // 
+        // If db has any data, the firmware can attempt to validate signatures. If those
+        // signatures are invalid, boot will fail but the system won't be locked. Our goal
+        // is to prevent the dangerous state where SecureBoot is on but db is completely empty.
         *HasValidKey = TRUE;
       }
       FreePool(DbData);
@@ -1662,17 +1677,14 @@ GuardVariableModification(
   
   if (SecureBoot && !HasDbKey) {
     // System is in a dangerous state - don't allow any modifications
-    StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, 
-            L"⚠ BLOCKED: System in unsafe state (SecureBoot on but no keys). "
-            L"Fix secure boot configuration first.");
+    StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, MSG_UNSAFE_STATE);
     *AllowModification = FALSE;
     return EFI_SUCCESS;
   }
   
   // Don't allow modification of boot variables if system is unstable
   if (VarInfo->Category == VAR_CAT_BOOT && SecureBoot && SetupMode) {
-    StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, 
-            L"⚠ BLOCKED: Cannot modify boot variables in setup mode with SecureBoot enabled");
+    StrCpyS(WarningMessage, MAX_WARNING_MESSAGE_SIZE, MSG_BOOT_VAR_SETUP_MODE);
     *AllowModification = FALSE;
     return EFI_SUCCESS;
   }

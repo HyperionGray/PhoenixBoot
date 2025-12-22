@@ -272,7 +272,7 @@ Contributors are recognized in several ways:
 
 ## 📄 License
 
-By contributing to PhoenixBoot, you agree that your contributions will be licensed under the [Apache License 2.0](LICENSE.md).
+By contributing to PhoenixBoot, you agree that your contributions will be licensed under the Apache License 2.0. See [LICENSE.md](LICENSE.md) for details.
 
 ## 🔗 Additional Resources
 

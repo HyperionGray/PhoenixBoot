@@ -131,7 +131,7 @@ Security issues in:
 We appreciate security researchers and offer recognition:
 
 - **Credit in Security Advisory** - Public acknowledgment (if desired)
-- **Listed in SECURITY_REVIEW files** - Documentation of findings
+- **Listed in security review documentation** - Documentation of findings
 - **Listed in .mailmap** - Git history recognition
 - **Mentioned in Changelog** - Release notes acknowledgment
 
@@ -247,11 +247,9 @@ We request that you do not publicly disclose the vulnerability until:
 - We have published a security advisory
 - The agreed-upon disclosure date has arrived
 
-## 📜 Past Security Reviews
+## 📜 Security Reviews
 
-For transparency, we document security reviews:
-
-- [Security Review 2025-12-07](SECURITY_REVIEW_2025-12-07.md)
+For transparency, we document security reviews. Past security reviews are available in the repository and referenced in the project documentation.
 
 ## ❓ Questions?
 

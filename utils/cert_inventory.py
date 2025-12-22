@@ -37,7 +37,13 @@ class PhoenixGuardCertInventory:
         os.makedirs("/var/log/phoenixguard", exist_ok=True)
         
     def run_command(self, cmd: str, check: bool = True) -> subprocess.CompletedProcess:
-        """Run shell command with logging"""
+        """Run shell command with logging
+        
+        SECURITY WARNING: This function uses shell=True for command execution.
+        Current usage is safe as commands are internally generated, but
+        NEVER pass user input directly to this function without validation.
+        TODO: Refactor to use command lists instead of shell strings.
+        """
         logger.info(f"Running command: {cmd}")
         try:
             result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=check)

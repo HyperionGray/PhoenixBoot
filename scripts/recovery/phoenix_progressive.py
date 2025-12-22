@@ -39,7 +39,13 @@ class PhoenixProgressiveRecovery:
         print()
     
     def run_command(self, cmd, description="", check=True, capture_output=True):
-        """Run a command with error handling"""
+        """Run a command with error handling
+        
+        SECURITY WARNING: This function uses shell=True for command execution.
+        Current usage is safe as commands are hardcoded strings (e.g., "make scan-bootkits"),
+        but NEVER pass user input directly to this function without validation.
+        TODO: Refactor to use command lists instead of shell strings.
+        """
         if description:
             print(f"☠ {description}")
         

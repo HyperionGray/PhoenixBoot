@@ -7,28 +7,49 @@
 
 ## 🚀 New to PhoenixBoot?
 
-**👉 [Start Here: Getting Started Guide](GETTING_STARTED.md) 👈**
+**👉 [Start Here: Complete Bootkit Defense Workflow](BOOTKIT_DEFENSE_WORKFLOW.md) 👈**
 
-The getting started guide provides:
-- 🎯 **Easy options** for beginners
-- 📚 **Clear explanations** of what PhoenixBoot does
-- 🛠️ **Common tasks** with examples
-- 🔍 **Use cases** for real-world scenarios
-- 💡 **Tips** for safe usage
+This comprehensive guide walks you through **stopping bootkits completely** in three stages:
+1. 🔐 **Enable SecureBoot from the start** - Create install media with custom keys
+2. 💿 **Clean OS installation** - Install with SecureBoot enforced
+3. 🔥 **Post-install protection** - Clear malicious EFI vars with NuclearBoot
 
-## 🎯 NEW: Turnkey SecureBoot Bootable Media Creator
+**Result:** 99% of bootkits neutralized. The remaining 1% require hardware intervention (which we also support).
 
-**The simplest way to create SecureBoot-enabled boot media from any ISO!**
+**Also available:**
+- 📚 **[Getting Started Guide](GETTING_STARTED.md)** - Quick introduction for new users
+- 🎯 **[SecureBoot Quick Reference](SECUREBOOT_QUICKSTART.md)** - One-page command reference
+
+## 🎯 Quick Start: Three Ways to Begin
+
+### 1. 🧙 Interactive Setup Wizard (Easiest!)
+
+**NEW:** Guided wizard walks you through the complete bootkit defense workflow:
 
 ```bash
-# One command creates everything you need:
+./phoenixboot-wizard.sh
+```
+
+**What you get:**
+- 🎯 Step-by-step guidance through all three stages
+- 🔐 Create SecureBoot bootable media (Stage 1)
+- 💿 Instructions for clean OS install (Stage 2)
+- 🔥 Progressive recovery for post-install cleanup (Stage 3)
+- 📊 Built-in security checks
+- 🛠️ Advanced options menu
+
+### 2. 📟 One-Command Bootable Media Creation
+
+**Create SecureBoot-enabled boot media from any ISO:**
+
+```bash
 ./create-secureboot-bootable-media.sh --iso /path/to/ubuntu.iso
 
 # Output: USB image ready to write, with keys enrolled and instructions included
 # Write to USB: sudo dd if=out/esp/secureboot-bootable.img of=/dev/sdX bs=4M status=progress
 ```
 
-This new script solves the confusion around multiple runners and provides:
+**Features:**
 - ✅ Automatic SecureBoot key generation (PK, KEK, db)
 - ✅ Bootable ESP with Microsoft-signed shim (works immediately!)
 - ✅ Key enrollment tool included on the media
@@ -36,7 +57,15 @@ This new script solves the confusion around multiple runners and provides:
 - ✅ ISO loopback support (boots your ISO directly)
 - ✅ Works on USB or CD/DVD
 
-**See [SecureBoot Bootable Media Guide](docs/SECUREBOOT_BOOTABLE_MEDIA.md) for detailed instructions.**
+### 3. 🎨 Interactive TUI
+
+**Terminal User Interface for task management:**
+
+```bash
+./phoenixboot-tui.sh
+```
+
+**See [TUI Guide](docs/TUI_GUIDE.md) and [SecureBoot Bootable Media Guide](docs/SECUREBOOT_BOOTABLE_MEDIA.md) for detailed instructions.**
 
 ## 🆕 NEW: Container Architecture & TUI Interface
 

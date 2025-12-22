@@ -13,6 +13,8 @@ permissions:
 jobs:
   label:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
       - name: Add labels
         uses: actions/github-script@main

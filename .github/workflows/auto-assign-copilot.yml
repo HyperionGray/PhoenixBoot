@@ -12,6 +12,8 @@ permissions:
 jobs:
   auto-assign:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     if: contains(github.event.issue.labels.*.name, 'copilot')
     steps:
       - name: Assign Copilot to new issues

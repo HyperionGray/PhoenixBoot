@@ -27,6 +27,24 @@
 #define MAX_SUSPICIOUS_ITEMS 50
 #define MAX_DESCRIPTION_SIZE 512
 #define MAX_DISPLAYED_DELETIONS 10
+#define MAX_BACKUP_VARIABLES 10
+
+// UEFI Variable Protection System
+typedef enum {
+  PROTECTION_DISABLED,
+  PROTECTION_ENABLED,
+  PROTECTION_EMERGENCY
+} PROTECTION_STATE;
+
+// Variable backup structure
+typedef struct {
+  CHAR16 Name[MAX_VARIABLE_NAME_SIZE];
+  EFI_GUID VendorGuid;
+  UINT32 Attributes;
+  UINTN DataSize;
+  VOID *Data;
+  BOOLEAN IsValid;
+} VARIABLE_BACKUP;
 #define MAX_WARNING_MESSAGE_SIZE 256
 
 // Error messages for variable guarding
@@ -906,6 +924,7 @@ ToggleVariable(
   
   This provides a "nuclear option" for complete system reset:
   - Warns user about data loss
+  - Optionally wipes all n\n", var->DataSize);
   - Optionally wipes all non-essential NVRAM variables
   - Provides info about disk wiping tools (nwipe)
   - Resets firmware to defaults

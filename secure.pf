@@ -68,6 +68,6 @@ task secure-unenroll-mok
 end
 
 task secure-der-extract
-  describe Convert DER/PKCS#12 bundle into PEM cert and key (set PATH, OUT_DIR, NAME)
-  shell bash -lc 'scripts/secure-boot/der-extract.sh "${PATH:-}" "${OUT_DIR:-out/keys}" "${NAME:-PGMOK}"'
+  describe Convert DER/PKCS#12 bundle into PEM cert and key (set DER_PATH, OUT_DIR, NAME)
+  shell bash -lc 'scripts/secure-boot/der-extract.sh "${DER_PATH:-}" "${OUT_DIR:-out/keys}" "${NAME:-PGMOK}"'
 end

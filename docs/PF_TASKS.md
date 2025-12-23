@@ -152,7 +152,7 @@ secureboot-create-usb    - Create SecureBoot USB and write directly
 secure-keys-centralize   - Centralize keys into out/keys
 secure-keys-prune        - Backup + remove legacy key locations
 secure-mok-inventory     - JSON inventory of keys and enrollment
-secure-der-extract       - Convert DER/PKCS#12 bundle into PEM
+secure-der-extract       - Convert DER/PKCS#12 bundle into PEM (set DER_PATH, OUT_DIR, NAME)
 secure-package-esp-enroll - Package enrollment ESP
 secure-qemu-run-secure-ui - Launch QEMU GUI to enable Secure Boot
 ```
@@ -210,6 +210,8 @@ Many tasks accept environment variables for configuration:
 - `PYTHON` - Python interpreter (default: python3)
 - `PROFILE` - Kernel profile name (permissive/hardened/balanced)
 - `FIRMWARE_PATH` - Path to firmware file
+- `MODULE_PATH` - Path to kernel module file or directory for signing
+- `DER_PATH` - Path to DER/PKCS#12 bundle for extraction
 - `MOK_CERT_PEM`, `MOK_CERT_DER` - MOK certificate paths
 - `VENDOR`, `MODEL`, `VERSION` - Firmware metadata
 - `USB_DEVICE` - USB device path for writing

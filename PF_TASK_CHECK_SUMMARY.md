@@ -64,8 +64,15 @@ shell bash -lc '"/home/punk/.venv/bin/python" utils/pgmodsign.py'
 
 **Fix:** Changed to use PYTHON variable:
 ```bash
-shell bash -c '${PYTHON:-python3} utils/pgmodsign.py ...'
+shell ${PYTHON:-python3} utils/pgmodsign.py ...
 ```
+
+### 4. PATH Variable Name Conflict
+**Problem:** Tasks `os-kmod-sign` and `secure-der-extract` used `PATH` as an environment variable name, conflicting with system PATH.
+
+**Fix:** Renamed to more specific names:
+- `os-kmod-sign`: Changed `PATH` to `MODULE_PATH`
+- `secure-der-extract`: Changed `PATH` to `DER_PATH`
 
 ## Validation Results
 

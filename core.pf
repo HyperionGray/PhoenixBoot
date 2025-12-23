@@ -127,12 +127,12 @@ task kernel-profile-compare
 end
 
 task secureboot-check
-  describe Check Secure Boot status and capability to enable it
+  describe Check Secure Boot status on host machine
   shell bash scripts/secure-boot/check-secureboot-status.sh
 end
 
-task secureboot-enable-kexec
-  describe Enable Secure Boot via double kexec method (requires root)
+task secureboot-enable-host-kexec
+  describe [HOST] Enable Secure Boot on physical machine via double kexec method (requires root)
   shell bash scripts/secure-boot/enable-secureboot-kexec.sh
 end
 
@@ -179,7 +179,7 @@ end
 task os-kmod-sign
   describe Sign one module file or recursively sign directory (set PATH, FORCE=1 optional)
   shell bash -lc '[ -n "${PATH:-}" ] || { echo "Usage: PATH=<file|dir> [FORCE=1] ./pf.py os-kmod-sign"; exit 1; }'
-  shell bash -lc '"/home/punk/.venv/bin/python" utils/pgmodsign.py "${PATH}" $([ "${FORCE:-0}" = "1" ] && printf -- "--force" || true)'
+  shell bash -lc '"${PYTHON:-python3}" utils/pgmodsign.py "${PATH}" $([ "${FORCE:-0}" = "1" ] && printf -- "--force" || true)'
 end
 
 # --- UUEFI Operations ---

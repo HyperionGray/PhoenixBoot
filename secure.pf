@@ -14,8 +14,8 @@ task secure-enroll-secureboot
 end
 
 
-task secure-qemu-run-secure-ui
-  describe Launch QEMU GUI to enable Secure Boot
+task secure-qemu-enable-ui
+  describe [QEMU] Launch QEMU with GUI to enable Secure Boot in VM
   shell bash scripts/qemu/qemu-run-secure-ui.sh
 end
 

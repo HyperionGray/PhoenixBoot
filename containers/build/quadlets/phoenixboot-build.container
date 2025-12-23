@@ -1,5 +1,8 @@
 # PhoenixBoot Build Container - Podman Quadlet Definition
 # Place in: ~/.config/containers/systemd/ or /etc/containers/systemd/
+#
+# IMPORTANT: Before installing, update the Volume paths below to match
+# your repository location. Default assumes $HOME/PhoenixBoot
 
 [Unit]
 Description=PhoenixBoot Build Container
@@ -11,6 +14,9 @@ Image=localhost/phoenixboot-build:latest
 ContainerName=phoenixboot-build
 
 # Volume mounts
+# Note: Update these paths to match your repository location
+# Default assumes repository is in $HOME/PhoenixBoot
+# For other locations, edit the paths before installing the quadlet
 Volume=%h/PhoenixBoot:/phoenixboot:Z
 Volume=%h/PhoenixBoot/out:/phoenixboot/out:Z
 Volume=phoenixboot-build-cache:/home/phoenixbuild/.cache:Z

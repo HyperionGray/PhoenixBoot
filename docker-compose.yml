@@ -18,7 +18,7 @@ services:
     networks:
       - phoenixboot-net
     profiles: ["build", "all"]
-    command: bash scripts/build-production.sh
+    command: ["/bin/bash", "scripts/build/build-production.sh"]
 
   # Test container - QEMU tests and validation
   phoenixboot-test:

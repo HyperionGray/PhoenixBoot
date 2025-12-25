@@ -129,11 +129,6 @@ jobs:
             // Simulate GPT-5 analysis with static analysis tools
             const fs = require('fs');
             const { execSync } = require('child_process');
-        uses: austenstone/copilot-cli-action@v2
-        with:
-          copilot-token: ${{ secrets.COPILOT_TOKEN }}
-          prompt: |
-            Perform a comprehensive code analysis of this repository using GPT-5's advanced capabilities:
             
             console.log("Performing comprehensive code analysis...");
             
@@ -214,38 +209,6 @@ jobs:
             const existingAnalysis = fs.readFileSync('/tmp/gpt5-code-analysis.md', 'utf8');
             fs.writeFileSync('/tmp/gpt5-code-analysis.md', existingAnalysis + '\n\n' + testAnalysis);
             console.log("Test coverage analysis completed");
-            3. **Performance Optimization**
-               - Identify performance bottlenecks
-               - Suggest optimization opportunities
-               - Recommend efficient algorithms and data structures
-            
-            4. **Best Practices**
-               - Verify adherence to language-specific best practices
-               - Check for proper error handling
-               - Ensure code follows SOLID principles
-            
-            5. **Documentation & Maintainability**
-               - Assess code documentation quality
-               - Identify areas needing better comments
-               - Suggest improvements for code readability
-            
-            Provide specific, actionable recommendations with file names and line numbers where applicable.
-        continue-on-error: true
-
-      - name: GPT-5 Test Coverage Analysis
-        uses: austenstone/copilot-cli-action@v2
-        with:
-          copilot-token: ${{ secrets.COPILOT_TOKEN }}
-          prompt: |
-            Analyze the test coverage and testing strategy:
-            
-            1. Identify files that lack adequate test coverage
-            2. Suggest missing test cases for critical functionality
-            3. Recommend improvements to existing tests
-            4. Identify edge cases that should be tested
-            5. Suggest integration and end-to-end test scenarios
-            
-            Focus on critical paths and business logic.
         continue-on-error: true
 
       - name: Create GPT-5 Analysis Report

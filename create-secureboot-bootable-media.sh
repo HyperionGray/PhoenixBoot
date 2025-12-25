@@ -215,8 +215,8 @@ build_artifacts() {
         warn "KeyEnrollEdk2.efi not found in staging/boot/"
         warn "Using prebuilt binaries or building from source..."
         
-        if [ -f scripts/build-production.sh ]; then
-            bash scripts/build-production.sh || warn "Build script failed, continuing with existing artifacts"
+        if [ -f scripts/build/build-production.sh ]; then
+            bash scripts/build/build-production.sh || warn "Build script failed, continuing with existing artifacts"
         fi
     fi
     

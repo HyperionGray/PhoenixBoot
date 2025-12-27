@@ -43,7 +43,7 @@ The following files consistently appear across all review cycles as being large 
 | `./pf_parser.py` | 508 | 🟡 Large | Parser complexity expected |
 | `./utils/pgmodsign.py` | 503 | 🟡 Large | Review for modularization |
 
-*Note: kernel_hardening_analyzer.py size varied between 651 and 792 lines across reviews, indicating active development.*
+*Note: kernel_hardening_analyzer.py size varied between 651 lines (Dec 21) and 792 lines (Dec 25-26), showing active development with approximately 140 lines added during the review period.*
 
 ### Key Observations:
 
@@ -175,7 +175,7 @@ Both JavaScript and Python Playwright variants are supported.
 
 ### Observations:
 
-1. **Permissive Testing:** The `continue-on-error: true` setting means test failures don't block the pipeline. This is useful for gradual test adoption but may hide issues.
+1. **Permissive Testing:** The `continue-on-error: true` setting means test failures don't block the pipeline. This is useful for gradual test adoption but may hide issues. Recommendation: Keep this setting for experimental tests (e2e) but remove it for stable unit tests to ensure code quality gates are enforced.
 
 2. **Multiple Test Types:** The matrix strategy tests across unit, integration, and e2e categories, showing good test organization structure.
 
@@ -213,9 +213,9 @@ The following remained consistent across all 8 review cycles:
 ### Review Issue Volume
 
 **25 total CI/CD review issues** found in the repository:
-- **8 open issues** from recent reviews
+- **8 open issues** from recent reviews (Dec 13-26)
 - **2 closed issues** from December 20-22
-- **15+ historical issues** (some may be older)
+- **Approximately 15 historical issues** from earlier review cycles
 
 This high volume suggests:
 - Reviews are running as scheduled ✅

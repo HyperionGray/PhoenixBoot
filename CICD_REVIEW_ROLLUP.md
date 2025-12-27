@@ -28,14 +28,14 @@ These workflows leverage AI agents (GitHub Copilot, Amazon Q, GPT-5) to provide 
 
 | Workflow | File | Triggers | Jobs | Purpose |
 |----------|------|----------|------|---------|
-| **Complete CI/CD Agent Review Pipeline** | `auto-complete-cicd-review.yml` | Schedule (12h), Push, PR, Manual | 5 | Comprehensive review including code cleanliness, tests, docs, and build |
-| **AmazonQ Review** | `auto-amazonq-review.yml` | Workflow completion, Manual | 8 | Follow-up Amazon Q review after GitHub Copilot |
-| **Periodic Code Cleanliness Review** | `auto-copilot-code-cleanliness-review.yml` | Schedule (12h), Manual | 6 | Analyzes large files and code complexity |
-| **Code Functionality and Documentation Review** | `auto-copilot-functionality-docs-review.yml` | Push, PR, Manual | 8 | Reviews documentation completeness and functionality |
-| **GPT-5 Implementation Action** | `auto-gpt5-implementation.yml` | Push, PR, Manual | 6 | Advanced AI-powered implementation |
-| **Auto Assign Copilot to Issues** | `auto-assign-copilot.yml` | Issue events | 3 | Auto-assigns Copilot for issue resolution |
-| **Auto Assign Copilot to PRs** | `auto-assign-pr.yml` | PR opened | 4 | Auto-assigns Copilot for PR review |
-| **Add Pull Request Reviewers** | `request-reviews.yml` | PR events | 2 | Manages PR reviewer assignments |
+| **Complete CI/CD Agent Review Pipeline** | `auto-complete-cicd-review.yml` | Schedule (12h), Push, PR, Manual | 6 | Comprehensive review including code cleanliness, tests, docs, and build |
+| **AmazonQ Review** | `auto-amazonq-review.yml` | Workflow completion, Manual | 2 | Follow-up Amazon Q review after GitHub Copilot |
+| **Periodic Code Cleanliness Review** | `auto-copilot-code-cleanliness-review.yml` | Schedule (12h), Manual | 1 | Analyzes large files and code complexity |
+| **Code Functionality and Documentation Review** | `auto-copilot-functionality-docs-review.yml` | Push, PR, Manual | 2 | Reviews documentation completeness and functionality |
+| **GPT-5 Implementation Action** | `auto-gpt5-implementation.yml` | Push, PR, Manual | 1 | Advanced AI-powered implementation |
+| **Auto Assign Copilot to Issues** | `auto-assign-copilot.yml` | Issue events | 1 | Auto-assigns Copilot for issue resolution |
+| **Auto Assign Copilot to PRs** | `auto-assign-pr.yml` | PR opened | 1 | Auto-assigns Copilot for PR review |
+| **Add Pull Request Reviewers** | `request-reviews.yml` | PR events | 1 | Manages PR reviewer assignments |
 
 **Frequency:** Scheduled reviews run every 12 hours, plus on-demand via push/PR triggers.
 
@@ -45,8 +45,8 @@ Comprehensive test coverage with emphasis on Playwright for E2E testing:
 
 | Workflow | File | Triggers | Jobs | Purpose |
 |----------|------|----------|------|---------|
-| **End-to-End Tests** | `e2e-tests.yml` | Push, PR, Manual | 11 | Comprehensive E2E test suite |
-| **Comprehensive Test Review with Playwright** | `auto-copilot-test-review-playwright.yml` | Push, PR, Manual | 8 | Reviews test coverage and Playwright integration |
+| **End-to-End Tests** | `e2e-tests.yml` | Push, PR, Manual | 8 | Comprehensive E2E test suite |
+| **Comprehensive Test Review with Playwright** | `auto-copilot-test-review-playwright.yml` | Push, PR, Manual | 2 | Reviews test coverage and Playwright integration |
 | **Copilot: Generate and Run Playwright Tests** | `auto-copilot-playwright-auto-test.yml` | Push | 2 | Auto-generates and runs tests until passing |
 | **Org-wide: Copilot Playwright Loop** | `auto-copilot-org-playwright-loop.yaml` | Various | 1 | Organization-wide test automation |
 | **Org-wide: Copilot Playwright Loop v2** | `auto-copilot-org-playwright-loopv2.yaml` | Various | 1 | Updated org-wide test automation |
@@ -134,7 +134,7 @@ Issue form templates:
 ### Job Distribution
 
 - **High complexity (8+ jobs):** 1 workflow (End-to-End Tests with 8 jobs)
-- **Medium complexity (3-7 jobs):** 1 workflow (Complete CI/CD Review Pipeline with 5 jobs)
+- **Medium complexity (3-7 jobs):** 1 workflow (Complete CI/CD Review Pipeline with 6 jobs)
 - **Low complexity (1-2 jobs):** 26 workflows
 - **Total jobs across all workflows:** 43 jobs
 

@@ -144,7 +144,8 @@ GitHub issue template forms (not CI/CD workflows):
 
 ### Schedule Cadence
 
-- **Every 12 hours (00:00 and 12:00 UTC):** Code cleanliness review, Complete CI/CD review (verified via cron: '0 0,12 * * *')
+- **Every 12 hours (00:00 and 12:00 UTC):** Code cleanliness review, Complete CI/CD review  
+  *(cron: '0 0,12 * * *' = At minute 0, hour 0 and 12, every day)*
 - **Weekly:** Stale issue/PR cleanup
 - **On-demand:** Most workflows support manual triggering
 
@@ -156,10 +157,10 @@ GitHub issue template forms (not CI/CD workflows):
 
 The repository has extensive AI agent integration:
 
-1. **GitHub Copilot** - Primary code review and generation agent
-2. **Amazon Q** - Secondary review agent for AWS best practices
-3. **GPT-5** - Advanced implementation assistance
-4. **Playwright** - AI-assisted test generation
+- **GitHub Copilot** - Primary code review and generation agent
+- **Amazon Q** - Secondary review agent for AWS best practices
+- **GPT-5** - Advanced implementation assistance
+- **Playwright** - AI-assisted test generation
 
 ### CI/CD Tools
 
@@ -181,14 +182,14 @@ Multiple workflows upload artifacts:
 
 ### Strengths ✅
 
-1. **Comprehensive Coverage** - 28 CI/CD workflows cover all major automation needs
-2. **AI-Powered Reviews** - Multiple AI agents provide continuous code review
-3. **Automated Testing** - Robust Playwright-based E2E testing
-4. **Security Focus** - Dedicated CodeQL and security scanning
-5. **Automation** - Extensive issue/PR automation reduces manual work
-6. **Scheduled Reviews** - Regular automated reviews (every 12 hours)
-7. **Multi-trigger Support** - Workflows respond to appropriate events
-8. **Error Resilience** - Many steps use `continue-on-error: true`
+- **Comprehensive Coverage** - 28 CI/CD workflows cover all major automation needs
+- **AI-Powered Reviews** - Multiple AI agents provide continuous code review
+- **Automated Testing** - Robust Playwright-based E2E testing
+- **Security Focus** - Dedicated CodeQL and security scanning
+- **Automation** - Extensive issue/PR automation reduces manual work
+- **Scheduled Reviews** - Regular automated reviews (every 12 hours)
+- **Multi-trigger Support** - Workflows respond to appropriate events
+- **Error Resilience** - Many steps use `continue-on-error: true`
 
 ### Potential Improvements 🔄
 

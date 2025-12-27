@@ -133,14 +133,14 @@ Issue form templates:
 
 ### Job Distribution
 
-- **High complexity (8+ jobs):** 6 workflows
-- **Medium complexity (3-7 jobs):** 10 workflows
-- **Low complexity (1-2 jobs):** 12 workflows
-- **Total jobs across all workflows:** ~100+
+- **High complexity (8+ jobs):** 1 workflow (End-to-End Tests with 8 jobs)
+- **Medium complexity (3-7 jobs):** 1 workflow (Complete CI/CD Review Pipeline with 5 jobs)
+- **Low complexity (1-2 jobs):** 26 workflows
+- **Total jobs across all workflows:** 43 jobs
 
 ### Schedule Cadence
 
-- **Every 12 hours (00:00 and 12:00 UTC):** Code cleanliness review, Complete CI/CD review
+- **Every 12 hours (00:00 and 12:00 UTC):** Code cleanliness review, Complete CI/CD review (verified via cron: '0 0,12 * * *')
 - **Weekly:** Stale issue/PR cleanup
 - **On-demand:** Most workflows support manual triggering
 

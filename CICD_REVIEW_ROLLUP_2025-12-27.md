@@ -23,7 +23,7 @@ This rollup consolidates findings from multiple automated CI/CD reviews conducte
 | **Documentation Files** | 9 core + 30+ detailed | ✅ |
 | **Security Reviews Completed** | 3 major | ✅ |
 | **Critical Vulnerabilities** | 0 | ✅ Fixed |
-| **Test Coverage** | 8 E2E tests | ✅ Comprehensive |
+| **Test Coverage** | 6 E2E tests + summary | ✅ Comprehensive |
 
 ---
 
@@ -169,14 +169,14 @@ This rollup consolidates findings from multiple automated CI/CD reviews conducte
 ### 🧪 Testing Coverage
 
 #### Test Infrastructure ✅ COMPREHENSIVE
-**E2E Test Suite (e2e-tests.yml):**
+**E2E Test Suite (e2e-tests.yml) - 6 tests + 1 summary job:**
 1. ✅ **test-basic-boot** - Basic QEMU boot flow
 2. ✅ **test-secureboot** - SecureBoot enforcement with custom keys
 3. ✅ **test-secureboot-strict** - Strict mode validation
 4. ✅ **test-attestation-failure** - Corruption detection
 5. ✅ **test-uuefi** - UUEFI diagnostic tool
 6. ✅ **test-cloud-init-integration** - Cloud-init with username/password
-7. ✅ **test-summary** - Results aggregation
+7. ✅ **test-summary** - Results aggregation (not a test, aggregates results)
 
 **Test Scripts:**
 - QEMU-based testing with OVMF firmware
@@ -472,7 +472,7 @@ This rollup consolidates findings from multiple automated CI/CD reviews conducte
 - **Shell Scripts:** 145
 - **Python LOC:** ~4,080
 - **Documentation Files:** 9 core + 30+ detailed
-- **Test Scripts:** 7+ E2E tests
+- **Test Scripts:** 6 E2E tests + summary job
 
 ### Code Quality Metrics
 - **CodeQL Alerts:** 0 ✅

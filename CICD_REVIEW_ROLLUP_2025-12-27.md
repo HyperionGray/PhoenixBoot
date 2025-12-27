@@ -457,14 +457,14 @@ The 32 workflows are organized into 7 major categories:
 
 ### Utility Workflows
 
-### 8.1 workflows-sync-template-backup.yml
+### 7.3 workflows-sync-template-backup.yml
 **Purpose:** Sync workflow templates and maintain backups
 
 **Status:** ✅ Active
 **Trigger:** Manual dispatch, scheduled
 **Health:** Good
 
-### 8.2 trigger-all-repos.yml
+### 7.4 trigger-all-repos.yml
 **Purpose:** Trigger workflows across multiple repositories
 
 **Key Features:**

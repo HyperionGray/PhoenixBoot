@@ -41,9 +41,7 @@ The 32 workflows are organized into 7 major categories:
 4. **Code Quality Workflows** (3)
 5. **Review & Analysis Workflows** (3)
 6. **Automation & Maintenance Workflows** (11)
-7. **Issue Management Workflows** (2)
-8. **Utility Workflows** (2)
-9. **Organizational Workflows** (2)
+7. **Issue Management & Utility Workflows** (4)
 
 ---
 
@@ -435,7 +433,9 @@ The 32 workflows are organized into 7 major categories:
 
 ---
 
-## 7. Issue Management Workflows
+## 7. Issue Management & Utility Workflows
+
+### Issue Management
 
 ### 7.1 auto-bug-report.yml
 **Purpose:** Automate bug report handling
@@ -455,9 +455,7 @@ The 32 workflows are organized into 7 major categories:
 - ✅ Streamlined issue management
 - ✅ Proper categorization at creation time
 
----
-
-## 8. Utility Workflows
+### Utility Workflows
 
 ### 8.1 workflows-sync-template-backup.yml
 **Purpose:** Sync workflow templates and maintain backups

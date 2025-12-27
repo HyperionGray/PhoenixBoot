@@ -203,7 +203,7 @@ Multiple workflows upload artifacts:
 ### Areas to Monitor ⚠️
 
 1. **Workflow Execution Time** - 28 active workflows may have resource implications
-2. **Duplicate Functionality** - Some overlapping workflows (org-wide Playwright loops v1/v2). Recommend evaluating v1 vs v2 differences within 30 days and consolidating if redundant.
+2. **Duplicate Functionality** - Some overlapping workflows (org-wide Playwright loops v1/v2). Recommend evaluating within 30 days by comparing: (a) functionality differences, (b) test coverage, (c) execution time, (d) maintenance overhead. Keep the version with better performance and broader coverage, or merge features if both have unique value.
 3. **Secret Management** - Ensure COPILOT_TOKEN and other secrets are properly managed
 4. **Artifact Storage** - Monitor artifact storage costs (30-90 day retention)
 
@@ -214,7 +214,7 @@ Multiple workflows upload artifacts:
 ### Immediate Actions
 
 1. **Document Workflows** - Create a WORKFLOWS.md file cataloging each workflow
-2. **Review Duplicates** - Evaluate org-wide Playwright loop v1 vs v2
+2. **Review Duplicates** - Evaluate org-wide Playwright loop v1 vs v2: Compare functionality, test coverage, execution time, and maintenance overhead. Decision criteria: Keep the version with better performance/coverage, or merge if both have unique valuable features.
 3. **Monitor Costs** - Track GitHub Actions minutes and artifact storage
 4. **Test Coverage** - Ensure test workflows are producing meaningful results
 

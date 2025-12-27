@@ -140,7 +140,7 @@ Issue form templates:
 
 ### Schedule Cadence
 
-- **Every 12 hours:** Code cleanliness review, Complete CI/CD review
+- **Every 12 hours (00:00 and 12:00 UTC):** Code cleanliness review, Complete CI/CD review
 - **Weekly:** Stale issue/PR cleanup
 - **On-demand:** Most workflows support manual triggering
 
@@ -198,7 +198,7 @@ Multiple workflows upload artifacts:
 ### Areas to Monitor ⚠️
 
 1. **Workflow Execution Time** - 30 workflows may have resource implications
-2. **Duplicate Functionality** - Some overlapping workflows (org-wide Playwright loops v1/v2)
+2. **Duplicate Functionality** - Some overlapping workflows (org-wide Playwright loops v1/v2). Recommend evaluating v1 vs v2 differences within 30 days and consolidating if redundant.
 3. **Secret Management** - Ensure COPILOT_TOKEN and other secrets are properly managed
 4. **Artifact Storage** - Monitor artifact storage costs (30-90 day retention)
 

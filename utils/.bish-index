@@ -1,0 +1,12 @@
+./kernel_hardening_analyzer.py
+./pgmodsign.py
+./APFS_SIGNING_DEMO.md
+./README_SECURITY_TOOLS.md
+./README.md
+./kernel_config_remediation.py
+./cert_inventory.py
+./kernel_config_profiles.py
+./test_efi_parser.py
+./update_just_help.sh
+./test_integration.py
+./firmware_checksum_db.py

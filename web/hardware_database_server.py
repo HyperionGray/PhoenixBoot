@@ -17,6 +17,7 @@ VISION: Open-source hardware database that breaks vendor lock-in!
 from flask import Flask, request, jsonify, render_template_string, send_file
 import json
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
@@ -31,7 +32,6 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'phoenix_guard_hardware_
 
 # Warn if using insecure development secret
 if app.config['SECRET_KEY'] == 'phoenix_guard_hardware_db':
-    import sys
     print("=" * 80, file=sys.stderr)
     print("⚠️  SECURITY WARNING: Using insecure development SECRET_KEY!", file=sys.stderr)
     print("   This is acceptable for development/testing ONLY.", file=sys.stderr)

@@ -1,0 +1,25 @@
+# PhoenixBoot Changes
+
+For detailed change history, see:
+
+- [CHANGELOG.md](CHANGELOG.md) - Detailed changelog with version history
+- [CHANGELOG_CONSOLIDATED.md](CHANGELOG_CONSOLIDATED.md) - Consolidated changelog
+
+For recent development updates, see:
+
+- [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) - Recent implementation work
+- [ISSUE_RESOLUTION_SUMMARY.md](ISSUE_RESOLUTION_SUMMARY.md) - Issue tracking
+
+For project reviews and improvements:
+
+- [GLOBAL_REVIEW_SUMMARY.md](GLOBAL_REVIEW_SUMMARY.md) - Comprehensive project review
+- [SECURITY_REVIEW_2025-12-07.md](SECURITY_REVIEW_2025-12-07.md) - Security audit
+- [CICD_REVIEW_ROLLUP.md](CICD_REVIEW_ROLLUP.md) - CI/CD improvements
+
+## Quick Links
+
+- **Getting Started**: [GETTING_STARTED.md](GETTING_STARTED.md)
+- **Features**: [FEATURES.md](FEATURES.md)
+- **Security Policy**: [SECURITY.md](SECURITY.md)
+- **Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Architecture**: [ARCHITECTURE.md](ARCHITECTURE.md)

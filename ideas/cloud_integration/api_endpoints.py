@@ -37,8 +37,20 @@ app = Flask(__name__)
 # SECURITY: Use environment variable for secret key in production
 # Generate a secure key with: python -c 'import secrets; print(secrets.token_hex(32))'
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-only-insecure-key-change-in-production')
+
+# Enhanced security warning for development secret
 if app.secret_key == 'dev-only-insecure-key-change-in-production':
-    logging.error("⚠️  CRITICAL: Using insecure development secret key. Set FLASK_SECRET_KEY environment variable!")
+    logging.error("=" * 80)
+    logging.error("⚠️  CRITICAL SECURITY WARNING!")
+    logging.error("   Using insecure development secret key.")
+    logging.error("   This is example/demo code - DO NOT use in production!")
+    logging.error("   Set FLASK_SECRET_KEY environment variable for production.")
+    logging.error("   Generate with: python -c 'import secrets; print(secrets.token_hex(32))'")
+    logging.error("=" * 80)
+    
+    # In production environments, fail fast
+    if os.environ.get('FLASK_ENV') == 'production' or os.environ.get('ENVIRONMENT') == 'production':
+        raise ValueError("Cannot start in production with insecure default secret key!")
 
 CORS(app, origins=["https://*.yourcloudplatform.com", "https://phoenixguard.coop"])
 

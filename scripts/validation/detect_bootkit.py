@@ -372,7 +372,12 @@ def main():
         time.sleep(10)
         
         # Trigger recovery
-        os.system("sudo make reboot-to-vm")
+        # SECURITY: Using subprocess.run with command list (secure)
+        try:
+            subprocess.run(["sudo", "make", "reboot-to-vm"], check=True)
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to trigger recovery: {e}")
+            return 1
     
     return 0
 

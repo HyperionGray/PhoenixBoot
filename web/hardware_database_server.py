@@ -24,7 +24,20 @@ import sqlite3
 import hashlib
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'phoenix_guard_hardware_db'
+
+# SECURITY: Use environment variable for secret key in production
+# Generate a secure key with: python -c 'import secrets; print(secrets.token_hex(32))'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'phoenix_guard_hardware_db')
+
+# Warn if using insecure development secret
+if app.config['SECRET_KEY'] == 'phoenix_guard_hardware_db':
+    import sys
+    print("=" * 80, file=sys.stderr)
+    print("⚠️  SECURITY WARNING: Using insecure development SECRET_KEY!", file=sys.stderr)
+    print("   This is acceptable for development/testing ONLY.", file=sys.stderr)
+    print("   For production, set the SECRET_KEY environment variable.", file=sys.stderr)
+    print("   Generate with: python -c 'import secrets; print(secrets.token_hex(32))'", file=sys.stderr)
+    print("=" * 80, file=sys.stderr)
 
 # Database setup
 DB_PATH = Path("hardware_profiles.db")

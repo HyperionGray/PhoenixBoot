@@ -410,6 +410,32 @@ sudo reboot
    - Follow complete workflow
    - Verify system recovery
 
+## Emergency Capsule Path (v3.2.0)
+
+This release introduces a capsule-like emergency path that only unlocks when UUEFI is booted from your signed, trusted media. Drop a lightweight marker file at `\EFI\PhoenixGuard\UUEFI_EMERGENCY.marker` on the ESP you plan to ship as the “capsule” and UUEFI will detect it at boot. When the marker is present:
+
+- UUEFI prints: “Emergency capsule marker detected; emergency clear option unlocked.”
+- The interactive menu adds a new **E. Emergency Capsule Clear (Vendor variables)** entry.
+- Selecting `E` performs a safe deletion pass over vendor/unknown variables after you type `EMERGENCY`.
+  The actual `SetVariable` calls only run when the signed capsule is present, mirroring the hardware vendor capsule model while staying software-only.
+
+### Preparing the capsule marker
+
+1. Build/sign `UUEFI.efi` with your db key (`./pf.py build-build`/EDK2 + `sbsign`).
+2. Mount the ESP you will distribute (USB or installers).
+3. Create the marker file:
+
+   ```bash
+   sudo mkdir -p /mnt/esp/EFI/PhoenixGuard
+   printf 'Emergency capsule marker – keep this on trusted media only.\n' \
+     | sudo tee /mnt/esp/EFI/PhoenixGuard/UUEFI_EMERGENCY.marker
+   ```
+
+4. Copy the signed `UUEFI.efi` to `EFI/PhoenixGuard/` (or `EFI/BOOT` if you prefer BootNext).
+5. Ship this disk/USB as your “capsule.” UUEFI will refuse to show the emergency option unless the marker exists.
+
+Keep the marker file off any other media; it is intentionally simple so that only your signed capsule (which carries your keys) enables the risky clearing path.
+
 ## Code Statistics
 
 ### UUEFI.c Enhancements

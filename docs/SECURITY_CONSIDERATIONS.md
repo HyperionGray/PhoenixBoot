@@ -228,11 +228,12 @@ diff out/securevars/PK.auth test.auth
 
 ## Audit Trail
 
-The script creates:
+The script creates (when keys are enabled):
 ```
-out/esp/secureboot-bootable.img.sha256  # Checksum of output
-out/esp/BUILD_UUID                       # Unique build identifier
-keys/*.crt                               # Public certificates for audit
+keys/*.key                               # Private keys (highly sensitive)
+keys/*.crt / keys/*.cer                  # Public certificates for audit
+out/securevars/*.auth                    # Enrollment files (PK/KEK/db)
+out/backups/keys-*                       # Backups when using --new-keys (if present)
 ```
 
 **Recommendations:**

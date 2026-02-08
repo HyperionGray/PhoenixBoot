@@ -23,12 +23,14 @@ PhoenixBoot includes a comprehensive GitHub Actions workflow that tests all majo
   3. Boots with SecureBoot enabled
 - **Success criteria**: NuclearBoot boots successfully with SecureBoot active
 - **Run locally**: 
-  ```bash
-  ./pf.py secure-keygen
-  ./pf.py secure-make-auth
-  ./pf.py secure-enroll-secureboot
-  ./pf.py test-qemu-secure-positive
-  ```
+```bash
+./pf.py secure-keygen
+./pf.py secure-make-auth
+./pf.py secure-enroll-secureboot
+./pf.py test-qemu-secure-positive
+```
+
+If you need more time for the enrollment VM or you're running without `/dev/kvm`, use `./pf.py secure-enroll-secureboot timeout=180 no_kvm=1`.
 
 ### 3. SecureBoot Strict Mode (`test-secureboot-strict`)
 - **What it tests**: Strict SecureBoot verification mode
@@ -182,7 +184,7 @@ Per the issue requirements, Xen boot tests are **not included** in the workflow.
 1. **"OVMF not found"**: Install OVMF package
 2. **"No ESP image"**: Run `./pf.py build-package-esp` first
 3. **"KVM not available"**: Tests will run slower without KVM but should still work
-4. **Timeout errors**: Increase `PG_QEMU_TIMEOUT` environment variable
+4. **Timeout errors**: Re-run the failing test with `--timeout SECONDS` (e.g., `./pf.py test-qemu --timeout 120`)
 
 ### Viewing Test Output
 

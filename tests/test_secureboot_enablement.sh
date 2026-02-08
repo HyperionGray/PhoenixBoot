@@ -1,7 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test script for Secure Boot enablement feature
 
 set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "${ROOT_DIR}"
 
 echo "Testing PhoenixBoot Secure Boot Enablement Feature"
 echo "=================================================="
@@ -121,8 +124,19 @@ else
     PASSED=$((PASSED + 1))
 fi
 
-# Test 10: Check documentation exists
-echo "[TEST 10] Checking documentation..."
+# Test 10: Test kexec enablement script dry-run modes
+echo "[TEST 10] Testing enablement script dry-run modes..."
+if bash scripts/secure-boot/enable-secureboot-kexec.sh --dry-run > /dev/null 2>&1 && \
+   bash scripts/secure-boot/enable-secureboot-kexec.sh --direct --dry-run > /dev/null 2>&1; then
+    echo "  ✓ Enablement script dry-run modes work"
+    PASSED=$((PASSED + 1))
+else
+    echo "  ✗ Enablement script dry-run failed"
+    FAILED=$((FAILED + 1))
+fi
+
+# Test 11: Check documentation exists
+echo "[TEST 11] Checking documentation..."
 if [ -f "docs/SECUREBOOT_ENABLEMENT_KEXEC.md" ]; then
     if grep -q "Double Kexec Method" docs/SECUREBOOT_ENABLEMENT_KEXEC.md; then
         echo "  ✓ Documentation exists and is complete"

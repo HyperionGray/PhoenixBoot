@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+cd "${SCRIPT_DIR}/../.."
+# shellcheck disable=SC1091
 source scripts/lib/common.sh
 
 info "☠ Installing UUEFI.efi to system ESP"
@@ -116,4 +118,3 @@ echo "  APP=UUEFI EFI_DISK=$EFI_DISK EFI_PART=$EFI_PART ./pf.py uuefi-apply"
 else
 echo "  APP=UUEFI EFI_DISK=/dev/sdX EFI_PART=1 ./pf.py uuefi-apply"
 fi
-

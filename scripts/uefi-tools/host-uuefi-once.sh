@@ -3,6 +3,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
 ENV_FILE=out/uuefi/efiboot.env
 if [ ! -f "$ENV_FILE" ]; then
   echo "☠ Missing $ENV_FILE; run './pf.py uuefi-install' first"; exit 1
@@ -17,4 +21,3 @@ fi
 APP=UUEFI EFI_DISK="$EFI_DISK" EFI_PART="$EFI_PART" bash scripts/uefi-tools/uuefi-apply.sh
 
 echo "[OK] UUEFI one-shot BootNext set; reboot to test"
-

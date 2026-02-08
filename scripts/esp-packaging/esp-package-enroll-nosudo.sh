@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+cd "${SCRIPT_DIR}/../.."
+# shellcheck disable=SC1091
 source scripts/lib/common.sh
 
 info "☠ Packaging enrollment ESP (no sudo, mtools)"
@@ -27,7 +29,7 @@ elif [ -f secureboot_certs/PK.auth ] && [ -f secureboot_certs/KEK.auth ] && [ -f
 else
   if command -v cert-to-efi-sig-list >/dev/null 2>&1 && command -v sign-efi-sig-list >/dev/null 2>&1; then
     info "Generating AUTH blobs via efitools..."
-    just --justfile Justfile make-auth || true
+    ./pf.py secure-make-auth || true
     if [ -f out/securevars/PK.auth ] && [ -f out/securevars/KEK.auth ] && [ -f out/securevars/db.auth ]; then
       PK_AUTH=out/securevars/PK.auth
       KEK_AUTH=out/securevars/KEK.auth

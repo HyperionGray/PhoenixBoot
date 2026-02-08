@@ -136,7 +136,7 @@ Overall system security is rated as:
 ./pf.py secure-keygen
 
 # Create bootable media with SecureBoot
-ISO_PATH=/path/to.iso ./pf.py secureboot-create
+./pf.py secureboot-create iso_path=/path/to.iso
 
 # Enable SecureBoot in BIOS/UEFI settings
 ```
@@ -151,7 +151,7 @@ ISO_PATH=/path/to.iso ./pf.py secureboot-create
 ./pf.py mok-flow
 
 # Sign kernel modules
-PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
+./pf.py os-kmod-sign MODULE_PATH=/lib/modules/$(uname -r) FORCE=1
 ```
 
 #### 3. Kernel Lockdown Disabled
@@ -205,10 +205,10 @@ bash scripts/scan-bootkits.sh
 **Solution**:
 ```bash
 # Sign all modules in the current kernel
-PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 
 # For specific module:
-PATH=/lib/modules/$(uname -r)/kernel/drivers/mymodule.ko ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r)/kernel/drivers/mymodule.ko ./pf.py os-kmod-sign
 ```
 
 ## Integration with PhoenixBoot Workflows
@@ -226,7 +226,7 @@ PATH=/lib/modules/$(uname -r)/kernel/drivers/mymodule.ko ./pf.py os-kmod-sign
 ./pf.py mok-flow
 
 # 4. Sign kernel modules
-PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 
 # 5. Create firmware baseline
 bash scripts/scan-bootkits.sh

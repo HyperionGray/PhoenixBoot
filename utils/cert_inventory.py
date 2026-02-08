@@ -16,25 +16,58 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
-# Set up logging
+def _select_log_path() -> Optional[Path]:
+    env_dir = os.environ.get("PHOENIXGUARD_LOG_DIR")
+    candidates: List[Path] = []
+    if env_dir:
+        candidates.append(Path(env_dir))
+
+    repo_root = Path(__file__).resolve().parents[1]
+    candidates.extend(
+        [
+            Path("/var/log/phoenixguard"),
+            repo_root / "out" / "logs" / "phoenixguard",
+            Path.home() / ".cache" / "phoenixguard",
+        ]
+    )
+
+    for directory in candidates:
+        try:
+            directory.mkdir(parents=True, exist_ok=True)
+            log_path = directory / "cert_inventory.log"
+            with open(log_path, "a", encoding="utf-8"):
+                pass
+            return log_path
+        except OSError:
+            continue
+
+    return None
+
+
+_LOG_PATH = _select_log_path()
+_HANDLERS: List[logging.Handler] = [logging.StreamHandler(sys.stdout)]
+if _LOG_PATH:
+    _HANDLERS.insert(0, logging.FileHandler(_LOG_PATH))
+
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('/var/log/phoenixguard/cert_inventory.log'),
-        logging.StreamHandler(sys.stdout)
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=_HANDLERS,
 )
 logger = logging.getLogger(__name__)
 
 class PhoenixGuardCertInventory:
     def __init__(self, cert_dir: str = None):
-        self.cert_dir = cert_dir or "/home/punk/Projects/edk2-bootkit-defense/PhoenixGuard/secureboot_certs"
+        self.repo_root = Path(__file__).resolve().parents[1]
+
+        if cert_dir:
+            self.cert_dir = cert_dir
+        else:
+            env_cert_dir = os.environ.get("PHOENIXGUARD_CERT_DIR")
+            self.cert_dir = env_cert_dir or str(self.repo_root / "examples_and_samples" / "secureboot_certs")
+
         self.cert_data = {}
         self.conversion_log = []
-        
-        # Ensure log directory exists
-        os.makedirs("/var/log/phoenixguard", exist_ok=True)
         
     def run_command(self, cmd: str, check: bool = True) -> subprocess.CompletedProcess:
         """Run shell command with logging
@@ -270,13 +303,16 @@ class PhoenixGuardCertInventory:
         """Save inventory to JSON file"""
         if not output_file:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            output_file = f"/home/punk/Projects/edk2-bootkit-defense/PhoenixGuard/cert_inventory_{timestamp}.json"
-        
-        with open(output_file, 'w') as f:
+            output_file = str(self.repo_root / "out" / f"cert_inventory_{timestamp}.json")
+
+        output_path = Path(output_file)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(output_path, 'w') as f:
             json.dump(inventory, f, indent=2, sort_keys=True)
         
-        logger.info(f"Certificate inventory saved to: {output_file}")
-        return output_file
+        logger.info(f"Certificate inventory saved to: {output_path}")
+        return str(output_path)
 
 def main():
     """Main entry point"""

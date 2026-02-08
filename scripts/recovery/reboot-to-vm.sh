@@ -4,6 +4,10 @@
 
 set -e
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
 echo "☠ WARNING: This will REBOOT your system into PhoenixGuard recovery mode!"
 echo "The system will reboot automatically in 10 seconds. Press Ctrl+C to cancel."
 sleep 10 || exit 0
@@ -13,12 +17,12 @@ echo "☠ Initiating PhoenixGuard Recovery VM staging..."
 # Run bootkit detection scan first
 echo "☠ Running bootkit detection scan first..."
 if [ -f firmware_baseline.json ]; then
-    python3 scripts/detect_bootkit.py --output bootkit_scan_prereboot.json || echo "☠  Bootkit scan failed, continuing..."
+    python3 scripts/validation/detect_bootkit.py --output bootkit_scan_prereboot.json || echo "☠  Bootkit scan failed, continuing..."
 else
     echo "☠  No firmware baseline found - creating from clean BIOS..."
     if [ -f drivers/G615LPAS.325 ]; then
-        python3 scripts/analyze_firmware_baseline.py drivers/G615LPAS.325 -o firmware_baseline.json || echo "☠  Baseline creation failed"
-        python3 scripts/detect_bootkit.py --output bootkit_scan_prereboot.json || echo "☠  Bootkit scan failed"
+        python3 scripts/validation/analyze_firmware_baseline.py drivers/G615LPAS.325 -o firmware_baseline.json || echo "☠  Baseline creation failed"
+        python3 scripts/validation/detect_bootkit.py --output bootkit_scan_prereboot.json || echo "☠  Bootkit scan failed"
     else
         echo "☠  Clean BIOS dump not found at drivers/G615LPAS.325"
     fi
@@ -66,7 +70,7 @@ fi
 
 # Install KVM snapshot jump configuration
 echo "[kvm] Installing KVM snapshot jump configuration"
-./scripts/install_kvm_snapshot_jump.sh \
+./scripts/recovery/install_kvm_snapshot_jump.sh \
     --esp "$ESP" --vmlinuz "$VMLINUZ" --initrd "$INITRD" --root-uuid "$ROOT_UUID" \
     --qcow2 "$QCOW2" --loadvm base-snapshot \
     --gpu-bdf 0000:02:00.0 --gpu-ids 10de:2d58 || echo "☠  KVM config failed, continuing..."

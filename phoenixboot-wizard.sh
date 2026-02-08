@@ -80,7 +80,7 @@ show_main_menu() {
     
     echo -e "${WHITE}${BOLD}This wizard guides you through complete bootkit defense:${NC}"
     echo ""
-    echo -e "${GREEN}  1.${NC} 🔐 ${BOLD}Stage 1:${NC} Create SecureBoot bootable media with custom keys"
+    echo -e "${GREEN}  1.${NC} 🔐 ${BOLD}Stage 1:${NC} Write OS ISO to USB (+ optional keys)"
     echo -e "${GREEN}  2.${NC} 💿 ${BOLD}Stage 2:${NC} Install OS cleanly with SecureBoot enforced"
     echo -e "${GREEN}  3.${NC} 🔥 ${BOLD}Stage 3:${NC} Clear malicious EFI vars (NuclearBoot)"
     echo ""
@@ -95,19 +95,18 @@ show_main_menu() {
 stage1_menu() {
     clear
     print_stage "1" "Create SecureBoot Bootable Media" \
-        "Generate custom SecureBoot keys and create bootable install media"
+        "Optionally generate custom SecureBoot keys, then write an OS ISO to a USB drive"
     
     echo -e "${WHITE}${BOLD}This stage will:${NC}"
-    echo "  ✅ Generate YOUR custom SecureBoot keys (PK, KEK, db)"
-    echo "  ✅ Create bootable USB/CD image from your ISO"
-    echo "  ✅ Include key enrollment tools on the media"
-    echo "  ✅ Set up everything for secure OS installation"
+    echo "  ✅ (Optional) Generate YOUR custom SecureBoot keys (PK, KEK, db)"
+    echo "  ✅ (Optional) Create enrollment files (.auth) for firmware key enrollment"
+    echo "  ✅ Write your OS installation ISO to a USB drive you choose (DESTRUCTIVE)"
     echo ""
     
     print_info "You will need:"
     echo "  • An OS installation ISO file (e.g., Ubuntu, Fedora, Debian)"
-    echo "  • USB flash drive (8GB+) OR blank CD/DVD"
-    echo "  • About 5-10 minutes"
+    echo "  • A USB flash drive (will be erased)"
+    echo "  • About 2-5 minutes (depends on ISO size + USB speed)"
     echo ""
     
     if ! ask_continue "Start Stage 1"; then
@@ -116,7 +115,7 @@ stage1_menu() {
     
     # Ask for ISO path
     echo ""
-    read -p "$(echo -e ${WHITE}${BOLD}Enter path to your ISO file: ${NC})" iso_path
+    read -p "$(echo -e "${WHITE}${BOLD}Enter path to your ISO file: ${NC}")" iso_path
     
     if [ ! -f "$iso_path" ]; then
         print_error "ISO file not found: $iso_path"
@@ -125,31 +124,42 @@ stage1_menu() {
     fi
     
     print_info "ISO found: $iso_path"
-    print_info "Starting bootable media creation..."
+
+    # Ask for target USB device
+    echo ""
+    read -p "$(echo -e "${WHITE}${BOLD}Enter target USB device (e.g., /dev/sdb) [WILL BE ERASED]: ${NC}")" usb_device
+
+    if [ -z "$usb_device" ]; then
+        print_error "No USB device provided"
+        read -p "Press Enter to continue..."
+        return
+    fi
+
+    print_info "Target device: $usb_device"
+    print_warning "This will ERASE ALL DATA on $usb_device"
+    if ! ask_continue "Proceed"; then
+        print_info "Aborted by user"
+        read -p "Press Enter to continue..."
+        return
+    fi
+
+    print_info "Writing ISO to USB (and optionally generating keys)..."
     echo ""
     
-    # Run the creation script
-    if bash ./create-secureboot-bootable-media.sh --iso "$iso_path"; then
+    # Run the creation script (script will prompt about keys)
+    if bash ./create-secureboot-bootable-media.sh --iso "$iso_path" --usb-device "$usb_device"; then
         echo ""
-        print_success "Bootable media created successfully!"
+        print_success "USB written successfully!"
         echo ""
         print_info "Output files:"
-        echo "  • out/esp/secureboot-bootable.img - USB image"
         echo "  • keys/ - Your SecureBoot keys (KEEP SAFE!)"
+        echo "  • out/securevars/ - Enrollment files (.auth) for firmware key enrollment"
         echo ""
         print_info "Next steps:"
-        echo "  1. Write the image to USB: sudo dd if=out/esp/secureboot-bootable.img of=/dev/sdX bs=4M"
-        echo "  2. Boot from the media and install your OS (Stage 2)"
-        echo ""
-        if [ -f FIRST_BOOT_INSTRUCTIONS.txt ]; then
-            echo ""
-            print_info "First Boot Instructions:"
-            cat FIRST_BOOT_INSTRUCTIONS.txt
-        else
-            print_info "For detailed first boot instructions, see the file on the bootable media"
-        fi
+        echo "  1. Boot from the USB and install your OS (Stage 2)"
+        echo "  2. After install: sign kernel modules (if needed) and run: ./pf.py secure-env"
     else
-        print_error "Failed to create bootable media"
+        print_error "Failed to write USB / generate keys"
         print_info "Check the error messages above for details"
     fi
     
@@ -164,27 +174,16 @@ stage2_menu() {
     
     echo -e "${WHITE}${BOLD}Stage 2 Instructions:${NC}"
     echo ""
-    echo "1. Boot from your PhoenixBoot media (created in Stage 1)"
-    echo "2. Choose your security mode:"
-    echo ""
-    echo -e "${GREEN}   Option A: Easy Mode${NC}"
-    echo "   • Enable SecureBoot in BIOS"
-    echo "   • Boot from media"
-    echo "   • Select 'Boot from ISO' in GRUB menu"
-    echo "   • Install OS normally"
-    echo ""
-    echo -e "${CYAN}   Option B: Maximum Security${NC}"
-    echo "   • Boot with SecureBoot OFF"
-    echo "   • Select 'Enroll PhoenixGuard SecureBoot Keys'"
-    echo "   • Reboot, enable SecureBoot in BIOS"
-    echo "   • Boot from media again"
-    echo "   • Select 'Boot from ISO' and install"
-    echo ""
-    echo "3. After OS installation, sign your kernel modules:"
+    echo "1. Boot from your OS installation USB (created in Stage 1)"
+    echo "2. Install the OS normally"
+    echo "3. After OS installation, sign your kernel modules (if needed):"
     echo "   ./sign-kernel-modules.sh"
     echo ""
     echo "4. Verify clean installation:"
     echo "   ./pf.py secure-env"
+    echo ""
+    echo "5. (Optional / Advanced) If you generated custom SecureBoot keys and want to enroll them:"
+    echo "   See: docs/SECUREBOOT_ENABLEMENT_KEXEC.md"
     echo ""
     
     print_warning "This stage requires physical access to the target system"

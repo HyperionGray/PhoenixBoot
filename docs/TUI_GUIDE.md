@@ -281,16 +281,17 @@ If a task fails:
 
 ### Environment Variables
 
-Set environment variables before launching TUI:
+Set environment variables before launching the TUI (if needed):
 
 ```bash
 # Force rebuild
 export PG_FORCE_BUILD=1
 python3 containers/tui/app/phoenixboot_tui.py
+```
 
-# Set ISO path for installer
-export ISO_PATH=/path/to/ubuntu.iso
-python3 containers/tui/app/phoenixboot_tui.py
+Inside the TUI you can run tasks such as `secureboot-create` and `secureboot-create-usb` by supplying `iso_path` and `usb_device` arguments, e.g.,
+```
+./pf.py secureboot-create iso_path=/path/to/ubuntu.iso
 ```
 
 ### Integration with pf.py

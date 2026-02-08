@@ -3,16 +3,18 @@
 
 task workflow-artifact-create
   describe Create all necessary artifacts for ESP and CD with secure boot support
-  shell ARTIFACT_DIR=out/artifacts ESP_DIR=out/esp KEYS_DIR=out/keys && mkdir -p $ARTIFACT_DIR/esp $ARTIFACT_DIR/cd $ARTIFACT_DIR/docs $ESP_DIR $KEYS_DIR
+  shell ARTIFACT_DIR=out/artifacts ESP_DIR=out/esp KEYS_DIR=out/artifacts/keys && mkdir -p $ARTIFACT_DIR/esp $ARTIFACT_DIR/cd $ARTIFACT_DIR/docs $ESP_DIR $KEYS_DIR
   shell bash -c "if [ ! -f staging/boot/NuclearBootEdk2.efi ] || [ ! -f staging/boot/UUEFI.efi ]; then ./pf.py build-build; fi"
-  shell bash -c "KEYS_DIR=out/keys && if [ ! -f $KEYS_DIR/PK/PK.key ]; then ./pf.py secure-keygen; fi"
-  shell bash -c "KEYS_DIR=out/keys && if [ ! -f $KEYS_DIR/PK/PK.auth ]; then ./pf.py secure-make-auth; fi"
+  shell bash -c "if [ ! -f keys/PK.key ] || [ ! -f keys/KEK.key ] || [ ! -f keys/db.key ]; then ./pf.py secure-keygen; fi"
+  shell bash -c "if [ ! -f out/securevars/PK.auth ] || [ ! -f out/securevars/KEK.auth ] || [ ! -f out/securevars/db.auth ]; then ./pf.py secure-make-auth; fi"
   shell ./pf.py build-package-esp
   shell bash -c "ARTIFACT_DIR=out/artifacts && if [ -f out/esp/esp.img ]; then cp out/esp/esp.img $ARTIFACT_DIR/esp/; fi"
   shell ARTIFACT_DIR=out/artifacts && cp staging/boot/NuclearBootEdk2.efi $ARTIFACT_DIR/esp/
   shell ARTIFACT_DIR=out/artifacts && cp staging/boot/KeyEnrollEdk2.efi $ARTIFACT_DIR/esp/
   shell ARTIFACT_DIR=out/artifacts && cp staging/boot/UUEFI.efi $ARTIFACT_DIR/esp/
-  shell bash -c "ARTIFACT_DIR=out/artifacts KEYS_DIR=out/keys && if [ -d $KEYS_DIR ]; then cp -r $KEYS_DIR $ARTIFACT_DIR/; fi"
+  shell bash -c "ARTIFACT_DIR=out/artifacts KEYS_DIR=out/artifacts/keys && mkdir -p $KEYS_DIR && cp -f out/securevars/*.auth out/securevars/*.esl $KEYS_DIR/ 2>/dev/null || true"
+  shell bash -c "ARTIFACT_DIR=out/artifacts KEYS_DIR=out/artifacts/keys && cp -f keys/*.crt keys/*.cer $KEYS_DIR/ 2>/dev/null || true"
+  shell bash -c "ARTIFACT_DIR=out/artifacts KEYS_DIR=out/artifacts/keys && if [ -d out/keys/mok ]; then cp -f out/keys/mok/*.crt out/keys/mok/*.der out/keys/mok/*.pem $KEYS_DIR/ 2>/dev/null || true; fi"
   shell ARTIFACT_DIR=out/artifacts && echo '✅ Artifacts created in' $ARTIFACT_DIR
   shell ARTIFACT_DIR=out/artifacts && ls -lh $ARTIFACT_DIR/esp/
 end
@@ -57,16 +59,16 @@ task workflow-verify-artifacts
 end
 
 task workflow-usb-write
-  describe Write artifacts to USB drive (DESTRUCTIVE - requires USB_DEVICE)
-  shell bash -c 'if [ -z "${USB_DEVICE:-}" ]; then echo "ERROR: Set USB_DEVICE=/dev/sdX"; exit 1; fi'
-  shell bash -c 'if [ ! -b "${USB_DEVICE}" ]; then echo "ERROR: ${USB_DEVICE} is not a block device"; exit 1; fi'
+  describe Write artifacts to USB drive (DESTRUCTIVE - pass usb_device=/dev/sdX)
+  shell bash -c '[ -n "$usb_device" ] || { echo "Usage: pf workflow-usb-write usb_device=/dev/sdX"; exit 1; }'
+  shell bash -c '[ -b "$usb_device" ] || { echo "ERROR: $usb_device is not a block device"; exit 1; }'
   shell bash -c 'ARTIFACT_DIR=out/artifacts && if [ ! -f $ARTIFACT_DIR/esp/esp.img ]; then echo "ERROR: ESP image not found. Run workflow-artifact-create first"; exit 1; fi'
-  shell bash -c 'sudo umount ${USB_DEVICE}* 2>/dev/null || true'
-  shell bash -c 'echo "Writing ESP image to ${USB_DEVICE}..."'
-  shell bash -c 'ARTIFACT_DIR=out/artifacts && sudo dd if=$ARTIFACT_DIR/esp/esp.img of=${USB_DEVICE} bs=4M status=progress'
+  shell bash -c 'sudo umount "$usb_device"* 2>/dev/null || true'
+  shell bash -c 'echo "Writing ESP image to $usb_device..."'
+  shell bash -c 'ARTIFACT_DIR=out/artifacts && sudo dd if=$ARTIFACT_DIR/esp/esp.img of="$usb_device" bs=4M status=progress'
   shell sudo sync
   shell bash -c 'echo "✅ USB drive written successfully"'
-  shell bash -c 'echo "   Device: ${USB_DEVICE}"'
+  shell bash -c 'echo "   Device: $usb_device"'
   shell echo '   You can now boot from this USB drive'
 end
 
@@ -84,13 +86,16 @@ task workflow-test-uuefi
 end
 
 task workflow-usb-prepare
-  describe Prepare USB media structure (requires USB_DEVICE)
-  shell bash scripts/usb-tools/usb-prepare.sh
+  describe Prepare USB media structure (requires usb_device=<dev>; optional iso_path/esp_img)
+  shell bash -c '[ -n "$usb_device" ] || { echo "Usage: pf workflow-usb-prepare usb_device=<dev>"; exit 1; }'
+  shell bash -c 'CMD=(scripts/usb-tools/usb-prepare.sh --device "$usb_device"); [ -n "$esp_img" ] && CMD+=(--esp-image "$esp_img"); [ -n "$iso_path" ] && CMD+=(--iso-path "$iso_path"); "${CMD[@]}"'
 end
 
 task workflow-usb-write-dd
-  describe Write image to USB using dd (DESTRUCTIVE - requires USB_DEVICE and IMG_PATH)
-  shell bash scripts/usb-tools/usb-write-dd.sh
+  describe Write image to USB using dd (DESTRUCTIVE - requires usb_device=<dev>; optional esp_img)
+  shell bash -c '[ -n "$usb_device" ] || { echo "Usage: pf workflow-usb-write-dd usb_device=<dev>"; exit 1; }'
+  shell bash -c 'CMD=(scripts/usb-tools/usb-write-dd.sh --device "$usb_device" --confirm); [ -n "$esp_img" ] && CMD+=(--image "$esp_img"); "${CMD[@]}"'
+end
 end
 
 task workflow-recovery-reboot-metal

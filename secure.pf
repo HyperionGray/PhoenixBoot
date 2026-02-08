@@ -9,8 +9,8 @@ end
 
 
 task secure-enroll-secureboot
-  describe Auto-enroll custom SB keys in OVMF
-  shell bash scripts/secure-boot/enroll-secureboot.sh
+  describe Auto-enroll custom SB keys in OVMF (timeout/no_kvm optional)
+  shell bash -lc 'args=(); [ -n "${timeout:-}" ] && args+=(--timeout "${timeout}"); [ "${no_kvm:-0}" = "1" ] && args+=(--no-kvm); scripts/secure-boot/enroll-secureboot.sh "${args[@]}"'
 end
 
 
@@ -25,8 +25,8 @@ task secure-mok-status
 end
 
 task secure-mok-verify
-  describe Verify MOK certificate details
-  shell bash -lc 'scripts/mok-management/mok-verify.sh "${MOK_CERT_PEM:-out/keys/mok/PGMOK.crt}" "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}"'
+  describe Verify MOK certificate details (pass mok_cert_pem/mok_cert_der)
+  shell bash -lc 'pem="${mok_cert_pem:-${MOK_CERT_PEM:-out/keys/mok/PGMOK.crt}}"; der="${mok_cert_der:-${MOK_CERT_DER:-out/keys/mok/PGMOK.der}}"; scripts/mok-management/mok-verify.sh "$pem" "$der"'
 end
 
 task secure-mok-find-enrolled
@@ -35,16 +35,16 @@ task secure-mok-find-enrolled
 end
 
 task secure-enroll-mok
-  describe Enroll PhoenixGuard MOK certificate
-  shell bash -lc 'scripts/mok-management/enroll-mok.sh "${MOK_CERT_PEM:-out/keys/mok/PGMOK.crt}" "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}" ${MOK_DRY_RUN:-0}'
+  describe Enroll PhoenixGuard MOK certificate (pass mok_cert_pem/mok_cert_der/mok_dry_run)
+  shell bash -lc 'args=(); [ -n "${mok_cert_pem:-}" ] && args+=(--cert-pem "${mok_cert_pem}"); [ -n "${mok_cert_der:-}" ] && args+=(--cert-der "${mok_cert_der}"); [ "${mok_dry_run:-0}" = "1" ] && args+=(--dry-run); scripts/mok-management/enroll-mok.sh "${args[@]}"'
 end
 
 # Note: secure-mok-new moved to core.pf to avoid duplication
 
 task secure-mok-enroll-new
-  describe Generate + enroll PhoenixGuard MOK (reboot to complete)
-  shell bash -lc 'scripts/mok-management/mok-new.sh "${NAME:-PGMOK}" "${CN:-PhoenixGuard Module Key}"'
-  shell bash -lc 'scripts/mok-management/enroll-mok.sh "out/keys/${NAME:-PGMOK}.crt" "out/keys/${NAME:-PGMOK}.der" ${MOK_DRY_RUN:-0}'
+  describe Generate + enroll PhoenixGuard MOK (pass name/cn/mok_dry_run)
+  shell bash -lc 'resolved_name="${name:-PGMOK}"; resolved_cn="${cn:-PhoenixGuard Module Key}"; scripts/mok-management/mok-new.sh "$resolved_name" "$resolved_cn"'
+  shell bash -lc 'resolved_name="${name:-PGMOK}"; args=(--cert-pem "out/keys/${resolved_name}.crt" --cert-der "out/keys/${resolved_name}.der"); [ "${mok_dry_run:-0}" = "1" ] && args+=(--dry-run); scripts/mok-management/enroll-mok.sh "${args[@]}"'
 end
 
 task secure-keys-centralize
@@ -63,11 +63,13 @@ task secure-mok-inventory
 end
 
 task secure-unenroll-mok
-  describe Remove PhoenixGuard MOK certificate
-  shell bash -lc 'scripts/mok-management/unenroll-mok.sh "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}"'
+  describe Remove PhoenixGuard MOK certificate (pass mok_cert_der)
+  shell bash -lc '[ -n "$mok_cert_der" ] || { echo "Usage: pf secure-unenroll-mok mok_cert_der=<path>"; exit 1; }'
+  shell bash -lc 'scripts/mok-management/unenroll-mok.sh "$mok_cert_der"'
 end
 
 task secure-der-extract
-  describe Convert DER/PKCS#12 bundle into PEM cert and key (set DER_PATH, OUT_DIR, NAME)
-  shell bash -lc 'scripts/secure-boot/der-extract.sh "${DER_PATH:-}" "${OUT_DIR:-out/keys}" "${NAME:-PGMOK}"'
+  describe Convert DER/PKCS#12 bundle into PEM cert and key (require der_path=<file>, optional out_dir/name)
+  shell bash -c '[ -n "$der_path" ] || { echo "Usage: pf secure-der-extract der_path=<file> [out_dir=out/keys] [name=PGMOK]"; exit 1; }'
+  shell bash -lc 'target_dir="${out_dir:-out/keys}"; key_name="${name:-PGMOK}"; scripts/secure-boot/der-extract.sh "$der_path" "$target_dir" "$key_name"'
 end

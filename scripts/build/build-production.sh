@@ -21,8 +21,36 @@ echo
 
 cd "${REPO_ROOT}"
 
+# Command-line flags
+usage() {
+    cat <<'EOF'
+Usage: build-production.sh [--force]
+
+Options:
+  --force       Rebuild production artifacts even if staging copies already exist
+  -h, --help    Show this message
+EOF
+    exit 1
+}
+
+FORCE_BUILD=0
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --force)
+            FORCE_BUILD=1
+            shift
+            ;;
+        -h|--help)
+            usage
+            ;;
+        *)
+            echo "Unknown option: $1"
+            usage
+            ;;
+    esac
+done
+
 # Check if we should force rebuild from source
-FORCE_BUILD="${PG_FORCE_BUILD:-0}"
 
 # Define artifact locations
 STAGING_BOOT="${REPO_ROOT}/staging/boot"
@@ -60,7 +88,7 @@ if all_artifacts_exist && [ "$FORCE_BUILD" != "1" ]; then
     done
     echo
     echo "Artifacts are ready for use."
-    echo -e "${YELLOW}Note: Set PG_FORCE_BUILD=1 to rebuild from source${NC}"
+    echo -e "${YELLOW}Note: Run this script with --force to rebuild from source${NC}"
     exit 0
 fi
 

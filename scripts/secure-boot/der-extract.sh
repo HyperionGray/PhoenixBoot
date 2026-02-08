@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+cd "${SCRIPT_DIR}/../.."
 
 # Usage: der-extract.sh <infile.der|.p12|.pfx|.cer|.crt|.pem> <out_dir> <name>
 # Produces: <out_dir>/<name>.crt (PEM cert), <out_dir>/<name>.key (PEM key, if available), <out_dir>/<name>.der (DER cert)

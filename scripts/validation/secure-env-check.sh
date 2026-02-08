@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # secure-env-check.sh - PhoenixBoot Comprehensive Security Environment Check
 # 
 # Checks user environment for security, ensures safety of boot by looking into EFI vars,
@@ -20,13 +20,10 @@ BOLD='\033[1m'
 # Script directory and repo root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-# Prefer central venv when available
-if [ -x "/home/punk/.venv/bin/python3" ]; then
-  PY="/home/punk/.venv/bin/python3"
-else
-  PY="python3"
-fi
+source "${SCRIPT_DIR}/../lib/common.sh"
+PY="$(resolve_python "${PROJECT_ROOT}")" || die "No usable Python found (tried VENV_PY/VENV_BIN, ./venv/.venv, python3/python)"
 
 # Output directories
 OUT_DIR="${REPO_ROOT}/out"
@@ -603,9 +600,9 @@ provide_recommendations() {
   
   recommendations+=("🔐 Generate or update SecureBoot keys: ./pf.py secure-keygen")
   recommendations+=("🔑 Set up PhoenixGuard MOK: ./pf.py mok-flow")
-  recommendations+=("✍️  Sign kernel modules: PATH=/lib/modules/\$(uname -r) FORCE=1 ./pf.py os-kmod-sign")
+  recommendations+=("✍️  Sign kernel modules: MODULE_PATH=/lib/modules/\$(uname -r) FORCE=1 ./pf.py os-kmod-sign")
   recommendations+=("🔍 Run full validation: ./pf.py verify")
-  recommendations+=("💿 Create SecureBoot USB: ISO_PATH=/path/to.iso ./pf.py secureboot-create")
+  recommendations+=("💿 Create SecureBoot USB: ./pf.py secureboot-create iso_path=/path/to.iso")
   
   for rec in "${recommendations[@]}"; do
     echo -e "  ${rec}"

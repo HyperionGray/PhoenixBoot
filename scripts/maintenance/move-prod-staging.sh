@@ -3,6 +3,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
 # Move core UEFI application files
 [ -f NuclearBootEdk2.c ] && mv NuclearBootEdk2.c staging/src/
 [ -f NuclearBootEdk2.inf ] && mv NuclearBootEdk2.inf staging/src/
@@ -18,4 +22,3 @@ set -euo pipefail
 [ -f PhoenixGuardDemo.h ] && mv PhoenixGuardDemo.h staging/include/ 2>/dev/null || true
 
 echo "☠ Production code moved to staging/"
-

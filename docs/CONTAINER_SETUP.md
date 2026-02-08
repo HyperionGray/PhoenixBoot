@@ -84,7 +84,7 @@ make run-build
 make run-test
 
 # Create bootable media
-ISO_PATH=/path/to/ubuntu.iso make run-installer
+./pf.py secureboot-create iso_path=/path/to/ubuntu.iso
 ```
 
 ### Pattern 3: Direct Execution
@@ -133,14 +133,8 @@ ls -la out/
 ### Workflow 2: Create SecureBoot USB
 
 ```bash
-# 1. Build containers
-make build
-
-# 2. Create bootable media
-ISO_PATH=/path/to/ubuntu.iso make run-installer
-
-# 3. Write to USB (outside container)
-sudo dd if=out/esp/secureboot-bootable.img of=/dev/sdX bs=4M status=progress
+# Write directly (DESTRUCTIVE)
+./pf.py secureboot-create-usb iso_path=/path/to/ubuntu.iso usb_device=/dev/sdX
 ```
 
 ### Workflow 3: Security Audit
@@ -259,9 +253,7 @@ PG_FORCE_BUILD=1 docker compose --profile build up
 
 ```bash
 # Create bootable media from ISO
-export ISO_PATH=/path/to/ubuntu.iso
-export USB_DEVICE=/dev/sdX
-make run-installer
+./pf.py secureboot-create-usb iso_path=/path/to/ubuntu.iso usb_device=/dev/sdX
 ```
 
 ### Configure QEMU Tests

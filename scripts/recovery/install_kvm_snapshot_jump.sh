@@ -9,7 +9,7 @@ set -euo pipefail
 # - Installs host-side scripts + systemd units under /usr/local and /etc/systemd/system
 #
 # Usage (example; all values are hard-coded by args, no auto-detects):
-#   sudo ./scripts/install_kvm_snapshot_jump.sh \
+#   sudo ./scripts/recovery/install_kvm_snapshot_jump.sh \
 #     --esp /boot/efi \
 #     --vmlinuz /boot/vmlinuz-6.8.0-xyz \
 #     --initrd /boot/initrd.img-6.8.0-xyz \
@@ -25,6 +25,10 @@ set -euo pipefail
 # - Secure Boot is assumed: you should launch GRUB via shim or a trusted GRUB; this script only writes entries.
 # - If passing through NVMe controller, it MUST NOT host the running root FS.
 # - QEMU snapshot resume requires an internal savevm snapshot named by --loadvm.
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
 
 ESP=
 VMLINUZ=

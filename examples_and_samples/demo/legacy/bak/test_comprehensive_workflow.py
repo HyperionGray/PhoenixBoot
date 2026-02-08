@@ -138,7 +138,7 @@ def test_comprehensive_workflow():
         
         print(f"  Results saved to: {results_file}")
         print(f"  Total warnings: {len(recovery.results.get('warnings', []))}")
-        print(f"  Total errors: {len(recovery.results.get('errors', [])))}")
+        print(f"  Total errors: {len(recovery.results.get('errors', []))}")
         
         test_results['report_generation'] = True
         
@@ -152,7 +152,7 @@ def test_comprehensive_workflow():
         Path(tmp_path).unlink(missing_ok=True)
 
 def test_dom0_integration():
-    \"\"\"Test dom0 integration via SSH\"\"\"
+    """Test dom0 integration via SSH"""
     print("\\n🌐 Step 10: Dom0 Integration Test")
     print("-" * 40)
     
@@ -168,7 +168,7 @@ def test_dom0_integration():
         print(f"  SSH connectivity: {'✅ PASS' if ssh_success else '❌ FAIL'}")
         
         if ssh_success:
-            print(f\"  Response: {result.stdout.strip()}\")
+            print(f"  Response: {result.stdout.strip()}")
         
         # Test if our hardware recovery script is accessible via SSH
         result = subprocess.run([
@@ -178,12 +178,12 @@ def test_dom0_integration():
         ], capture_output=True, text=True, timeout=10)
         
         script_accessible = result.returncode == 0
-        print(f\"  Recovery script accessible: {'✅ PASS' if script_accessible else '❌ FAIL'}\")
+        print(f"  Recovery script accessible: {'✅ PASS' if script_accessible else '❌ FAIL'}")
         
         return ssh_success and script_accessible
         
     except Exception as e:
-        print(f\"  ❌ Dom0 integration test failed: {e}\")
+        print(f"  ❌ Dom0 integration test failed: {e}")
         return False
 
 if __name__ == '__main__':
@@ -205,35 +205,35 @@ if __name__ == '__main__':
     critical_passed = sum(1 for test in critical_tests if workflow_results.get(test, False))
     total_critical = len(critical_tests)
     
-    print(f\"\\n📋 Critical Functionality: {critical_passed}/{total_critical} tests passed\")
+    print(f"\n📋 Critical Functionality: {critical_passed}/{total_critical} tests passed")
     for test in critical_tests:
-        status = \"✅ PASS\" if workflow_results.get(test, False) else \"❌ FAIL\"
-        print(f\"  {test}: {status}\")
+        status = "✅ PASS" if workflow_results.get(test, False) else "❌ FAIL"
+        print(f"  {test}: {status}")
     
-    print(f\"\\n🔒 Security Verification: (failures expected on secure system)\")
+    print("\n🔒 Security Verification: (failures expected on secure system)")
     for test in security_tests:
-        status = \"✅ PASS\" if workflow_results.get(test, False) else \"❌ FAIL (expected - system is secure)\"
-        print(f\"  {test}: {status}\")
+        status = "✅ PASS" if workflow_results.get(test, False) else "❌ FAIL (expected - system is secure)"
+        print(f"  {test}: {status}")
     
     # Other tests
     other_tests = [k for k in workflow_results.keys() if k not in critical_tests + security_tests]
     if other_tests:
-        print(f\"\\n🧪 Additional Tests:\")
+        print("\n🧪 Additional Tests:")
         for test in other_tests:
-            status = \"✅ PASS\" if workflow_results.get(test, False) else \"❌ FAIL\"
-            print(f\"  {test}: {status}\")
+            status = "✅ PASS" if workflow_results.get(test, False) else "❌ FAIL"
+            print(f"  {test}: {status}")
     
     # Overall assessment
     system_ready = critical_passed >= len(critical_tests) * 0.8  # 80% of critical tests must pass
     
-    print(f\"\\n🏁 OVERALL ASSESSMENT:\")
+    print("\n🏁 OVERALL ASSESSMENT:")
     if system_ready:
-        print(\"✅ PhoenixGuard system is READY for deployment\")
-        print(\"   - All critical functionality is working\")
-        print(\"   - System properly secured (firmware access blocked)\") 
-        print(\"   - Integration components functional\")
+        print("✅ PhoenixGuard system is READY for deployment")
+        print("   - All critical functionality is working")
+        print("   - System properly secured (firmware access blocked)")
+        print("   - Integration components functional")
     else:
-        print(\"❌ PhoenixGuard system needs attention\")
-        print(\"   - Some critical functionality is not working\")
+        print("❌ PhoenixGuard system needs attention")
+        print("   - Some critical functionality is not working")
     
     sys.exit(0 if system_ready else 1)

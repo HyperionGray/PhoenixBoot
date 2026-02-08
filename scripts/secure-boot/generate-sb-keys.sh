@@ -3,6 +3,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+cd "${PROJECT_ROOT}"
+
 echo ""
 echo "╔═══════════════════════════════════════════════════════════════╗"
 echo "║                                                               ║"
@@ -16,6 +20,8 @@ echo "  📌 PK  (Platform Key)        - Root of trust, owns your system"
 echo "  📌 KEK (Key Exchange Key)    - Intermediate authority"
 echo "  📌 db  (Signature Database)  - Authorizes bootloaders & kernels"
 echo ""
+
+mkdir -p keys
 
 # PK
 if [ -f keys/PK.key ]; then
@@ -74,10 +80,9 @@ echo ""
 echo "  2️⃣  Use these keys to sign bootloaders (like BOOTX64.EFI)"
 echo "     They're automatically used when you run './pf.py build-package-esp'"
 echo ""
-echo "  3️⃣  Enroll them on your system using KeyEnrollEdk2.efi"
-echo "     (Included in bootable media created by './pf.py secureboot-create')"
+echo "  3️⃣  Enroll them in firmware (advanced)"
+echo "     See: docs/SECUREBOOT_ENABLEMENT_KEXEC.md"
 echo ""
 echo "💡 TIP: For a complete SecureBoot bootable USB, run:"
-echo "     ISO_PATH=/path/to/your.iso ./pf.py secureboot-create"
+echo "     ./pf.py secureboot-create iso_path=/path/to/your.iso usb_device=/dev/sdX  # alias secureboot-create-usb"
 echo ""
-

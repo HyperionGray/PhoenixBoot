@@ -1,0 +1,57 @@
+/**
+ * PhoenixBoot configuration (JSON5)
+ *
+ * `pf.py` automatically loads:
+ *   1) `phoenixboot.config.json5` (this file)
+ *   2) `phoenixboot.config.local.json5` (optional, gitignored)
+ *
+ * Use `globals` to define defaults for pf parameters (iso_path, usb_device, etc.).
+ * These values are injected into every task and exported as both lower- and
+ * upper-case variables so legacy scripts that read ISO_PATH/USB_DEVICE continue
+ * to work without extra exports.
+ */
+{
+  env: {},
+
+  globals: {
+    // Bootable media helpers
+    iso_path: null,
+    usb_device: null,
+    esp_img: null,
+
+    // Firmware checksum tooling
+    firmware_path: null,
+    vendor: null,
+    model: null,
+    version: null,
+    source: null,
+    confidence: null,
+
+    // Kernel profile compare
+    profile: null,
+
+    // Secure Boot key defaults
+    mok_cert_pem: null,
+    mok_cert_der: null,
+    mok_dry_run: null,
+    name: null,
+    cn: null,
+
+    // Module signing helpers
+    module_path: null,
+    force: null,
+
+    // DER/PKCS#12 extraction
+    der_path: null,
+    out_dir: null,
+  },
+
+  pf: {
+    pfy_file: "Pfyfile.pf",
+    env_map: {
+      local: ["@local"],
+      // prod: ["user@10.0.0.5:22", "user@10.4.4.4:24"],
+      // staging: "user@10.1.2.3:22,user@10.1.2.4:22",
+    },
+  },
+}

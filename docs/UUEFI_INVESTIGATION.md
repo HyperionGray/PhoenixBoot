@@ -131,7 +131,7 @@ b) **Try without KVM**:
 
 c) **Increase timeout**:
 ```bash
-PG_QEMU_TIMEOUT=120 ./pf.py test-qemu-uuefi
+./pf.py test-qemu-uuefi --timeout 120
 ```
 
 d) **Rebuild from source**:

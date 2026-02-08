@@ -6,6 +6,44 @@
 
 set -euo pipefail
 
+die() {
+    echo "$*" >&2
+    exit 1
+}
+
+PROG=$(basename "$0")
+usage() {
+    cat <<EOF
+Usage: $PROG [OPTIONS]
+
+Options:
+  --output-dir DIR  Directory to store the JSON output (default: ./)
+  -h, --help        Show this help message
+EOF
+    exit 0
+}
+
+OUTPUT_DIR_ARG=""
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --output-dir)
+            opt="$1"; shift
+            [ $# -gt 0 ] || die "Missing value for $opt"
+            OUTPUT_DIR_ARG="$1"
+            shift
+            ;;
+        -h|--help)
+            usage
+            ;;
+        *)
+            die "Unknown option: $1"
+            ;;
+    esac
+done
+
+OUTPUT_DIR="${OUTPUT_DIR_ARG:-${OUTPUT_DIR:-./}}"
+
 echo "🔥 ESP Configuration Extraction Tool"
 echo "====================================="
 echo ""
@@ -33,7 +71,6 @@ echo ""
 
 # Output file
 OUTPUT_FILE="esp_configs_$(date +%Y%m%d_%H%M%S).json"
-OUTPUT_DIR="${OUTPUT_DIR:-./}"
 
 echo "📋 Extracting Configuration Files"
 echo "=================================="

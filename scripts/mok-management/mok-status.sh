@@ -3,7 +3,12 @@
 
 set -euo pipefail
 
-VENV_PY=${VENV_BIN:-/home/punk/.venv/bin}/python
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+cd "${REPO_ROOT}"
+source scripts/lib/common.sh
+
+VENV_PY="$(resolve_python 2>/dev/null || true)"
 
 echo "☠ MOK and Secure Boot Status"
 echo "============================="
@@ -58,9 +63,12 @@ if [ -n "${MOK_CERT_PEM:-}" ] && [ -f "${MOK_CERT_PEM}" ]; then
   NAME_NOEXT="${NAME_BASE%.*}"
   META_PATH="out/keys/mok/${NAME_NOEXT}.meta.json"
   if [ -f "$META_PATH" ]; then
-    NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-    ENR="$ENROLLED_MATCH"
-    "$VENV_PY" - "$META_PATH" "$NOW" "$ENR" <<'PY'
+    if [ -z "${VENV_PY}" ]; then
+      warn "No usable Python found; skipping metadata sync for ${META_PATH}"
+    else
+      NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+      ENR="$ENROLLED_MATCH"
+      "$VENV_PY" - "$META_PATH" "$NOW" "$ENR" <<'PY'
 import json, sys
 meta_path = sys.argv[1]
 now = sys.argv[2]
@@ -79,5 +87,6 @@ with open(meta_path, 'w') as f:
     json.dump(data, f, indent=2, sort_keys=True)
 print(f"Updated metadata: {meta_path} (pending={data.get('pending')})")
 PY
+    fi
   fi
 fi

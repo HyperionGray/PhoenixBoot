@@ -20,7 +20,8 @@ Commands
     just nuke level1-scan
   - Level 2 — ESP build (optional host deploy)
     just nuke level2-esp
-    PG_HOST_OK=1 ISO_PATH=/path/to.iso just nuke level2-esp
+    # To include a specific installer ISO:
+    ./pf.py secureboot-create iso_path=/path/to.iso
   - Level 3 — Secure firmware access (double-kexec)
     just nuke level3-secure -- --backup current.bin
     just nuke level3-secure -- --read suspect.bin

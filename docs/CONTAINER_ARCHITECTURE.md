@@ -97,8 +97,7 @@ docker run --rm -v $(pwd):/phoenixboot phoenixboot-installer
 
 # Create SecureBoot bootable media
 docker run --rm -v $(pwd):/phoenixboot \
-  -e ISO_PATH=/phoenixboot/ubuntu.iso \
-  phoenixboot-installer bash create-secureboot-bootable-media.sh --iso $ISO_PATH
+  phoenixboot-installer bash create-secureboot-bootable-media.sh --iso /phoenixboot/ubuntu.iso
 
 # Using docker-compose
 docker-compose --profile installer up
@@ -245,13 +244,7 @@ Configure containers via environment variables:
 # Build configuration
 export PG_FORCE_BUILD=1
 
-# ISO path for installer
-export ISO_PATH=/path/to/ubuntu.iso
-
-# USB device for installer
-export USB_DEVICE=/dev/sdb
-
-# Run with variables
+# Run with variables (set PG_FORCE_BUILD etc. as needed)
 docker-compose --profile installer up
 ```
 

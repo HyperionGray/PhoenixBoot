@@ -1,17 +1,17 @@
 # Secure Boot Enablement via Double Kexec Method
 
-> **⚠️ IMPORTANT: Framework Implementation**
+> **⚠️ IMPORTANT: Host-only advanced workflow**
 > 
-> This feature provides a **framework** for the double kexec method and demonstrates
-> the workflow, but does **NOT** include hardware-specific Secure Boot enablement code.
+> PhoenixBoot can orchestrate a **double-kexec** workflow and (optionally) enroll keys via
+> standard UEFI variables (Setup Mode required). It does **NOT** attempt firmware patching.
 > 
-> Actual Secure Boot enablement is hardware-specific and typically requires:
+> Secure Boot enablement can still be hardware/firmware-specific and may require:
 > - Manufacturer-specific tools
 > - Firmware-specific knowledge
-> - UEFI variable manipulation (complex)
-> - **OR traditional BIOS/UEFI setup method (RECOMMENDED)**
+> - A BIOS/UEFI toggle (common)
+> - **OR the traditional BIOS/UEFI setup method (often the safest)**
 > 
-> The framework can be extended with hardware-specific code as needed.
+> For Phase 2, you can supply a custom command with `--phase2-cmd '...'` (auto switches to `--action=run_cmd`).
 
 ## Overview
 
@@ -20,15 +20,17 @@ PhoenixBoot provides an advanced **framework** for enabling Secure Boot from the
 ### Framework vs. Complete Implementation
 
 **What this provides:**
-- ✅ Complete double kexec workflow orchestration
+- ✅ Double-kexec workflow orchestration (Phase 1 → Phase 2 → Phase 3)
+- ✅ Optional key enrollment via `efi-updatevar` when in Setup Mode
+- ✅ Optional Phase 2 hook via `--phase2-cmd '...'` (runs after key enrollment/prep)
 - ✅ Kernel configuration profiles (permissive, hardened, balanced)
 - ✅ Status detection and analysis tools
 - ✅ Prerequisites checking and validation
 - ✅ Educational demonstration of the technique
 
 **What this does NOT provide:**
-- ❌ Hardware-specific Secure Boot enablement code
-- ❌ Automatic firmware modification
+- ❌ Vendor-specific firmware patching / flashrom automation
+- ❌ A universal “flip Secure Boot on” switch (many platforms require BIOS/UEFI enable)
 - ❌ Universal UEFI variable manipulation
 
 **Recommended for most users:** Enable Secure Boot through BIOS/UEFI setup (traditional method).
@@ -92,6 +94,9 @@ This will show:
 ### Enable Secure Boot via Double Kexec
 
 ```bash
+# Optional: preview what will happen (no changes)
+./pf.py secureboot-prepare-kexec
+
 # Enable Secure Boot using the double kexec method
 sudo ./pf.py secureboot-enable-kexec
 ```
@@ -288,10 +293,10 @@ The script will:
 2. Show available kernels
 3. Load alternate kernel via kexec
 4. Execute kexec (switch to permissive kernel)
-5. Enable Secure Boot (in Phase 2)
+5. In Phase 2, optionally enroll keys via `efi-updatevar` (Setup Mode required) and/or run a custom command
 6. Kexec back to hardened kernel
 
-**Note**: The current implementation provides a framework. Full automation requires hardware-specific knowledge for Secure Boot enablement.
+**Note**: Many platforms still require enabling Secure Boot in BIOS/UEFI settings even after keys are enrolled.
 
 ### Step 4: Verify Secure Boot is Enabled
 
@@ -320,11 +325,11 @@ This is the **safest and recommended method** for most users.
 
 ### Option 2: Direct OS Enablement
 
-If your current kernel allows BIOS access:
+If your platform is in **Setup Mode** (keys cleared) and you want to enroll PhoenixBoot keys from the OS without kexec:
 
 ```bash
 # This command attempts direct enablement
-# Only works if kernel permits hardware access
+# Requires Setup Mode + efitools (efi-updatevar)
 sudo ./pf.py secureboot-enable-direct
 ```
 
@@ -508,10 +513,10 @@ With Secure Boot enabled, modules must be signed:
 ./pf.py os-mok-enroll
 
 # Sign a module
-PATH=/lib/modules/$(uname -r)/kernel/drivers/net/wireless/intel/iwlwifi/iwlwifi.ko ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r)/kernel/drivers/net/wireless/intel/iwlwifi/iwlwifi.ko ./pf.py os-kmod-sign
 
 # Sign all modules
-PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 ```
 
 ## Limitations and Considerations

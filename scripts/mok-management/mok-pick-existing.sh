@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+cd "${SCRIPT_DIR}/../.."
 
 # Find the best existing enrolled MOK to reuse for signing if possible.
 # - Tries to match out/keys/PGMOK.* or other known certs to mokutil --list-enrolled

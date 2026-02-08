@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+cd "${SCRIPT_DIR}/../.."
+# shellcheck disable=SC1091
 source scripts/lib/common.sh
 
 info "☠ Launching AutoNuke recovery orchestrator"
@@ -10,11 +12,6 @@ if [ ! -f "$SCRIPT" ]; then
   die "AutoNuke script not found at $SCRIPT"
 fi
 
-if [ -x "/home/punk/.venv/bin/python3" ]; then
-  PY="/home/punk/.venv/bin/python3"
-else
-  PY="python3"
-fi
+PY="$(resolve_python)" || die "No usable Python found (tried VENV_PY/VENV_BIN, ./venv/.venv, python3/python)"
 
 exec "$PY" "$SCRIPT"
-

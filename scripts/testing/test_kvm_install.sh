@@ -5,6 +5,10 @@ set -euo pipefail
 # =================================
 # Quick test setup for KVM recovery with auto-detected parameters
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
 echo "☠☠ PhoenixGuard KVM Test Installation ☠☠"
 echo "============================================"
 
@@ -63,7 +67,7 @@ echo
 echo "☠ Installing KVM Snapshot Jump with enhanced recovery..."
 
 # Run the KVM installer with our parameters
-sudo ./scripts/install_kvm_snapshot_jump.sh \
+sudo ./scripts/recovery/install_kvm_snapshot_jump.sh \
     --esp /boot/efi \
     --vmlinuz "$VMLINUZ" \
     --initrd "$INITRD" \

@@ -15,7 +15,9 @@ end
 
 task maint-docs
   describe Update documentation
-  shell bash -lc 'echo Documentation updated'
+  shell bash scripts/maintenance/regen-instructions.sh
+  shell bash scripts/secure-boot/generate-secureboot-instructions.sh
+  shell bash scripts/secure-boot/create-secureboot-instructions.sh
 end
 
 task maint-clean
@@ -27,9 +29,4 @@ task maint-install-git-hooks
   describe Install pre-push size guard hook
   shell mkdir -p .git/hooks && chmod 0755 .git/hooks
   shell cp scripts/git-hooks/pre-push .git/hooks/pre-push && chmod 0755 .git/hooks/pre-push
-end
-
-task maint-pre-push-check
-  describe Run the size guard check locally (no push)
-  shell bash -lc 'scripts/git-hooks/pre-push <<EOF\n$(git rev-parse HEAD) 0000000000000000000000000000000000000000 refs/heads/main\nEOF'
 end

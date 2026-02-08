@@ -140,7 +140,7 @@
 │    User     │
 └──────┬──────┘
        │
-       │ ISO_PATH=/path/to.iso make run-installer
+       │ ./pf.py secureboot-create iso_path=/path/to/installer.iso
        │
        ▼
 ┌──────────────────────────┐
@@ -152,7 +152,7 @@
 │  2. Create ESP image     │
 │     (FAT32 partition)    │
 │                          │
-│  3. Integrate ISO        │◄──── ISO_PATH (env var)
+│  3. Integrate ISO        │◄──── iso_path argument
 │     (optional)           │
 │                          │
 │  4. Package bootable     │────► /phoenixboot/out/esp

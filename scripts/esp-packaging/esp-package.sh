@@ -3,6 +3,68 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/lib/common.sh
 
+usage() {
+  cat <<EOF
+Usage: esp-package.sh [OPTIONS]
+
+Options:
+  --size MB            Base ESP size in MiB (default: 64)
+  --overhead MB        Extra space for ISO inclusion (default: 512)
+  --iso PATH           Optional ISO to add into the ESP
+  --iso-extra-args ARG Additional GRUB arguments injected into the ISO entry
+  --uuid UUID          Override the BUILD_UUID written into the image
+  -h, --help           Show this help message
+EOF
+  exit 0
+}
+
+ESP_SIZE_MB=64
+ESP_OVERHEAD_MB=512
+ISO_PATH=""
+ISO_EXTRA_ARGS=""
+BUILD_UUID_OVERRIDE=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --size)
+      opt="$1"; shift
+      [ $# -gt 0 ] || die "Missing value for $opt"
+      ESP_SIZE_MB="$1"
+      shift
+      ;;
+    --overhead)
+      opt="$1"; shift
+      [ $# -gt 0 ] || die "Missing value for $opt"
+      ESP_OVERHEAD_MB="$1"
+      shift
+      ;;
+    --iso)
+      opt="$1"; shift
+      [ $# -gt 0 ] || die "Missing value for $opt"
+      ISO_PATH="$1"
+      shift
+      ;;
+    --iso-extra-args)
+      opt="$1"; shift
+      [ $# -gt 0 ] || die "Missing value for $opt"
+      ISO_EXTRA_ARGS="$1"
+      shift
+      ;;
+    --uuid)
+      opt="$1"; shift
+      [ $# -gt 0 ] || die "Missing value for $opt"
+      BUILD_UUID_OVERRIDE="$1"
+      shift
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      die "Unknown option: $1"
+      ;;
+  esac
+done
+
 info "☠ Creating bootable ESP image..."
 require_cmd dd
 require_cmd mkfs.fat
@@ -15,14 +77,13 @@ detach_loops_for_image out/esp/esp.img
 
 [ -f out/staging/BootX64.efi ] || die "No BootX64.efi found - run './pf.py build-build' first"
 
-ESP_MB=${ESP_MB:-64}
-if [ -n "${ISO_PATH:-}" ] && [ -f "${ISO_PATH}" ]; then
+ESP_MB="$ESP_SIZE_MB"
+if [ -n "$ISO_PATH" ] && [ -f "$ISO_PATH" ]; then
   ISO_BYTES=$(stat -c%s "${ISO_PATH}" 2>/dev/null || stat -f%z "${ISO_PATH}" 2>/dev/null || echo 0)
   ISO_MB=$(( (ISO_BYTES + 1048575) / 1048576 ))
   [ "$ISO_MB" -lt 64 ] && ISO_MB=64
-  OVERHEAD_MB=${OVERHEAD_MB:-512}
-  ESP_MB=$(( ISO_MB + OVERHEAD_MB ))
-  info "Sizing ESP to ${ESP_MB} MiB for ISO inclusion (${ISO_MB} MiB ISO + ${OVERHEAD_MB} MiB overhead)"
+  ESP_MB=$(( ISO_MB + ESP_OVERHEAD_MB ))
+  info "Sizing ESP to ${ESP_MB} MiB for ISO inclusion (${ISO_MB} MiB ISO + ${ESP_OVERHEAD_MB} MiB overhead)"
 fi
 
 # Create image and FS
@@ -93,17 +154,21 @@ for mod in part_gpt fat iso9660 loopback normal linux efi_gop efi_uga search reg
 done
 
 # Optional ISO
-ISO_BASENAME=""; ISO_EXTRA_ARGS="${ISO_EXTRA_ARGS:-}"
-if [ -n "${ISO_PATH:-}" ] && [ -f "${ISO_PATH}" ]; then
-  ISO_BASENAME=$(basename "${ISO_PATH}")
+ISO_BASENAME=""
+if [ -n "$ISO_PATH" ] && [ -f "$ISO_PATH" ]; then
+  ISO_BASENAME=$(basename "$ISO_PATH")
   ok "Including ISO: ${ISO_PATH}"
   sudo mkdir -p out/esp/mount/ISO
-  sudo cp "${ISO_PATH}" "out/esp/mount/ISO/${ISO_BASENAME}"
+  sudo cp "$ISO_PATH" "out/esp/mount/ISO/${ISO_BASENAME}"
 fi
 
 # Build UUID and sidecar from signed binary on ESP
 SIGNED_HASH=$(sudo sha256sum out/esp/mount/EFI/PhoenixGuard/BootX64.efi | awk '{print $1}')
-BUILD_UUID=${BUILD_UUID:-${SIGNED_HASH:0:8}-${SIGNED_HASH:8:4}-${SIGNED_HASH:12:4}-${SIGNED_HASH:16:4}-${SIGNED_HASH:20:12}}
+if [ -n "$BUILD_UUID_OVERRIDE" ]; then
+  BUILD_UUID="$BUILD_UUID_OVERRIDE"
+else
+  BUILD_UUID="${SIGNED_HASH:0:8}-${SIGNED_HASH:8:4}-${SIGNED_HASH:12:4}-${SIGNED_HASH:16:4}-${SIGNED_HASH:20:12}"
+fi
 printf '%s\n' "$BUILD_UUID" > out/esp/BUILD_UUID
 sudo bash -c "echo '$BUILD_UUID' > out/esp/mount/EFI/PhoenixGuard/ESP_UUID.txt"
 
@@ -254,7 +319,7 @@ echo "  1️⃣  Test this ESP in QEMU:"
 echo "     ./pf.py test-qemu"
 echo ""
 echo "  2️⃣  Create bootable media with an ISO:"
-echo "     ISO_PATH=/path/to/your.iso ./pf.py build-package-esp"
+echo "     ./pf.py build-package-esp --iso /path/to/your.iso"
 echo "     OR use the turnkey script:"
 echo "     ./create-secureboot-bootable-media.sh --iso /path/to/your.iso"
 echo ""
@@ -272,4 +337,3 @@ echo "   • Keys explained: keys/README.md"
 echo "   • SecureBoot setup: SECUREBOOT_QUICKSTART.md"
 echo "   • Full docs: docs/SECURE_BOOT.md"
 echo ""
-

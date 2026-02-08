@@ -58,3 +58,6 @@ nohup*.out
 # Generated documentation files
 copilot-instructions.md
 WARP.md
+
+# Local config overrides
+phoenixboot.config.local.json5

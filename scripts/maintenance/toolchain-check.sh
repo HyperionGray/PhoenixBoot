@@ -2,6 +2,11 @@
 # Description: Checks for required tools and firmware for the build process.
 
 set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
 mkdir -p out/setup
 
 echo "Checking required toolchain..." > out/setup/report.txt
@@ -58,4 +63,3 @@ else
     echo "FAILED: Missing required tools" >> out/setup/report.txt
     exit 1
 fi
-

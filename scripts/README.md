@@ -4,40 +4,25 @@ This folder contains host-side helper scripts organized by category. They do not
 
 ## Directory Structure
 
-The scripts are organized into the following categories:
+The scripts are grouped by capability so it's easier to find the tool you need.
 
-### 📦 [build/](build/)
-Scripts for building PhoenixBoot artifacts and images.
-
-### 🧪 [testing/](testing/)
-Scripts for testing PhoenixBoot functionality using QEMU and other methods.
-
-### 🔑 [mok-management/](mok-management/)
-Scripts for managing Machine Owner Keys (MOK) and kernel module signing.
-
-### 💾 [esp-packaging/](esp-packaging/)
-Scripts for creating and managing EFI System Partition (ESP) images.
-
-### 🔐 [secure-boot/](secure-boot/)
-Scripts for managing SecureBoot keys and enrollment.
-
-### ✅ [validation/](validation/)
-Scripts for validating system security and detecting threats.
-
-### 🚑 [recovery/](recovery/)
-Scripts for system recovery and remediation.
-
-### 💿 [usb-tools/](usb-tools/)
-Scripts for creating and managing bootable USB media.
-
-### 🖥️ [qemu/](qemu/)
-Scripts for running QEMU virtual machines.
-
-### 🔧 [uefi-tools/](uefi-tools/)
-Scripts for UEFI operations and diagnostics.
-
-### 🛠️ [maintenance/](maintenance/)
-Scripts for project maintenance and development.
+| Directory | Purpose |
+| --- | --- |
+| `build/` | Build production artifacts and helper tooling. |
+| `testing/` | QEMU-based integration/secure-boot tests. |
+| `mok-management/` | Machine Owner Key (MOK) creation, enrollment, and signing helpers. |
+| `esp-packaging/` | EFI System Partition (ESP) sizing, packaging, and normalization. |
+| `secure-boot/` | SecureBoot key creation, enrollment, and instructions. |
+| `validation/` | Static and runtime validation (ESP, keys, bootkits). |
+| `recovery/` | Emergency recovery, reboot helpers, and NuclearBoot flows. |
+| `usb-tools/` | USB sanitization, preparation, and write helpers. |
+| `qemu/` | QEMU launch scripts for secure and UI flows. |
+| `uefi-tools/` | Direct UEFI tooling like UUEFI preparation and reports. |
+| `maintenance/` | Linting, formatting, cleanup, and structural helpers. |
+| `lib/`, `templates/` | Shared helper scripts and templated assets. |
+| `git-hooks/` | Repository Git hook helpers (linting, commit policies, pre-commit tooling). |
+| `release/` | Release packaging helpers used by `pf build-package-esp` and related flows. |
+| `out/` | Artifact staging area (ESP images, keys, docs, etc.). |
 
 ## Usage
 
@@ -57,3 +42,12 @@ bash ./scripts/testing/qemu-test.sh
 
 See individual category README files for detailed information about each script.
 
+## CLI & TUI launchers
+
+| Launcher | Purpose |
+| --- | --- |
+| `./pf.py` | Canonical task runner; pass `./pf.py task-name key=value` to run any script via the DSL. |
+| `./phoenixboot-tui.sh` | Launches the terminal UI for the most common tasks in a modern interface. |
+| `./phoenixboot-wizard.sh` | Guided three-stage workflow (secure-boot media, clean install, NuclearBoot recovery). |
+
+For CLI-heavy operations (batch builds, QEMU tests, MOK workflows) the `pf.py` task runner keeps arguments organized. When you need a more visual experience, the TUI mirrors the same tasks with buttons and output panels, and the wizard walks you through the full secure install + recovery flow.

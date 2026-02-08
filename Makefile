@@ -1,7 +1,7 @@
 # PhoenixBoot Makefile
 # Convenience commands for container-based development
 
-.PHONY: help build test installer runtime tui clean all
+.PHONY: help build test installer runtime tui clean all usb usb-run usb-enroll
 
 help: ## Show this help message
 	@echo "PhoenixBoot Container Management"
@@ -72,3 +72,16 @@ direct-test: ## Run tests directly (no container)
 
 direct-tui: ## Run TUI directly (no container)
 	./phoenixboot-tui.sh
+
+# --- USB helpers (DESTRUCTIVE) ---
+usb: ## Write ESP image to a USB device (DEVICE=/dev/sdX) (DESTRUCTIVE)
+	@ : $${DEVICE?Usage: make usb DEVICE=/dev/sdX [ARGS='--image ... --confirm']}
+	./phoenix-boot usb --device "$(DEVICE)" $(ARGS)
+
+usb-run: ## Build + prepare + sanitize USB (DEVICE=/dev/sdX) (DESTRUCTIVE)
+	@ : $${DEVICE?Usage: make usb-run DEVICE=/dev/sdX [ARGS='--iso-path ... --format vfat --confirm']}
+	./phoenix-boot usb-run --device "$(DEVICE)" $(ARGS)
+
+usb-enroll: ## Build enrollment media and copy to USB (DEVICE=/dev/sdX) (DESTRUCTIVE)
+	@ : $${DEVICE?Usage: make usb-enroll DEVICE=/dev/sdX [ARGS='--no-build --confirm']}
+	./phoenix-boot usb-enroll --device "$(DEVICE)" $(ARGS)

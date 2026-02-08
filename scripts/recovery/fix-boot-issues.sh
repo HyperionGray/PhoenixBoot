@@ -8,8 +8,8 @@
 set -euo pipefail
 
 # Get absolute path to PhoenixGuard root
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 cd "$PROJECT_ROOT"
 
 echo "☠ PhoenixGuard Boot Issue Fixer"
@@ -23,8 +23,8 @@ echo "   Cause: Including full Ubuntu ISO inside ESP"
 echo "   Fix: Creating minimal ESP without embedded ISOs"
 
 # Check current ESP size
-if [ -f "build/esp/esp.img" ]; then
-    CURRENT_SIZE=$(du -h build/esp/esp.img | cut -f1)
+if [ -f "out/esp/esp.img" ]; then
+    CURRENT_SIZE=$(du -h out/esp/esp.img | cut -f1)
     echo "   Current ESP size: $CURRENT_SIZE"
 fi
 
@@ -36,7 +36,9 @@ export ISO_PATH=""
 cat > scripts/esp-package-minimal.sh << 'ESPMIN'
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+cd "${SCRIPT_DIR}/.."
+# shellcheck disable=SC1091
 source scripts/lib/common.sh
 
 info "☠ Creating MINIMAL bootable ESP image (no ISOs)..."
@@ -47,7 +49,11 @@ ensure_dir out/esp
 unmount_if_mounted out/esp/mount
 detach_loops_for_image out/esp/esp.img
 
-[ -f out/staging/BootX64.efi ] || die "No BootX64.efi found - run 'just build' first"
+BOOT_SRC=""
+for cand in out/esp/BOOTX64.EFI out/staging/BootX64.efi staging/boot/NuclearBootEdk2.efi; do
+    [ -f "$cand" ] && BOOT_SRC="$cand" && break
+done
+[ -n "$BOOT_SRC" ] || die "No BOOTX64 source found - run './pf.py build-build' first"
 
 # FIXED: Use reasonable 128MB size for ESP (not 3.8GB!)
 ESP_MB=128
@@ -68,13 +74,11 @@ sudo mkdir -p out/esp/mount/EFI/PhoenixGuard
 sudo mkdir -p out/esp/mount/recovery
 
 # Copy main bootloader
-if [ -f out/staging/BootX64.efi ]; then
-    sudo cp out/staging/BootX64.efi out/esp/mount/EFI/BOOT/BOOTX64.EFI
-    sudo cp out/staging/BootX64.efi out/esp/mount/EFI/PhoenixGuard/BootX64.efi
-fi
+sudo cp "$BOOT_SRC" out/esp/mount/EFI/BOOT/BOOTX64.EFI
+sudo cp "$BOOT_SRC" out/esp/mount/EFI/PhoenixGuard/BootX64.efi
 
 # Copy KeyEnroll if available
-[ -f out/staging/KeyEnrollEdk2.efi ] && sudo cp out/staging/KeyEnrollEdk2.efi out/esp/mount/EFI/BOOT/
+[ -f staging/boot/KeyEnrollEdk2.efi ] && sudo cp staging/boot/KeyEnrollEdk2.efi out/esp/mount/EFI/BOOT/
 
 # Copy recovery kernel/initrd if available (but NOT ISOs)
 if [ -f out/recovery/vmlinuz ]; then
@@ -226,49 +230,105 @@ echo "   Fix: Creating user-friendly commands"
 # Main user entry point
 cat > phoenix-boot << 'USERBOOT'
 #!/usr/bin/env bash
-# PhoenixGuard Boot - User-friendly launcher
-# Run this from ANYWHERE - it handles paths correctly
+# PhoenixBoot - user-friendly launcher
+# Run this from ANYWHERE (it resolves the repo root)
 
-# Find the PhoenixGuard directory
-if [ -f "Justfile" ] && [ -d "scripts" ]; then
-    PHOENIX_ROOT="$(pwd)"
-elif [ -f "$HOME/Projects/edk2-bootkit-defense/PhoenixGuard/Justfile" ]; then
-    PHOENIX_ROOT="$HOME/Projects/edk2-bootkit-defense/PhoenixGuard"
+set -euo pipefail
+
+resolve_self_dir() {
+    local src="${BASH_SOURCE[0]}"
+    if command -v readlink >/dev/null 2>&1; then
+        src="$(readlink -f "$src" 2>/dev/null || echo "$src")"
+    fi
+    cd -- "$(dirname -- "$src")" && pwd -P
+}
+
+is_repo_root() {
+    local d="$1"
+    [ -d "$d/scripts" ] && [ -f "$d/pf.py" ] && ( [ -f "$d/Pfyfile.pf" ] || [ -f "$d/Makefile" ] )
+}
+
+find_repo_root_up() {
+    local dir="$1"
+    dir="$(cd -- "$dir" && pwd -P)"
+    while true; do
+        if is_repo_root "$dir"; then
+            printf '%s\n' "$dir"
+            return 0
+        fi
+        local parent
+        parent="$(cd -- "$dir/.." && pwd -P)"
+        if [ "$parent" = "$dir" ]; then
+            return 1
+        fi
+        dir="$parent"
+    done
+}
+
+usage() {
+    cat <<'USAGE'
+Usage: phoenix-boot <command>
+
+Commands:
+  build   Build production artifacts
+  test    Run main QEMU boot test
+  usb     Write ESP image to a USB device (DESTRUCTIVE)
+  fix     Run recovery/fix script
+  status  Show quick status
+  help    Show this help
+USAGE
+}
+
+# Resolve PhoenixBoot repo root:
+#  1) explicit PHOENIX_ROOT
+#  2) search up from CWD
+#  3) search up from this script's directory
+if [ -n "${PHOENIX_ROOT:-}" ]; then
+    PHOENIX_ROOT="$(cd -- "$PHOENIX_ROOT" && pwd -P)"
 else
-    echo "☠ Cannot find PhoenixGuard installation!"
-    echo "Please run from PhoenixGuard directory or set PHOENIX_ROOT"
+    PHOENIX_ROOT="$(find_repo_root_up "$(pwd -P)" 2>/dev/null || true)"
+    if [ -z "${PHOENIX_ROOT}" ]; then
+        PHOENIX_ROOT="$(find_repo_root_up "$(resolve_self_dir)" 2>/dev/null || true)"
+    fi
+fi
+
+if [ -z "${PHOENIX_ROOT}" ] || ! is_repo_root "${PHOENIX_ROOT}"; then
+    echo "❌ Cannot find PhoenixBoot repo root." >&2
+    echo "Set PHOENIX_ROOT to your PhoenixBoot checkout." >&2
     exit 1
 fi
 
 cd "$PHOENIX_ROOT"
-echo "☠ PhoenixGuard Boot System"
+echo "🔥 PhoenixBoot"
 echo "Working from: $PHOENIX_ROOT"
 echo ""
 
 case "${1:-help}" in
+    help|-h|--help)
+        usage
+        ;;
+
     build)
         echo "☠ Building boot system..."
-        just build
+        ./pf.py build-build
         ;;
     
     usb)
         if [ -z "$2" ]; then
             echo "Usage: $0 usb /dev/sdX"
             echo "Available devices:"
-            lsblk -d -o NAME,SIZE,MODEL | grep -E "^sd|^nvme"
+            lsblk -d -o NAME,SIZE,MODEL | grep -E "^(sd|nvme)" || true
             exit 1
         fi
         echo "☠ Writing to USB: $2"
         echo "☠  This will ERASE $2! Press Ctrl+C to cancel, Enter to continue"
-        read
-        sudo dd if=build/esp/esp.img of="$2" bs=4M status=progress
-        sync
-        echo "☠ USB ready!"
+        read -r
+        bash scripts/usb-tools/usb-write-dd.sh --device "$2" --confirm
         ;;
     
     test)
         echo "☠ Testing in QEMU..."
-        just test-qemu
+        ./pf.py test-qemu
         ;;
     
     fix)
@@ -279,25 +339,25 @@ case "${1:-help}" in
     status)
         echo "☠ System Status:"
         echo -n "  ESP Image: "
-        if [ -f "build/esp/esp.img" ]; then
-            du -h build/esp/esp.img | cut -f1
+        if [ -f "out/esp/esp.img" ]; then
+            du -h out/esp/esp.img | cut -f1
+        elif [ -f "out/esp/secureboot-bootable.img" ]; then
+            du -h out/esp/secureboot-bootable.img | cut -f1
         else
             echo "Not built"
         fi
         echo -n "  Boot EFI: "
-        [ -f "out/staging/BootX64.efi" ] && echo "Ready" || echo "Not built"
+        if [ -f "staging/boot/NuclearBootEdk2.efi" ] && [ -f "staging/boot/UUEFI.efi" ] && [ -f "staging/boot/KeyEnrollEdk2.efi" ]; then
+            echo "Ready"
+        else
+            echo "Missing (run: $0 build)"
+        fi
         echo -n "  Keys: "
         [ -f "keys/PK.crt" ] && echo "Generated" || echo "Not generated"
         ;;
     
     *)
-        echo "Usage: $0 {build|usb|test|fix|status}"
-        echo ""
-        echo "  build  - Build the boot system"
-        echo "  usb    - Write to USB device"
-        echo "  test   - Test in QEMU"
-        echo "  fix    - Fix all known issues"
-        echo "  status - Show system status"
+        usage
         ;;
 esac
 USERBOOT
@@ -317,11 +377,11 @@ set -euo pipefail
 # Use minimal ESP, not the bloated one
 ESP_IMG="${1:-out/esp/esp.img}"
 
-if [ ! -f "$ESP_IMG" ]; then
-    echo "☠ ESP image not found: $ESP_IMG"
-    echo "Run: just build package-esp"
-    exit 1
-fi
+	if [ ! -f "$ESP_IMG" ]; then
+	    echo "☠ ESP image not found: $ESP_IMG"
+	    echo "Run: ./pf.py build-build build-package-esp"
+	    exit 1
+	fi
 
 # Find OVMF
 OVMF_CODE=""
@@ -366,12 +426,12 @@ echo ""
 echo "☠ Applying fixes..."
 
 # Clean up old bloated images
-if [ -f "build/esp/esp.img" ]; then
-    SIZE_MB=$(du -m build/esp/esp.img | cut -f1)
+if [ -f "out/esp/esp.img" ]; then
+    SIZE_MB=$(du -m out/esp/esp.img | cut -f1)
     if [ "$SIZE_MB" -gt 500 ]; then
         echo "  Removing bloated ESP image (${SIZE_MB}MB)"
-        rm -f build/esp/esp.img
-        rm -f build/esp/esp.img.sha256
+        rm -f out/esp/esp.img
+        rm -f out/esp/esp.img.sha256
     fi
 fi
 
@@ -386,9 +446,9 @@ cat > .phoenix.env << 'ENVFILE'
 # Source this file or it will be auto-loaded by scripts
 
 # Paths (automatically determined, don't change)
-export PHOENIX_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export PHOENIX_BUILD="$PHOENIX_ROOT/build"
+export PHOENIX_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 export PHOENIX_OUT="$PHOENIX_ROOT/out"
+export PHOENIX_BUILD="$PHOENIX_OUT"
 
 # Build configuration
 export ESP_MB=128               # Reasonable ESP size (not 3.8GB!)

@@ -4,13 +4,16 @@
 
 set -euo pipefail
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$ROOT_DIR"
+
 echo "🔥 PhoenixBoot End-to-End Test Suite"
 echo "====================================="
 echo ""
 
 # Check for required commands
 MISSING_DEPS=()
-for cmd in qemu-system-x86_64 ovmf mtools genisoimage; do
+for cmd in qemu-system-x86_64 genisoimage mcopy mkfs.fat sbsign cert-to-efi-sig-list sign-efi-sig-list; do
     if ! command -v $cmd &> /dev/null; then
         MISSING_DEPS+=($cmd)
     fi
@@ -20,9 +23,13 @@ if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
     echo "❌ Missing dependencies: ${MISSING_DEPS[*]}"
     echo ""
     echo "Install with:"
-    echo "  sudo apt-get install qemu-system-x86 ovmf mtools genisoimage"
+    echo "  sudo apt-get install qemu-system-x86 ovmf mtools genisoimage dosfstools sbsigntool util-linux"
     exit 1
 fi
+
+# Ensure toolchain is present and OVMF paths are discovered
+echo "🔎 Checking toolchain..."
+./pf.py build-setup
 
 # Track results
 TESTS_RUN=0
@@ -51,10 +58,19 @@ run_test() {
     fi
 }
 
+# Ensure SecureBoot key material exists (needed for ESP packaging + secure tests)
+echo ""
+echo "🔐 Ensuring SecureBoot key material..."
+if [ ! -f keys/PK.key ] || [ ! -f keys/KEK.key ] || [ ! -f keys/db.key ]; then
+    ./pf.py secure-keygen
+fi
+if [ ! -f out/securevars/PK.auth ] || [ ! -f out/securevars/KEK.auth ] || [ ! -f out/securevars/db.auth ]; then
+    ./pf.py secure-make-auth
+fi
+
 # Ensure artifacts are built
 echo "📦 Building artifacts..."
 if [ ! -f out/esp/esp.img ]; then
-    ./pf.py build-setup
     ./pf.py build-build
     ./pf.py build-package-esp
 fi
@@ -68,12 +84,11 @@ run_test "UUEFI Diagnostic Tool" "./pf.py test-qemu-uuefi"
 # Test 3: Cloud-Init
 run_test "Cloud-Init Integration" "./pf.py test-qemu-cloudinit"
 
-# Test 4: SecureBoot (requires key generation)
+# Test 4: SecureBoot
 echo ""
-echo "🔐 Setting up SecureBoot keys..."
-if [ ! -d out/keys/PK ]; then
-    ./pf.py secure-keygen
-    ./pf.py secure-make-auth
+echo "🔐 Setting up SecureBoot enrollment media..."
+if [ ! -f out/esp/enroll-esp.img ]; then
+    ./pf.py secure-package-esp-enroll
 fi
 
 # Enroll keys
@@ -105,7 +120,7 @@ if ./pf.py test-qemu-secure-negative-attest 2>&1 | tee /tmp/neg-test.log; then
     FAILED_TESTS+=("Corruption Detection")
 else
     # Test failed as expected, check if it was for the right reason
-    if grep -q "PG-ATTEST=FAIL" out/qemu/serial-negative-attest.log; then
+    if grep -q "PG-ATTEST=FAIL" out/qemu/serial-secure-neg-attest.log; then
         echo "✅ PASSED: Corruption Detection (correctly detected hash mismatch)"
         TESTS_PASSED=$((TESTS_PASSED + 1))
     else

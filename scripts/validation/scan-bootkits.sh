@@ -1,16 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # scan-bootkits.sh - Hunt for bootkit infections using firmware baseline analysis
 # This performs comprehensive bootkit detection against clean firmware baseline
 
 set -euo pipefail
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+cd "${SCRIPT_DIR}/../.."
+# shellcheck disable=SC1091
+source scripts/lib/common.sh
 
-# Prefer central venv when available
-if [ -x "/home/punk/.venv/bin/python3" ]; then
-  PY="/home/punk/.venv/bin/python3"
-else
-  PY="python3"
-fi
+PY="$(resolve_python)" || die "No usable Python found (tried VENV_PY/VENV_BIN, ./venv/.venv, python3/python)"
 
 echo "☠ PhoenixGuard Bootkit Detection Engine"
 echo "Hunting for firmware-level malware..."

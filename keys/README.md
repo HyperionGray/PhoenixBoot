@@ -46,11 +46,12 @@ SecureBoot uses a hierarchical trust model with three key types:
 # 2. Create enrollment files
 ./pf.py secure-make-auth
 
-# 3. Create bootable media with your ISO
-ISO_PATH=/path/to/ubuntu.iso ./pf.py secureboot-create
+# 3. Create (or write) an OS installer USB
+./pf.py secureboot-create iso_path=/path/to/ubuntu.iso
+./pf.py secureboot-create iso_path=/path/to/ubuntu.iso usb_device=/dev/sdX  # DESTRUCTIVE (secureboot-create-usb alias)
 
-# 4. Boot from media and enroll keys
-#    Select "Enroll PhoenixGuard SecureBoot Keys" from GRUB menu
+# 4. Enroll keys (advanced / optional)
+#    See: docs/SECUREBOOT_ENABLEMENT_KEXEC.md (or enroll via firmware UI using out/securevars/*.auth)
 ```
 
 ### 🔧 Signing a Custom Bootloader
@@ -65,11 +66,14 @@ sbsign --key keys/db.key --cert keys/db.crt \
 
 ### 📦 Creating a SecureBoot Bootable USB
 ```bash
-# This uses db keys automatically to sign all EFI files
-ISO_PATH=/path/to/your.iso ./pf.py secureboot-create
+# Create a ready-to-write installer image in out/esp/
+./pf.py secureboot-create iso_path=/path/to/your.iso
 
-# Or use the standalone script:
-./create-secureboot-bootable-media.sh --iso /path/to/your.iso
+# Or write directly (DESTRUCTIVE)
+./pf.py secureboot-create iso_path=/path/to/your.iso usb_device=/dev/sdX  # (same as secureboot-create-usb)
+
+# Or use the standalone script directly:
+./create-secureboot-bootable-media.sh --iso /path/to/your.iso --usb-device /dev/sdX
 ```
 
 ## 🚨 Security Best Practices
@@ -111,10 +115,8 @@ ISO_PATH=/path/to/your.iso ./pf.py secureboot-create
 
 ### "Which shim do I need to enroll?"
 If you're loading an OS from an ISO with SecureBoot:
-- **Option 1** (Easiest): Use Microsoft-signed shim - works immediately, no enrollment needed
-- **Option 2** (More secure): Sign your own shim with `db.key` + `db.crt`, then enroll these PhoenixGuard keys
-
-When PhoenixBoot creates bootable media, it includes BOTH options!
+- **Option 1** (Easiest): Use the distro installer as-is (most mainstream installers are already SecureBoot-signed)
+- **Option 2** (More secure): Enroll your own PK/KEK/db and sign the boot chain with `keys/db.key` + `keys/db.crt`
 
 ### "I have multiple directories with keys - which one?"
 PhoenixBoot organizes keys by purpose:

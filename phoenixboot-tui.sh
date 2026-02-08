@@ -2,14 +2,15 @@
 # PhoenixBoot TUI Launcher
 # Launch the interactive Terminal User Interface
 
-set -e
+set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TUI_APP="${SCRIPT_DIR}/containers/tui/app/phoenixboot_tui.py"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+cd "$SCRIPT_DIR"
+TUI_APP="containers/tui/app/phoenixboot_tui.py"
 
-# Check if running from PhoenixBoot root
+# Ensure we're running from the PhoenixBoot repo root regardless of caller CWD
 if [ ! -f "pf.py" ]; then
-    echo "Error: Must run from PhoenixBoot root directory"
+    echo "Error: pf.py not found at repo root: $SCRIPT_DIR"
     exit 1
 fi
 
@@ -22,9 +23,9 @@ fi
 # Check for textual library
 if ! python3 -c "import textual" 2>/dev/null; then
     echo "Installing TUI dependencies..."
-    pip install --user textual rich pyyaml || {
+    python3 -m pip install --user textual rich pyyaml || {
         echo "Error: Failed to install dependencies"
-        echo "Try: pip install textual rich pyyaml"
+        echo "Try: python3 -m pip install textual rich pyyaml"
         exit 1
     }
 fi

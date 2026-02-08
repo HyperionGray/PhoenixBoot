@@ -53,4 +53,4 @@ RUN python3 -m venv /home/phoenixinstall/.venv
 ENV PATH="/home/phoenixinstall/.venv/bin:$PATH"
 
 # Default command packages ESP
-CMD ["bash", "scripts/esp-package.sh"]
+CMD ["bash", "scripts/esp-packaging/esp-package.sh"]

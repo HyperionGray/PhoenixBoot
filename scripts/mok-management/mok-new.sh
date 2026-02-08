@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+cd "${SCRIPT_DIR}/../.."
 
 # Generate a new PhoenixGuard Module Owner Key (PGMOK)
 # Usage: mok-new.sh [NAME] [CN]
@@ -112,7 +113,7 @@ echo "     During boot, you'll see the MOK Manager - enter the password to enrol
 echo ""
 echo "  3️⃣  Sign kernel modules with this MOK:"
 echo "     ./sign-kernel-modules.sh /path/to/module.ko"
-echo "     OR: PATH=/lib/modules/\$(uname -r)/kernel/drivers/... ./pf.py os-kmod-sign"
+echo "     OR: MODULE_PATH=/lib/modules/\$(uname -r)/kernel/drivers/... ./pf.py os-kmod-sign"
 echo ""
 echo "💡 EXAMPLE: Sign the APFS driver (common use case):"
 echo "     ./sign-kernel-modules.sh /lib/modules/\$(uname -r)/kernel/fs/apfs/apfs.ko"

@@ -4,6 +4,10 @@ set -euo pipefail
 # QEMU GUI run using the packaged ESP
 # Exits with error if ESP or OVMF paths are missing
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
 mkdir -p out/qemu
 
 if [ ! -f out/esp/esp.img ]; then
@@ -46,4 +50,3 @@ exec qemu-system-x86_64 \
   -drive format=raw,file=out/esp/esp.img \
   -display gtk,gl=on \
   -serial stdio
-

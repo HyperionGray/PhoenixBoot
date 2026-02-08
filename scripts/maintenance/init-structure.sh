@@ -3,6 +3,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
 # Create staging directories
 mkdir -p staging/{src,include,boot,drivers,platform,tests,tools}
 
@@ -24,4 +28,3 @@ for dir in staging/{src,include,boot,drivers,platform,tests,tools} dev/{boot,bri
 done
 
 echo "☠ Production directory structure created"
-

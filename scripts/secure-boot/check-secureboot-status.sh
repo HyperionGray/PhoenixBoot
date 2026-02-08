@@ -4,6 +4,11 @@
 
 set -euo pipefail
 
+# Determine key project paths so commands work regardless of current directory
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+PF_PY="$PROJECT_ROOT/pf.py"
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -309,8 +314,12 @@ main() {
     fi
     
     # Check flashrom
-    check_flashrom_available
-    
+    if check_flashrom_available; then
+        FLASHROM_AVAILABLE=1
+    else
+        FLASHROM_AVAILABLE=0
+    fi
+
     # Provide recommendations
     provide_recommendations
     

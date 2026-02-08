@@ -1,7 +1,70 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# one-off script before we move to repo root
 cd "$(dirname "$0")/.."
 source scripts/lib/common.sh
+
+usage() {
+  cat <<EOF
+Usage: esp-package-nosudo.sh [OPTIONS]
+
+Options:
+  --size MB            Base ESP size in MiB (default: 64)
+  --overhead MB        Extra space for ISO inclusion (default: 512)
+  --iso PATH           Optional ISO to copy into the ESP image
+  --iso-extra-args ARG Additional GRUB arguments for the ISO entry
+  --uuid UUID          Override the BUILD_UUID written into the image
+  -h, --help           Show this help message
+EOF
+  exit 0
+}
+
+ESP_SIZE_MB=64
+ESP_OVERHEAD_MB=512
+ISO_PATH=""
+ISO_EXTRA_ARGS=""
+BUILD_UUID_OVERRIDE=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --size)
+      opt="$1"; shift
+      [ $# -gt 0 ] || die "Missing value for $opt"
+      ESP_SIZE_MB="$1"
+      shift
+      ;;
+    --overhead)
+      opt="$1"; shift
+      [ $# -gt 0 ] || die "Missing value for $opt"
+      ESP_OVERHEAD_MB="$1"
+      shift
+      ;;
+    --iso)
+      opt="$1"; shift
+      [ $# -gt 0 ] || die "Missing value for $opt"
+      ISO_PATH="$1"
+      shift
+      ;;
+    --iso-extra-args)
+      opt="$1"; shift
+      [ $# -gt 0 ] || die "Missing value for $opt"
+      ISO_EXTRA_ARGS="$1"
+      shift
+      ;;
+    --uuid)
+      opt="$1"; shift
+      [ $# -gt 0 ] || die "Missing value for $opt"
+      BUILD_UUID_OVERRIDE="$1"
+      shift
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      die "Unknown option: $1"
+      ;;
+  esac
+done
 
 info "☠ Creating bootable ESP image (no sudo, mtools)"
 [ -f out/staging/BootX64.efi ] || die "No BootX64.efi found - run 'just build' first"
@@ -9,14 +72,14 @@ require_cmd sbsign
 
 ensure_dir out/esp
 
-ESP_MB=${ESP_MB:-64}
-if [ -n "${ISO_PATH:-}" ] && [ -f "${ISO_PATH}" ]; then
+ESP_MB="$ESP_SIZE_MB"
+if [ -n "$ISO_PATH" ]; then
+  [ -f "$ISO_PATH" ] || die "ISO file not found: $ISO_PATH"
   ISO_BYTES=$(stat -c%s "${ISO_PATH}" 2>/dev/null || stat -f%z "${ISO_PATH}" 2>/dev/null || echo 0)
   ISO_MB=$(( (ISO_BYTES + 1048575) / 1048576 ))
   [ "$ISO_MB" -lt 64 ] && ISO_MB=64
-  OVERHEAD_MB=${OVERHEAD_MB:-512}
-  ESP_MB=$(( ISO_MB + OVERHEAD_MB ))
-  info "Sizing ESP to ${ESP_MB} MiB for ISO inclusion (${ISO_MB} MiB ISO + ${OVERHEAD_MB} MiB overhead)"
+  ESP_MB=$(( ISO_MB + ESP_OVERHEAD_MB ))
+  info "Sizing ESP to ${ESP_MB} MiB for ISO inclusion (${ISO_MB} MiB ISO + ${ESP_OVERHEAD_MB} MiB overhead)"
 fi
 
 rm -f out/esp/esp.img
@@ -86,12 +149,12 @@ for mod in part_gpt fat iso9660 loopback normal linux efi_gop efi_uga search reg
 done
 
 # Optional ISO
-ISO_BASENAME=""; ISO_EXTRA_ARGS="${ISO_EXTRA_ARGS:-}"
-if [ -n "${ISO_PATH:-}" ] && [ -f "${ISO_PATH}" ]; then
-  ISO_BASENAME=$(basename "${ISO_PATH}")
+ISO_BASENAME=""
+if [ -n "$ISO_PATH" ] && [ -f "$ISO_PATH" ]; then
+  ISO_BASENAME=$(basename "$ISO_PATH")
   ok "Including ISO: ${ISO_PATH}"
   mmd -i out/esp/esp.img ::/ISO || true
-  mcopy -i out/esp/esp.img -o "${ISO_PATH}" ::/ISO/"${ISO_BASENAME}"
+  mcopy -i out/esp/esp.img -o "$ISO_PATH" ::/ISO/"${ISO_BASENAME}"
 fi
 
 # UUID and sidecar from signed binary (hash local signed file again)
@@ -99,7 +162,11 @@ SIGNED_TMP2=$(mktemp)
 sbsign --key keys/db.key --cert keys/db.crt \
   --output "$SIGNED_TMP2" out/staging/BootX64.efi
 SIGNED_HASH=$(sha256sum "$SIGNED_TMP2" | awk '{print $1}')
-BUILD_UUID=${BUILD_UUID:-${SIGNED_HASH:0:8}-${SIGNED_HASH:8:4}-${SIGNED_HASH:12:4}-${SIGNED_HASH:16:4}-${SIGNED_HASH:20:12}}
+if [ -n "$BUILD_UUID_OVERRIDE" ]; then
+  BUILD_UUID="$BUILD_UUID_OVERRIDE"
+else
+  BUILD_UUID="${SIGNED_HASH:0:8}-${SIGNED_HASH:8:4}-${SIGNED_HASH:12:4}-${SIGNED_HASH:16:4}-${SIGNED_HASH:20:12}"
+fi
 printf '%s\n' "$BUILD_UUID" > out/esp/BUILD_UUID
 # Write attestation sidecar into ESP using mtools
 SIDE_TMP=$(mktemp)

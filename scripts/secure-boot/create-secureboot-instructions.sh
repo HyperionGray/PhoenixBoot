@@ -3,7 +3,51 @@
 
 set -euo pipefail
 
-DOCS_DIR="${DOCS_DIR:-out/artifacts/docs}"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
+DOCS_DIR_DEFAULT="out/artifacts/docs"
+DOCS_DIR="$DOCS_DIR_DEFAULT"
+
+usage() {
+  cat <<EOF
+Usage: $0 [--docs-dir DIR]
+
+Options:
+  --docs-dir DIR   override where instructions and checksums are written (default: $DOCS_DIR_DEFAULT)
+  -h, --help       show this message
+EOF
+}
+
+die() {
+  echo "☠ $*" >&2
+  exit 1
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --docs-dir)
+      if [ $# -lt 2 ]; then
+        die "--docs-dir requires a directory argument"
+      fi
+      DOCS_DIR="${2:-}"
+      shift 2
+      ;;
+    --docs-dir=*)
+      DOCS_DIR="${1#*=}"
+      shift
+      ;;
+    *)
+      die "Unknown argument: $1"
+      ;;
+  esac
+done
+
 mkdir -p "$DOCS_DIR"
 
 cat > "$DOCS_DIR/README_CD.txt" << 'EOF'
@@ -40,12 +84,23 @@ cat > "$DOCS_DIR/CHECKSUMS.txt" << 'EOF'
 EOF
 
 # Calculate checksums if files exist
-if [ -f out/artifacts/esp/esp.img ]; then
-    echo "Calculating checksums..."
+ESP_SEARCH_DIRS=(out/artifacts/esp out/esp)
+ESP_SOURCE_DIR=""
+for cand in "${ESP_SEARCH_DIRS[@]}"; do
+    if [ -f "$cand/esp.img" ]; then
+        ESP_SOURCE_DIR="$cand"
+        break
+    fi
+done
+
+if [ -n "$ESP_SOURCE_DIR" ]; then
+    echo "Calculating checksums from $ESP_SOURCE_DIR..."
     (
-        cd out/artifacts/esp || exit 1
+        cd "$ESP_SOURCE_DIR" || exit 1
         sha256sum esp.img *.efi 2>/dev/null || true
     ) >> "$DOCS_DIR/CHECKSUMS.txt"
+else
+    echo "WARNING: No ESP artifacts found in ${ESP_SEARCH_DIRS[*]} for checksum generation" >> "$DOCS_DIR/CHECKSUMS.txt"
 fi
 
 echo "✅ Secure boot instructions created in $DOCS_DIR"

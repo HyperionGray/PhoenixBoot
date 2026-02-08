@@ -2,27 +2,80 @@
 # Description: Runs a positive Secure Boot test in QEMU.
 
 set -euo pipefail
+
+die() {
+    echo "$*" >&2
+    exit 1
+}
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
+usage() {
+    cat <<'USAGE'
+Usage: qemu-test-secure-positive.sh [--timeout SECONDS] [--no-kvm]
+
+Options:
+  --timeout SECONDS  Timeout to wait for the boot (default: 60)
+  --no-kvm           Disable /dev/kvm acceleration even if available
+  -h, --help         Show this message
+USAGE
+    exit 0
+}
+
+QEMU_TIMEOUT=60
+DISABLE_KVM=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --timeout)
+      [ $# -gt 1 ] || die "--timeout requires an argument"
+      QEMU_TIMEOUT="$2"
+      shift 2
+      ;;
+    --timeout=*)
+      QEMU_TIMEOUT="${1#*=}"
+      shift
+      ;;
+    --no-kvm)
+      DISABLE_KVM=1
+      shift
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      die "Unknown option: $1"
+      ;;
+  esac
+done
+
 mkdir -p out/qemu
 
 if [ ! -f out/esp/esp.img ]; then
-echo "☠ No ESP image found - run './pf.py build-package-esp' first"
+    echo "☠ No ESP image found - run './pf.py build-package-esp' first"
     exit 1
 fi
 if [ ! -f out/qemu/OVMF_VARS_custom.fd ]; then
-echo "☠ Missing enrolled OVMF VARS (out/qemu/OVMF_VARS_custom.fd). Run './pf.py secure-enroll-secureboot' first."
+    echo "☠ Missing enrolled OVMF VARS (out/qemu/OVMF_VARS_custom.fd). Run './pf.py secure-enroll-secureboot' first."
     exit 1
 fi
-[ -f out/setup/ovmf_code_path ] || { echo "☠ Missing OVMF discovery; run './pf.py build-setup'"; exit 1; }
+if [ ! -f out/setup/ovmf_code_path ]; then
+    echo "☠ Missing OVMF discovery; run './pf.py build-setup'"
+    exit 1
+fi
 OVMF_CODE_PATH=$(cat out/setup/ovmf_code_path)
 
-echo "Using OVMF (secure): $OVMF_CODE_PATH"
+QEMU_ACCEL_ARGS=()
+if [ "$DISABLE_KVM" -eq 0 ] && [ -c /dev/kvm ] && [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+    QEMU_ACCEL_ARGS=(-enable-kvm -cpu host)
+else
+    echo "ℹ☠  /dev/kvm not available; running without KVM acceleration"
+fi
 
-# Launch QEMU with secure OVMF and capture serial output
-QT=${PG_QEMU_TIMEOUT:-60}
-timeout ${QT}s qemu-system-x86_64 \
+timeout ${QEMU_TIMEOUT}s qemu-system-x86_64 \
     -machine q35 \
-    -cpu host \
-    -enable-kvm \
+    "${QEMU_ACCEL_ARGS[@]}" \
     -m 2G \
     -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE_PATH" \
     -drive if=pflash,format=raw,file=out/qemu/OVMF_VARS_custom.fd \
@@ -31,7 +84,6 @@ timeout ${QT}s qemu-system-x86_64 \
     -display none \
     -no-reboot || true
 
-# Success determination: presence of PhoenixGuard marker
 if grep -q "PhoenixGuard" out/qemu/serial-secure-positive.log; then
     TEST_RESULT="PASS"
     echo "☠ Secure boot positive test PASSED"
@@ -40,7 +92,6 @@ else
     echo "☠ Secure boot positive test FAILED"
 fi
 
-# JUnit report
 {
     echo '<?xml version="1.0" encoding="UTF-8"?>';
     echo '<testsuite name="PhoenixGuard Secure Boot Test" tests="1" failures="'$([[ $TEST_RESULT == "FAIL" ]] && echo "1" || echo "0")'" time="60">';
@@ -51,4 +102,3 @@ fi
 } > out/qemu/report-secure.xml
 
 [ "$TEST_RESULT" == "PASS" ] || exit 1
-

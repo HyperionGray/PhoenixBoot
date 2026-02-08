@@ -3,11 +3,47 @@
 ## Overview
 PhoenixBoot uses `.pf` task files for automation and workflow management. The task system is based on a custom DSL defined in `pf.lark` and executed via `pf.py`.
 
+## Start Here: Workflows (do a full thing)
+
+Most tasks are small building blocks. If you just want the "one command" version, start with these composite/workflow tasks:
+
+```bash
+# Build + package + robust verify
+./pf.py setup
+
+# Full end-to-end QEMU suite (builds what it needs)
+./pf.py test-e2e-all
+
+# Turnkey SecureBoot bootable media from an OS ISO
+# (optional) set defaults in phoenixboot.config.local.json5, but prefer passing task arguments
+./pf.py secureboot-create iso_path=/path/to/installer.iso
+./pf.py secureboot-create iso_path=/path/to/installer.iso usb_device=/dev/sdX  # DESTRUCTIVE (secureboot-create-usb alias)
+
+# ESP/CD artifact bundle + instructions (for offline/immutable media workflows)
+./pf.py workflow-complete-esp-cd
+
+# UUEFI smoke test in QEMU (includes diagnostics + log pointers)
+./pf.py workflow-test-uuefi
+
+# MOK enrollment workflow (reboot required to finish)
+./pf.py mok-flow
+
+# Sign kernel modules after MOK enrollment
+./pf.py os-kmod-sign MODULE_PATH=/lib/modules/$(uname -r) FORCE=1
+
+# Host security audit (boot integrity, EFI vars, kernel hardening signals)
+./pf.py secure-env
+```
+
+**Tip:** Use `./pf.py list` when you need the piecemeal tasks (or want to compose your own workflow).
+
+One-page cheat sheet: `docs/QUICK_REFERENCE.md`.
+
 ## Task File Structure
 
 ### Core Files
 - **Pfyfile.pf** - Main entry point that includes all other task files
-- **core.pf** - Core functionality (46 tasks)
+- **core.pf** - Core functionality (49 tasks)
   - Build tasks (build-setup, build-build, build-package-esp, etc.)
   - Testing tasks (test-qemu, test-qemu-secure-*, etc.)
   - Secure Boot key management
@@ -29,7 +65,7 @@ PhoenixBoot uses `.pf` task files for automation and workflow management. The ta
   - USB writing
   - Recovery operations
 
-### Total: 77 Tasks across 5 files
+### Total: 80 Tasks across 5 files
 
 ## Task Categories
 
@@ -58,7 +94,9 @@ secure-keygen            - Generate Secure Boot keypairs (RSA-4096)
 secure-make-auth         - Create ESL and AUTH for PK/KEK/db
 secure-env               - Comprehensive security environment check
 secureboot-check         - Check Secure Boot status
+secureboot-prepare-kexec - Preflight check for double kexec enablement (no changes)
 secureboot-enable-kexec  - Enable Secure Boot via double kexec
+secureboot-enable-direct - Enroll keys via UEFI vars (no kexec; Setup Mode required)
 secure-enroll-secureboot - Auto-enroll custom SB keys in OVMF
 ```
 
@@ -143,8 +181,8 @@ workflow-recovery-reboot-vm - Reboot to VM/recovery environment
 
 ### SecureBoot Bootable Media
 ```
-secureboot-create        - Create turnkey SecureBoot bootable media from ISO
-secureboot-create-usb    - Create SecureBoot USB and write directly
+secureboot-create        - Create turnkey SecureBoot bootable media from ISO (optionally write directly via usb_device=...)
+secureboot-create-usb    - Alias for secureboot-create with usb_device=<dev> (DESTRUCTIVE)
 ```
 
 ### Key Management
@@ -174,10 +212,10 @@ secure-qemu-run-secure-ui - Launch QEMU GUI to enable Secure Boot
 ./pf.py task1 task2 task3
 ```
 
-### Pass environment variables
+### Pass task inputs (no exports needed)
 ```bash
-PROFILE=hardened ./pf.py kernel-profile-compare
-FIRMWARE_PATH=/path/to/firmware ./pf.py firmware-checksum-verify
+./pf.py kernel-profile-compare PROFILE=hardened
+./pf.py firmware-checksum-verify FIRMWARE_PATH=/path/to/firmware
 ```
 
 ## Task Dependencies
@@ -205,19 +243,25 @@ All 77 tasks have been validated:
 
 ## Common Patterns
 
-### Environment Variable Usage
-Many tasks accept environment variables for configuration:
+### Config / Task Inputs
+Most tasks accept inputs as environment variables, but you don't need to export them:
+
+- Put them in `phoenixboot.config.local.json5` (preferred). See `docs/CONFIG.md`.
+- Or pass them as `key=value` after the task name (one-off).
+
+Common keys:
 - `PYTHON` - Python interpreter (default: python3)
 - `PROFILE` - Kernel profile name (permissive/hardened/balanced)
 - `FIRMWARE_PATH` - Path to firmware file
 - `MODULE_PATH` - Path to kernel module file or directory for signing
 - `DER_PATH` - Path to DER/PKCS#12 bundle for extraction
-- `MOK_CERT_PEM`, `MOK_CERT_DER` - MOK certificate paths
+- `mok_cert_pem`, `mok_cert_der`, `mok_dry_run` - pf parameter names for the MOK enrollment workflow. The legacy env vars `MOK_CERT_PEM`, `MOK_CERT_DER`, `MOK_DRY_RUN` are still recognized when calling the scripts directly.
 - `VENDOR`, `MODEL`, `VERSION` - Firmware metadata
-- `USB_DEVICE` - USB device path for writing
-- `ISO_PATH` - ISO file path
+- `usb_device` (pf) - USB device path for writing (legacy `USB_DEVICE`/`USB1_DEV` env vars remain for scripts)
+- `iso_path` (pf) - ISO file path for SecureBoot bootable media (legacy `ISO_PATH` env exists only for shell helpers)
 - `DEEP_CLEAN` - Enable deep cleaning (1=yes)
 - `PG_FORCE_BUILD` - Force rebuild (1=yes)
+- `timeout`, `no_kvm` - Optional arguments for `secure-enroll-secureboot`; pass `timeout=SECONDS` to extend the QEMU timeout and `no_kvm=1` to disable KVM acceleration.
 
 ### Script Locations
 - Build scripts: `scripts/build/`

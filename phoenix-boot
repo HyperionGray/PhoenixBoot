@@ -1,75 +1,876 @@
 #!/usr/bin/env bash
-# PhoenixGuard Boot - User-friendly launcher
-# Run this from ANYWHERE - it handles paths correctly
+# PhoenixBoot - user-friendly launcher
+# Run this from ANYWHERE (it resolves the repo root)
 
-# Find the PhoenixGuard directory
-if [ -f "Justfile" ] && [ -d "scripts" ]; then
-    PHOENIX_ROOT="$(pwd)"
-elif [ -f "$HOME/Projects/edk2-bootkit-defense/PhoenixGuard/Justfile" ]; then
-    PHOENIX_ROOT="$HOME/Projects/edk2-bootkit-defense/PhoenixGuard"
-else
-    echo "❌ Cannot find PhoenixGuard installation!"
-    echo "Please run from PhoenixGuard directory or set PHOENIX_ROOT"
+set -euo pipefail
+
+script_name() {
+    basename -- "${0}"
+}
+
+die() {
+    echo "❌ $*" >&2
     exit 1
+}
+
+require_pf_runner() {
+    if [ ! -x "./pf.py" ]; then
+        die "Missing or non-executable ./pf.py. (If it's a symlink, ensure its target exists; e.g. restore pf_universal.)"
+    fi
+}
+
+resolve_self_dir() {
+    local src="${BASH_SOURCE[0]}"
+    if command -v readlink >/dev/null 2>&1; then
+        src="$(readlink -f "$src" 2>/dev/null || echo "$src")"
+    fi
+    cd -- "$(dirname -- "$src")" && pwd -P
+}
+
+is_repo_root() {
+    local d="$1"
+    [ -d "$d/scripts" ] && [ -f "$d/Pfyfile.pf" ]
+}
+
+find_repo_root_up() {
+    local dir="$1"
+    dir="$(cd -- "$dir" && pwd -P)"
+    if [[ "$dir" =~ ^/+$ ]]; then
+        dir="/"
+    fi
+    while true; do
+        if is_repo_root "$dir"; then
+            printf '%s\n' "$dir"
+            return 0
+        fi
+        local parent
+        parent="$(cd -- "$dir/.." && pwd -P)"
+        if [[ "$parent" =~ ^/+$ ]]; then
+            parent="/"
+        fi
+        if [ "$parent" = "$dir" ]; then
+            return 1
+        fi
+        dir="$parent"
+    done
+}
+
+usage() {
+    local name
+    name="$(script_name)"
+    cat <<USAGE
+Usage: ${name} [global options] <command> [command options]
+
+Global options:
+  --root <path>      PhoenixBoot repo root (default: auto-detect)
+  --no-banner        Suppress the PhoenixBoot banner
+  -h, --help         Show help
+
+Commands:
+  build   Build production artifacts
+  test    Run main QEMU boot test
+  usb     Write ESP image to a USB device (DESTRUCTIVE)
+  usb-run Build + prepare + sanitize a USB (DESTRUCTIVE)
+  usb-enroll Build enrollment media and copy to USB (DESTRUCTIVE)
+  fix     Run recovery/fix script
+  status  Show quick status
+  help    Show help for a command
+
+Run: ${name} help <command>
+USAGE
+}
+
+usage_build() {
+    local name
+    name="$(script_name)"
+    cat <<USAGE
+Usage: ${name} build
+
+Builds the production artifacts needed for testing/deploying.
+USAGE
+}
+
+usage_test() {
+    local name
+    name="$(script_name)"
+    cat <<USAGE
+Usage: ${name} test
+
+Runs the main QEMU boot test.
+USAGE
+}
+
+usage_fix() {
+    local name
+    name="$(script_name)"
+    cat <<USAGE
+Usage: ${name} fix
+
+Runs the recovery/fix script to address common boot issues.
+USAGE
+}
+
+usage_status() {
+    local name
+    name="$(script_name)"
+    cat <<USAGE
+Usage: ${name} status
+
+Shows a quick status summary (ESP image, artifacts, keys).
+USAGE
+}
+
+usage_usb() {
+    local name
+    name="$(script_name)"
+    cat <<USAGE
+Usage: ${name} usb <device> [options]
+   or: ${name} usb --device <device> [options]
+
+Options:
+  -d, --device <path>    Target block device to write (e.g. /dev/sdX)
+  -i, --image <path>     ESP image to flash (default: out/esp/esp.img)
+  -c, --confirm          Skip interactive prompt (non-interactive safe)
+  -y, --yes              Alias for --confirm
+      --force-root       Override the root-disk safety check
+  -h, --help             Show this help text
+
+Examples:
+  ${name} usb /dev/sdb
+  ${name} usb --device /dev/sdb --image out/esp/esp.img
+  ${name} usb --device /dev/sdb --confirm
+USAGE
+}
+
+usage_usb_run() {
+    local name
+    name="$(script_name)"
+    cat <<USAGE
+Usage: ${name} usb-run <device> [options]
+   or: ${name} usb-run --device <device> [options]
+
+Options:
+  -d, --device <path>     Target block device (e.g. /dev/sdX)
+      --esp-image <path>  ESP image to use when organizing (optional)
+      --iso-path <path>   ISO to copy to ISO/ on the USB (optional)
+      --format <type>     Format the first partition (e.g. vfat, fat32, ext4)
+      --skip-sanitize     Skip sanitize step
+      --no-sync           Skip final sync step during organization
+      --force-root        Override the root-disk safety check
+  -c, --confirm           Skip interactive prompt (non-interactive safe)
+  -y, --yes               Alias for --confirm
+  -h, --help              Show this help text
+
+Examples:
+  ${name} usb-run /dev/sdb
+  ${name} usb-run --device /dev/sdb --iso-path ubuntu.iso
+  ${name} usb-run --device /dev/sdb --format vfat --confirm
+USAGE
+}
+
+usage_usb_enroll() {
+    local name
+    name="$(script_name)"
+    cat <<USAGE
+Usage: ${name} usb-enroll <device> [options]
+   or: ${name} usb-enroll --device <device> [options]
+
+Creates enrollment media (out/esp/enroll-esp.img) and copies it onto the USB so
+KeyEnrollEdk2.efi can enroll PK/KEK/db .auth files into firmware.
+
+Options:
+  -d, --device <path>        Target block device (e.g. /dev/sdX)
+      --enroll-image <path>  Use an existing enrollment ESP image (optional)
+      --no-build             Do not build enrollment image (copy only)
+      --force-root           Override the root-disk safety check
+  -c, --confirm              Skip interactive prompt (non-interactive safe)
+  -y, --yes                  Alias for --confirm
+  -h, --help                 Show this help text
+
+Examples:
+  ${name} usb-enroll /dev/sdb
+  ${name} usb-enroll --device /dev/sdb --confirm
+  ${name} usb-enroll --device /dev/sdb --enroll-image out/esp/enroll-esp.img --no-build
+USAGE
+}
+
+list_block_devices() {
+    # Keep output short and copy/paste-friendly.
+    lsblk -d -o NAME,PATH,MODEL,SIZE,TRAN,RM,ROTA,TYPE \
+        | awk 'NR==1 || $8=="disk"' \
+        | sed -n '1,200p' \
+        || true
+}
+
+resolve_root_disk() {
+    local root_source
+    root_source="$(findmnt -no SOURCE / 2>/dev/null || true)"
+    [ -n "$root_source" ] || return 1
+    root_source="$(readlink -f "$root_source" 2>/dev/null || echo "$root_source")"
+    [ -b "$root_source" ] || return 1
+
+    local cur="$root_source"
+    while true; do
+        local pk
+        pk="$(lsblk -no PKNAME "$cur" 2>/dev/null | awk 'NR==1{print $1}')"
+        if [ -z "$pk" ]; then
+            printf '%s\n' "$cur"
+            return 0
+        fi
+        cur="/dev/${pk}"
+    done
+}
+
+guard_not_root_disk() {
+    local device="$1"
+    local force="${2:-0}"
+
+    if [ "$force" = "1" ]; then
+        echo "⚠️  --force-root supplied; overriding root-disk protection" >&2
+        return 0
+    fi
+
+    local root_disk=""
+    root_disk="$(resolve_root_disk 2>/dev/null || true)"
+    if [ -n "$root_disk" ]; then
+        case "$device" in
+            "$root_disk"|"${root_disk}"[0-9]*|"${root_disk}"p[0-9]*)
+                die "Refusing to operate on root disk ($root_disk). Pass --force-root to override."
+                ;;
+        esac
+    fi
+}
+
+cmd_help() {
+    local topic="${1:-}"
+    case "$topic" in
+        ""|help|-h|--help)
+            usage
+            ;;
+        build)
+            usage_build
+            ;;
+        test)
+            usage_test
+            ;;
+        usb)
+            usage_usb
+            ;;
+        usb-run)
+            usage_usb_run
+            ;;
+        usb-enroll)
+            usage_usb_enroll
+            ;;
+        fix)
+            usage_fix
+            ;;
+        status)
+            usage_status
+            ;;
+        *)
+            echo "Unknown command for help: $topic" >&2
+            usage
+            return 1
+            ;;
+    esac
+}
+
+cmd_usb() {
+    local device=""
+    local image=""
+    local confirmed=0
+    local force_root=0
+
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            -h|--help)
+                usage_usb
+                return 0
+                ;;
+            -d|--device)
+                [ "$#" -ge 2 ] || { usage_usb; return 1; }
+                device="$2"
+                shift
+                ;;
+            --device=*)
+                device="${1#*=}"
+                ;;
+            -i|--image)
+                [ "$#" -ge 2 ] || { usage_usb; return 1; }
+                image="$2"
+                shift
+                ;;
+            --image=*)
+                image="${1#*=}"
+                ;;
+            -c|--confirm|-y|--yes)
+                confirmed=1
+                ;;
+            --force-root)
+                force_root=1
+                ;;
+            --)
+                shift
+                break
+                ;;
+            -*)
+                echo "Unknown option: $1" >&2
+                usage_usb
+                return 1
+                ;;
+            *)
+                if [ -z "$device" ]; then
+                    device="$1"
+                else
+                    echo "Unexpected argument: $1" >&2
+                    usage_usb
+                    return 1
+                fi
+                ;;
+        esac
+        shift
+    done
+
+    while [ "$#" -gt 0 ]; do
+        if [ -z "$device" ]; then
+            device="$1"
+        else
+            echo "Unexpected argument: $1" >&2
+            usage_usb
+            return 1
+        fi
+        shift
+    done
+
+    if [ -z "$device" ]; then
+        usage_usb
+        echo
+        echo "Available block devices:"
+        list_block_devices
+        return 1
+    fi
+
+    local device_type=""
+    device_type="$(lsblk -dn -o TYPE "$device" 2>/dev/null | head -n 1 || true)"
+    if [ -z "$device_type" ]; then
+        echo "Device not found: $device" >&2
+        echo
+        echo "Available block devices:"
+        list_block_devices
+        return 1
+    fi
+    if [ "$device_type" != "disk" ]; then
+        echo "Refusing to write to non-disk device (type: $device_type): $device" >&2
+        echo "Pass a whole-disk device like /dev/sdX or /dev/nvme0n1." >&2
+        return 1
+    fi
+
+    guard_not_root_disk "$device" "$force_root"
+
+    if [ "$confirmed" != "1" ]; then
+        if [ ! -t 0 ]; then
+            die "Refusing to write in non-interactive mode without --confirm"
+        fi
+        echo "📝 Target device: $device"
+        echo "Device info:"
+        lsblk -dn -o PATH,MODEL,SIZE,TRAN,RM,ROTA "$device" 2>/dev/null || true
+        echo "⚠️  This will ERASE $device."
+        echo "Type '$device' to continue, or anything else to abort:"
+        local reply=""
+        if ! read -r reply; then
+            echo "Aborted."
+            return 1
+        fi
+        if [ "$reply" != "$device" ]; then
+            echo "Aborted."
+            return 1
+        fi
+    fi
+
+    local args=(--device "$device" --confirm)
+    if [ -n "$image" ]; then
+        args+=(--image "$image")
+    fi
+    if [ "$force_root" = "1" ]; then
+        args+=(--force-root)
+    fi
+
+    bash scripts/usb-tools/usb-write-dd.sh "${args[@]}"
+}
+
+cmd_usb_run() {
+    local device=""
+    local esp_image=""
+    local iso_path=""
+    local format_type=""
+    local skip_sanitize=0
+    local no_sync=0
+    local confirmed=0
+    local force_root=0
+
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            -h|--help)
+                usage_usb_run
+                return 0
+                ;;
+            -d|--device)
+                [ "$#" -ge 2 ] || { usage_usb_run; return 1; }
+                device="$2"
+                shift
+                ;;
+            --device=*)
+                device="${1#*=}"
+                ;;
+            --esp-image)
+                [ "$#" -ge 2 ] || { usage_usb_run; return 1; }
+                esp_image="$2"
+                shift
+                ;;
+            --esp-image=*)
+                esp_image="${1#*=}"
+                ;;
+            --iso-path)
+                [ "$#" -ge 2 ] || { usage_usb_run; return 1; }
+                iso_path="$2"
+                shift
+                ;;
+            --iso-path=*)
+                iso_path="${1#*=}"
+                ;;
+            --format|--format-type)
+                [ "$#" -ge 2 ] || { usage_usb_run; return 1; }
+                format_type="$2"
+                shift
+                ;;
+            --format=*|--format-type=*)
+                format_type="${1#*=}"
+                ;;
+            --skip-sanitize)
+                skip_sanitize=1
+                ;;
+            --no-sync)
+                no_sync=1
+                ;;
+            --force-root)
+                force_root=1
+                ;;
+            -c|--confirm|-y|--yes)
+                confirmed=1
+                ;;
+            --)
+                shift
+                break
+                ;;
+            -*)
+                echo "Unknown option: $1" >&2
+                usage_usb_run
+                return 1
+                ;;
+            *)
+                if [ -z "$device" ]; then
+                    device="$1"
+                else
+                    echo "Unexpected argument: $1" >&2
+                    usage_usb_run
+                    return 1
+                fi
+                ;;
+        esac
+        shift
+    done
+
+    while [ "$#" -gt 0 ]; do
+        if [ -z "$device" ]; then
+            device="$1"
+        else
+            echo "Unexpected argument: $1" >&2
+            usage_usb_run
+            return 1
+        fi
+        shift
+    done
+
+    if [ -z "$device" ]; then
+        usage_usb_run
+        echo
+        echo "Available block devices:"
+        list_block_devices
+        return 1
+    fi
+
+    local device_type=""
+    device_type="$(lsblk -dn -o TYPE "$device" 2>/dev/null | head -n 1 || true)"
+    if [ -z "$device_type" ]; then
+        echo "Device not found: $device" >&2
+        echo
+        echo "Available block devices:"
+        list_block_devices
+        return 1
+    fi
+    if [ "$device_type" != "disk" ]; then
+        echo "Refusing to write to non-disk device (type: $device_type): $device" >&2
+        echo "Pass a whole-disk device like /dev/sdX or /dev/nvme0n1." >&2
+        return 1
+    fi
+
+    guard_not_root_disk "$device" "$force_root"
+
+    if [ "$confirmed" != "1" ]; then
+        if [ ! -t 0 ]; then
+            die "Refusing to run in non-interactive mode without --confirm"
+        fi
+        echo "📝 Target device: $device"
+        echo "Device info:"
+        lsblk -dn -o PATH,MODEL,SIZE,TRAN,RM,ROTA "$device" 2>/dev/null || true
+        echo "⚠️  This will MODIFY filesystems on $device."
+        echo "Type '$device' to continue, or anything else to abort:"
+        local reply=""
+        if ! read -r reply; then
+            echo "Aborted."
+            return 1
+        fi
+        if [ "$reply" != "$device" ]; then
+            echo "Aborted."
+            return 1
+        fi
+    fi
+
+    require_pf_runner
+
+    local args=(--device "$device")
+    [ -n "$esp_image" ] && args+=(--esp-image "$esp_image")
+    [ -n "$iso_path" ] && args+=(--iso-path "$iso_path")
+    [ -n "$format_type" ] && args+=(--format "$format_type")
+    [ "$skip_sanitize" = "1" ] && args+=(--skip-sanitize)
+    [ "$no_sync" = "1" ] && args+=(--no-sync)
+    [ "$force_root" = "1" ] && args+=(--force-root)
+
+    bash scripts/usb-tools/usb-run.sh "${args[@]}"
+}
+
+cmd_usb_enroll() {
+    local device=""
+    local enroll_image=""
+    local no_build=0
+    local confirmed=0
+    local force_root=0
+
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            -h|--help)
+                usage_usb_enroll
+                return 0
+                ;;
+            -d|--device)
+                [ "$#" -ge 2 ] || { usage_usb_enroll; return 1; }
+                device="$2"
+                shift
+                ;;
+            --device=*)
+                device="${1#*=}"
+                ;;
+            --enroll-image)
+                [ "$#" -ge 2 ] || { usage_usb_enroll; return 1; }
+                enroll_image="$2"
+                shift
+                ;;
+            --enroll-image=*)
+                enroll_image="${1#*=}"
+                ;;
+            --no-build)
+                no_build=1
+                ;;
+            --force-root)
+                force_root=1
+                ;;
+            -c|--confirm|-y|--yes)
+                confirmed=1
+                ;;
+            --)
+                shift
+                break
+                ;;
+            -*)
+                echo "Unknown option: $1" >&2
+                usage_usb_enroll
+                return 1
+                ;;
+            *)
+                if [ -z "$device" ]; then
+                    device="$1"
+                else
+                    echo "Unexpected argument: $1" >&2
+                    usage_usb_enroll
+                    return 1
+                fi
+                ;;
+        esac
+        shift
+    done
+
+    while [ "$#" -gt 0 ]; do
+        if [ -z "$device" ]; then
+            device="$1"
+        else
+            echo "Unexpected argument: $1" >&2
+            usage_usb_enroll
+            return 1
+        fi
+        shift
+    done
+
+    if [ -z "$device" ]; then
+        usage_usb_enroll
+        echo
+        echo "Available block devices:"
+        list_block_devices
+        return 1
+    fi
+
+    local device_type=""
+    device_type="$(lsblk -dn -o TYPE "$device" 2>/dev/null | head -n 1 || true)"
+    if [ -z "$device_type" ]; then
+        echo "Device not found: $device" >&2
+        echo
+        echo "Available block devices:"
+        list_block_devices
+        return 1
+    fi
+    if [ "$device_type" != "disk" ]; then
+        echo "Refusing to write to non-disk device (type: $device_type): $device" >&2
+        echo "Pass a whole-disk device like /dev/sdX or /dev/nvme0n1." >&2
+        return 1
+    fi
+
+    guard_not_root_disk "$device" "$force_root"
+
+    if [ "$confirmed" != "1" ]; then
+        if [ ! -t 0 ]; then
+            die "Refusing to run in non-interactive mode without --confirm"
+        fi
+        echo "📝 Target device: $device"
+        echo "Device info:"
+        lsblk -dn -o PATH,MODEL,SIZE,TRAN,RM,ROTA "$device" 2>/dev/null || true
+        echo "⚠️  This will OVERWRITE the EFI partition contents on $device."
+        echo "Type '$device' to continue, or anything else to abort:"
+        local reply=""
+        if ! read -r reply; then
+            echo "Aborted."
+            return 1
+        fi
+        if [ "$reply" != "$device" ]; then
+            echo "Aborted."
+            return 1
+        fi
+    fi
+
+    if [ -z "$enroll_image" ]; then
+        enroll_image="out/esp/enroll-esp.img"
+    fi
+
+    if [ "$no_build" != "1" ]; then
+        require_pf_runner
+        if [ ! -f "keys/PK.key" ] || [ ! -f "keys/KEK.key" ] || [ ! -f "keys/db.key" ]; then
+            ./pf.py secure-keygen
+        fi
+        if [ ! -f "out/securevars/PK.auth" ] || [ ! -f "out/securevars/KEK.auth" ] || [ ! -f "out/securevars/db.auth" ]; then
+            ./pf.py secure-make-auth
+        fi
+        ./pf.py secure-package-esp-enroll
+    fi
+
+    if [ ! -f "$enroll_image" ]; then
+        die "Missing enrollment image: $enroll_image"
+    fi
+
+    local args=(--device "$device" --enroll-image "$enroll_image")
+    [ "$force_root" = "1" ] && args+=(--force-root)
+    bash scripts/usb-tools/usb-enroll.sh "${args[@]}"
+}
+
+# Resolve PhoenixBoot repo root:
+#  1) explicit PHOENIX_ROOT
+#  2) search up from CWD
+#  3) search up from this script's directory
+SHOW_BANNER=1
+GLOBAL_HELP=0
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            GLOBAL_HELP=1
+            shift
+            break
+            ;;
+        --root)
+            [ "$#" -ge 2 ] || die "Missing value for --root"
+            PHOENIX_ROOT="$2"
+            shift 2
+            ;;
+        --root=*)
+            PHOENIX_ROOT="${1#*=}"
+            shift
+            ;;
+        --no-banner)
+            SHOW_BANNER=0
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*)
+            die "Unknown global option: $1"
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+CMD="${1:-help}"
+if [ "$GLOBAL_HELP" = "1" ]; then
+    CMD="help"
+else
+    if [ "$#" -gt 0 ]; then
+        shift
+    fi
+fi
+
+if [ -n "${PHOENIX_ROOT:-}" ]; then
+    PHOENIX_ROOT="$(cd -- "$PHOENIX_ROOT" && pwd -P)"
+else
+    PHOENIX_ROOT="$(find_repo_root_up "$(pwd -P)" 2>/dev/null || true)"
+    if [ -z "${PHOENIX_ROOT}" ]; then
+        PHOENIX_ROOT="$(find_repo_root_up "$(resolve_self_dir)" 2>/dev/null || true)"
+    fi
+fi
+
+if [ -z "${PHOENIX_ROOT}" ] || ! is_repo_root "${PHOENIX_ROOT}"; then
+    if [ "$CMD" = "help" ]; then
+        usage
+        echo
+    fi
+    die "Cannot find PhoenixBoot repo root. Set PHOENIX_ROOT or pass --root."
 fi
 
 cd "$PHOENIX_ROOT"
-echo "🔥 PhoenixGuard Boot System"
-echo "Working from: $PHOENIX_ROOT"
-echo ""
 
-case "${1:-help}" in
-    build)
-        echo "🔨 Building boot system..."
-        just build
+WANTS_HELP=0
+if [ "$CMD" = "help" ]; then
+    WANTS_HELP=1
+else
+    for arg in "$@"; do
+        case "$arg" in
+            -h|--help)
+                WANTS_HELP=1
+                break
+                ;;
+        esac
+    done
+fi
+
+if [ "$SHOW_BANNER" = "1" ] && [ "$WANTS_HELP" != "1" ]; then
+    echo "🔥 PhoenixBoot"
+    echo "Working from: $PHOENIX_ROOT"
+    echo ""
+fi
+
+case "$CMD" in
+    help|-h|--help)
+        cmd_help "${1:-}"
         ;;
-    
-    usb)
-        if [ -z "$2" ]; then
-            echo "Usage: $0 usb /dev/sdX"
-            echo "Available devices:"
-            lsblk -d -o NAME,SIZE,MODEL | grep -E "^sd|^nvme"
+
+    build)
+        if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+            usage_build
+            exit 0
+        fi
+        if [ "$#" -gt 0 ]; then
+            echo "Unexpected argument(s): $*" >&2
+            usage_build
             exit 1
         fi
-        echo "📝 Writing to USB: $2"
-        echo "⚠️  This will ERASE $2! Press Ctrl+C to cancel, Enter to continue"
-        read
-        sudo dd if=build/esp/esp.img of="$2" bs=4M status=progress
-        sync
-        echo "✅ USB ready!"
+        require_pf_runner
+        echo "🔨 Building production artifacts..."
+        ./pf.py build-build
         ;;
-    
+
+    usb)
+        cmd_usb "$@"
+        ;;
+
+    usb-run)
+        cmd_usb_run "$@"
+        ;;
+
+    usb-enroll)
+        cmd_usb_enroll "$@"
+        ;;
+
     test)
+        if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+            usage_test
+            exit 0
+        fi
+        if [ "$#" -gt 0 ]; then
+            echo "Unexpected argument(s): $*" >&2
+            usage_test
+            exit 1
+        fi
+        require_pf_runner
         echo "🧪 Testing in QEMU..."
-        just test-qemu
+        ./pf.py test-qemu
         ;;
-    
+
     fix)
+        if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+            usage_fix
+            exit 0
+        fi
+        if [ "$#" -gt 0 ]; then
+            echo "Unexpected argument(s): $*" >&2
+            usage_fix
+            exit 1
+        fi
         echo "🔧 Running all fixes..."
-        bash scripts/fix-boot-issues.sh
+        bash scripts/recovery/fix-boot-issues.sh
         ;;
-    
+
     status)
+        if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+            usage_status
+            exit 0
+        fi
+        if [ "$#" -gt 0 ]; then
+            echo "Unexpected argument(s): $*" >&2
+            usage_status
+            exit 1
+        fi
         echo "📊 System Status:"
         echo -n "  ESP Image: "
-        if [ -f "build/esp/esp.img" ]; then
-            du -h build/esp/esp.img | cut -f1
+        if [ -f "out/esp/esp.img" ]; then
+            du -h out/esp/esp.img | cut -f1
+        elif [ -f "out/esp/secureboot-bootable.img" ]; then
+            du -h out/esp/secureboot-bootable.img | cut -f1
         else
             echo "Not built"
         fi
-        echo -n "  Boot EFI: "
-        [ -f "out/staging/BootX64.efi" ] && echo "Ready" || echo "Not built"
+        echo -n "  UEFI Artifacts: "
+        if [ -f "staging/boot/NuclearBootEdk2.efi" ] && [ -f "staging/boot/UUEFI.efi" ] && [ -f "staging/boot/KeyEnrollEdk2.efi" ]; then
+            echo "Ready"
+        else
+            echo "Missing (run: $(script_name) build)"
+        fi
         echo -n "  Keys: "
         [ -f "keys/PK.crt" ] && echo "Generated" || echo "Not generated"
         ;;
-    
+
     *)
-        echo "Usage: $0 {build|usb|test|fix|status}"
-        echo ""
-        echo "  build  - Build the boot system"
-        echo "  usb    - Write to USB device"
-        echo "  test   - Test in QEMU"
-        echo "  fix    - Fix all known issues"
-        echo "  status - Show system status"
+        echo "Unknown command: $CMD" >&2
+        usage
+        exit 1
         ;;
 esac

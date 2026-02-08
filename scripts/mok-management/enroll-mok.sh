@@ -3,9 +3,66 @@
 
 set -euo pipefail
 
-MOK_CERT_PEM=$1
-MOK_CERT_DER=$2
-MOK_DRY_RUN=$3
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
+MOK_CERT_PEM=out/keys/mok/PGMOK.crt
+MOK_CERT_DER=out/keys/mok/PGMOK.der
+MOK_DRY_RUN=0
+
+usage() {
+  cat <<EOF
+Usage: $0 [--cert-pem PATH] [--cert-der PATH] [--dry-run]
+
+Options:
+  --cert-pem PATH  path to PEM certificate (default: ${MOK_CERT_PEM})
+  --cert-der PATH  path to DER certificate output (default: ${MOK_CERT_DER})
+  --dry-run        write metadata only without calling mokutil (defaults to ${MOK_DRY_RUN})
+  -h, --help       show this help message
+EOF
+  exit 1
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --cert-pem)
+      if [ $# -lt 2 ]; then
+        echo "☠ --cert-pem requires an argument"
+        usage
+      fi
+      MOK_CERT_PEM="$2"
+      shift 2
+      ;;
+    --cert-pem=*)
+      MOK_CERT_PEM="${1#*=}"
+      shift
+      ;;
+    --cert-der)
+      if [ $# -lt 2 ]; then
+        echo "☠ --cert-der requires an argument"
+        usage
+      fi
+      MOK_CERT_DER="$2"
+      shift 2
+      ;;
+    --cert-der=*)
+      MOK_CERT_DER="${1#*=}"
+      shift
+      ;;
+    --dry-run)
+      MOK_DRY_RUN="1"
+      shift
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      echo "☠ Unknown option: $1"
+      usage
+      ;;
+  esac
+done
 
 echo "☠ PhoenixGuard MOK Certificate Enrollment"
 echo "==========================================="
@@ -119,4 +176,3 @@ echo "--- Pending MOK Enrollments ---"
 sudo mokutil --list-new 2>/dev/null || echo "(Unable to list pending enrollments)"
 echo
 echo "☠ REBOOT REQUIRED - Complete Enrollment Process"
-

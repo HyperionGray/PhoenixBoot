@@ -174,7 +174,7 @@ out/securevars/               ← Enrollment files
 
 **Solution:**
 ```bash
-ISO_PATH=/path/to/ubuntu.iso ./pf.py secureboot-create
+./pf.py secureboot-create iso_path=/path/to/ubuntu.iso
 ```
 
 **What PhoenixBoot does:**

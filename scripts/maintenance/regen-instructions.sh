@@ -3,6 +3,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
 # Ensure all component files exist
 [ -f WARP.md ] || echo "[WARP.md missing – add strategic context]" > WARP.md
 [ -f PROJECT.txt ] || echo "[PROJECT.txt missing – add high-level summary]" > PROJECT.txt
@@ -39,4 +43,3 @@ set -euo pipefail
 } > copilot-instructions.md
 
 echo "☠ Generated copilot-instructions.md"
-

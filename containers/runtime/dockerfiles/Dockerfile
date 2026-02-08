@@ -40,4 +40,4 @@ RUN python3 -m venv /home/phoenixrun/.venv
 ENV PATH="/home/phoenixrun/.venv/bin:$PATH"
 
 # Default command shows UUEFI report
-CMD ["bash", "scripts/uuefi-report.sh"]
+CMD ["bash", "scripts/uefi-tools/uuefi-report.sh"]

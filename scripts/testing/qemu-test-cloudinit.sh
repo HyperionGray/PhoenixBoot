@@ -3,6 +3,54 @@
 # This verifies that NuclearBoot can work with cloud-init configurations.
 
 set -euo pipefail
+
+die() {
+    echo "$*" >&2
+    exit 1
+}
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
+usage() {
+    cat <<'USAGE'
+Usage: qemu-test-cloudinit.sh [--timeout SECONDS] [--no-kvm]
+
+Options:
+  --timeout SECONDS  Timeout to wait for the boot (default: 90)
+  --no-kvm           Disable /dev/kvm acceleration even if available
+  -h, --help         Show this message
+USAGE
+    exit 0
+}
+
+QEMU_TIMEOUT=90
+DISABLE_KVM=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --timeout)
+      [ $# -gt 1 ] || die "--timeout requires an argument"
+      QEMU_TIMEOUT="$2"
+      shift 2
+      ;;
+    --timeout=*)
+      QEMU_TIMEOUT="${1#*=}"
+      shift
+      ;;
+    --no-kvm)
+      DISABLE_KVM=1
+      shift
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      die "Unknown option: $1"
+      ;;
+  esac
+done
+
 mkdir -p out/qemu out/cloud-init
 
 if [ ! -f out/esp/esp.img ]; then
@@ -10,7 +58,6 @@ if [ ! -f out/esp/esp.img ]; then
     exit 1
 fi
 
-# Get discovered OVMF paths from ESP packaging stage
 if [ ! -f out/esp/ovmf_paths.txt ]; then
     echo "☠ OVMF paths not found - run './pf.py build-package-esp' first"
     exit 1
@@ -28,14 +75,12 @@ fi
 
 echo "Using OVMF: $OVMF_CODE_PATH"
 
-# Create cloud-init configuration
-cat > out/cloud-init/meta-data << EOF
+cat > out/cloud-init/meta-data <<'EOF_META'
 instance-id: phoenixboot-test-$(date +%s)
 local-hostname: phoenixboot-test-vm
-EOF
+EOF_META
 
-# Create user-data with password hash for 'testpass'
-cat > out/cloud-init/user-data << EOF
+cat > out/cloud-init/user-data <<'EOF_USER'
 #cloud-config
 users:
   - name: phoenixuser
@@ -47,9 +92,8 @@ users:
 runcmd:
   - echo "PhoenixBoot cloud-init integration test: SUCCESS" > /var/log/phoenixboot-cloudinit.log
   - logger "PhoenixBoot cloud-init test completed successfully"
-EOF
+EOF_USER
 
-# Create cloud-init ISO
 if ! command -v genisoimage &> /dev/null; then
     echo "☠ genisoimage not found - install with: sudo apt-get install genisoimage"
     exit 1
@@ -61,15 +105,18 @@ genisoimage -output out/cloud-init/cloud-init.iso \
 
 echo "Created cloud-init ISO"
 
-# Copy OVMF vars (writable)
 cp "$OVMF_VARS_PATH" out/qemu/OVMF_VARS_cloudinit.fd
 
-# Launch QEMU with ESP and cloud-init ISO
-QT=${PG_QEMU_TIMEOUT:-90}
-timeout ${QT}s qemu-system-x86_64 \
+QEMU_ACCEL_ARGS=()
+if [ "$DISABLE_KVM" -eq 0 ] && [ -c /dev/kvm ] && [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+    QEMU_ACCEL_ARGS=(-enable-kvm -cpu host)
+else
+    echo "ℹ☠  /dev/kvm not available; running without KVM acceleration"
+fi
+
+timeout ${QEMU_TIMEOUT}s qemu-system-x86_64 \
     -machine q35 \
-    -cpu host \
-    -enable-kvm \
+    "${QEMU_ACCEL_ARGS[@]}" \
     -m 2G \
     -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE_PATH" \
     -drive if=pflash,format=raw,file=out/qemu/OVMF_VARS_cloudinit.fd \
@@ -79,7 +126,6 @@ timeout ${QT}s qemu-system-x86_64 \
     -display none \
     -no-reboot || true
 
-# Check for success markers in serial output
 TEST_RESULT="FAIL"
 if grep -q "PhoenixGuard" out/qemu/serial-cloudinit.log; then
     echo "☠ PhoenixBoot banner found in boot log"
@@ -88,7 +134,6 @@ else
     echo "☠ PhoenixBoot banner not found"
 fi
 
-# Generate JUnit-style report
 {
     echo '<?xml version="1.0" encoding="UTF-8"?>';
     echo '<testsuite name="PhoenixGuard Cloud-Init Test" tests="1" failures="'$([[ $TEST_RESULT == "FAIL" ]] && echo "1" || echo "0")'" time="90">';

@@ -38,7 +38,7 @@ All complex logic has been extracted to scripts in the `scripts/` directory:
 ### Security Scripts
 - `generate-sb-keys.sh` - Generates Secure Boot keys
 - `create-auth-files.sh` - Creates AUTH files for Secure Boot
-- `enroll-secureboot.sh` - Enrolls keys into OVMF
+- `enroll-secureboot.sh` - Enrolls keys into OVMF (`--timeout`/`--no-kvm` are supported)
 - `enroll-secureboot-nosudo.sh` - No-sudo version
 - `qemu-run-secure-ui.sh` - Launches secure QEMU UI
 - `mok-status.sh` - Shows MOK status

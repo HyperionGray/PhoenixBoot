@@ -50,4 +50,4 @@ ENV PATH="/home/phoenixtest/.venv/bin:$PATH"
 EXPOSE 4444 5555
 
 # Default command runs all QEMU tests
-CMD ["bash", "scripts/run-e2e-tests.sh"]
+CMD ["bash", "scripts/testing/run-e2e-tests.sh"]

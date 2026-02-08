@@ -1,5 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Make build script executable and verify it's ready
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+cd "$SCRIPT_DIR"
 
 chmod +x scripts/build/build-production.sh
 

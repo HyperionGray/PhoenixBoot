@@ -4,6 +4,10 @@
 
 set -e
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
 echo "☠ PhoenixGuard BOOTKIT-PROOF Hardware-Level Firmware Recovery"
 echo "☠ EXTREME DANGER: This will directly manipulate SPI flash hardware!"
 echo "   This bypasses ASUS EZ Flash and ALL software that bootkits could compromise."
@@ -63,8 +67,8 @@ fi
 # Confirm the operation
 echo "Usage examples:"
 echo "  make hardware-recovery              # Interactive verification + recovery"
-echo "  sudo python3 scripts/hardware_firmware_recovery.py drivers/G615LPAS.325 --verify-only"
-echo "  sudo python3 scripts/hardware_firmware_recovery.py drivers/G615LPAS.325 -v"
+echo "  sudo python3 dev/tools/hardware_firmware_recovery.py drivers/G615LPAS.325 --verify-only"
+echo "  sudo python3 dev/tools/hardware_firmware_recovery.py drivers/G615LPAS.325 -v"
 echo
 
 read -p "Continue with hardware recovery? [y/N]: " confirm
@@ -76,13 +80,30 @@ fi
 echo
 echo "☠ Starting BOOTKIT-PROOF hardware recovery..."
 
+# Locate recovery script
+RECOVERY_SCRIPT=""
+for cand in scripts/hardware_firmware_recovery.py dev/tools/hardware_firmware_recovery.py nuclear-cd-build/iso/recovery/scripts/hardware_firmware_recovery.py; do
+    if [ -f "$cand" ]; then
+        RECOVERY_SCRIPT="$cand"
+        break
+    fi
+done
+if [ -z "$RECOVERY_SCRIPT" ]; then
+    echo "ERROR: hardware_firmware_recovery.py not found."
+    echo "       Looked in:"
+    echo "         - scripts/hardware_firmware_recovery.py"
+    echo "         - dev/tools/hardware_firmware_recovery.py"
+    echo "         - nuclear-cd-build/iso/recovery/scripts/hardware_firmware_recovery.py"
+    exit 1
+fi
+
 # Check if firmware image exists
 if [ -f "$FIRMWARE_IMAGE" ]; then
-    ARGS="$FIRMWARE_IMAGE"
-    [ -n "$VERBOSE" ] && ARGS="$ARGS -v"
-    [ -n "$VERIFY_ONLY" ] && ARGS="$ARGS --verify-only"
-    
-    sudo python3 scripts/hardware_firmware_recovery.py $ARGS --output hardware_recovery_results.json
+    ARGS=("$FIRMWARE_IMAGE")
+    [ -n "$VERBOSE" ] && ARGS+=("-v")
+    [ -n "$VERIFY_ONLY" ] && ARGS+=("--verify-only")
+
+    sudo python3 "$RECOVERY_SCRIPT" "${ARGS[@]}" --output hardware_recovery_results.json
 else
     echo "ERROR: Clean firmware image not found at $FIRMWARE_IMAGE"
     echo "       This must be your EXACT hardware's clean firmware dump."

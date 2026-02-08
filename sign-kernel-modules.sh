@@ -12,16 +12,15 @@ set -euo pipefail
 #   ./sign-kernel-modules.sh *.ko                   # Sign all .ko files
 #   ./sign-kernel-modules.sh --force module.ko      # Re-sign already signed
 #
-# Environment Variables:
-#   KMOD_CERT or PG_KMOD_CERT    - Path to signing certificate (default: out/keys/mok/PGMOK.crt)
-#   KMOD_KEY or PG_KMOD_KEY      - Path to signing private key (default: out/keys/mok/PGMOK.key)
-#
 # Options:
 #   --cert-path PATH    - Override certificate path
 #   --key-path PATH     - Override key path
 #   --force, -f         - Re-sign already signed modules
 #   --verbose, -v       - Enable verbose logging
 #   --help, -h          - Show this help message
+# Defaults:
+#   Certificate: out/keys/mok/PGMOK.crt
+#   Private key: out/keys/mok/PGMOK.key
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -42,10 +41,6 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
     echo "  --force, -f         Force re-signing of already signed modules"
     echo "  --verbose, -v       Verbose logging"
     echo "  --help, -h          Show this help message"
-    echo ""
-    echo "Environment Variables:"
-    echo "  KMOD_CERT or PG_KMOD_CERT    Signing certificate path"
-    echo "  KMOD_KEY or PG_KMOD_KEY      Signing private key path"
     echo ""
     echo "Default certificate: out/keys/mok/PGMOK.crt"
     echo "Default key:         out/keys/mok/PGMOK.key"

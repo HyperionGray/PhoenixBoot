@@ -32,5 +32,7 @@ Scripts for testing PhoenixBoot functionality using QEMU and other methods.
 
 # Or via task runner
 ./pf.py test-qemu
+./pf.py test-qemu-cloudinit
 ./pf.py test-e2e-all
+./pf.py test-staging
 ```

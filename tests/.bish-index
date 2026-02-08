@@ -1,0 +1,4 @@
+./PROGRESSIVE_RECOVERY.md
+./progressive_planfile_check.sh
+./test_pf_tasks_sanity.sh
+./test_secureboot_enablement.sh

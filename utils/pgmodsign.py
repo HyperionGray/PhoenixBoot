@@ -127,36 +127,59 @@ class PhoenixGuardModuleSigner:
         A signed kernel module ends with:
           [ signature data (sig_len bytes) ]
           [ struct module_signature (12 bytes) ]
-          [ magic string "~Module signature appended~\n" (28 bytes) ]
+          [ magic string "~Module signature appended~\\n" (28 bytes) ]
 
         The struct module_signature has a big-endian 32-bit sig_len field at
         offset 8. We iterate and truncate trailers until no magic is found.
         """
-        magic = b"~Module signature appended~\n"
+        # Some older toolchains omit the trailing newline in the magic string.
+        magic_candidates = [
+            b"~Module signature appended~\n",
+            b"~Module signature appended~",
+        ]
         removed = 0
         try:
             with open(module_path, "rb+") as f:
                 while True:
                     f.seek(0, os.SEEK_END)
                     size = f.tell()
-                    if size < len(magic) + 12:
-                        break
-                    f.seek(size - len(magic))
-                    tail = f.read(len(magic))
-                    if tail != magic:
+                    magic = None
+                    for candidate in magic_candidates:
+                        if size < len(candidate) + 12:
+                            continue
+                        f.seek(size - len(candidate))
+                        tail = f.read(len(candidate))
+                        if tail == candidate:
+                            magic = candidate
+                            break
+                    if magic is None:
                         break
                     sig_info_off = size - len(magic) - 12
                     f.seek(sig_info_off)
                     sig_hdr = f.read(12)
                     if len(sig_hdr) != 12:
                         break
-                    # sig_len is big-endian 32-bit at offset 8
-                    sig_len = int.from_bytes(sig_hdr[8:12], "big", signed=False)
-                    if sig_len <= 0 or sig_len > size:
+                    # sig_len is big-endian 32-bit at offset 8 (spec),
+                    # but accept little-endian as a fallback for legacy tooling.
+                    sig_len_be = int.from_bytes(sig_hdr[8:12], "big", signed=False)
+                    sig_len_le = int.from_bytes(sig_hdr[8:12], "little", signed=False)
+
+                    def _valid_sig_len(val: int) -> bool:
+                        return 0 < val <= sig_info_off
+
+                    if _valid_sig_len(sig_len_be):
+                        sig_len = sig_len_be
+                    elif _valid_sig_len(sig_len_le):
+                        sig_len = sig_len_le
+                        logger.debug(
+                            "Using little-endian sig_len for %s (value=%d)",
+                            module_path, sig_len,
+                        )
+                    else:
                         # Corrupt trailer; stop to avoid damaging the file
                         break
                     new_size = sig_info_off - sig_len
-                    if new_size < 0:
+                    if new_size < 0 or new_size >= size:
                         break
                     f.truncate(new_size)
                     removed += 1

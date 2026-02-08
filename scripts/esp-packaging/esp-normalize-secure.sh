@@ -8,7 +8,49 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/lib/common.sh
 
-IMG=${IMG:-out/esp/esp.img}
+usage() {
+  cat <<EOF
+Usage: esp-normalize-secure.sh [OPTIONS]
+
+Options:
+  --image PATH     ESP image to normalize (default: out/esp/esp.img)
+  --timeout SECS   Timeout for mtools operations (default: ${PG_MTOOLS_TIMEOUT:-30})
+  -h, --help       Show this help message
+EOF
+  exit 0
+}
+
+IMG="${IMG:-out/esp/esp.img}"
+MTOOLS_TIMEOUT="${PG_MTOOLS_TIMEOUT:-30}"
+IMG_ARG=""
+TIMEOUT_ARG=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --image)
+      opt="$1"; shift
+      [ $# -gt 0 ] || die "Missing value for $opt"
+      IMG_ARG="$1"
+      shift
+      ;;
+    --timeout)
+      opt="$1"; shift
+      [ $# -gt 0 ] || die "Missing value for $opt"
+      TIMEOUT_ARG="$1"
+      shift
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      die "Unknown option: $1"
+      ;;
+  esac
+done
+
+IMG="${IMG_ARG:-$IMG}"
+MTOOLS_TIMEOUT="${TIMEOUT_ARG:-$MTOOLS_TIMEOUT}"
+
 [ -f "$IMG" ] || die "Missing $IMG; run 'just package-esp' or 'just iso-prep' first"
 
 # Logging setup
@@ -19,9 +61,6 @@ LOG_FILE="$LOG_DIR/esp-normalize-secure.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 info "☠ Normalizing ESP for Secure Boot: $IMG"
-
-# Timeouts (seconds) for mtools operations to avoid hangs
-MTOOLS_TIMEOUT=${PG_MTOOLS_TIMEOUT:-30}
 
 # Locate shim and MokManager
 SHIM=""; MM=""
@@ -100,4 +139,3 @@ fi
 
 ok "ESP normalized for Secure Boot (shim default)"
 info "Log: $LOG_FILE"
-

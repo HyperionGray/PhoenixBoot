@@ -3,6 +3,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
 # Move universal BIOS components
 [ -d universal_bios_database ] && mv universal_bios_database wip/universal-bios/
 [ -f scripts/universal_bios_generator.py ] && mv scripts/universal_bios_generator.py wip/universal-bios/ 2>/dev/null || true
@@ -27,4 +31,3 @@ printf '%s\n' \
     > wip/universal-bios/README.md
 
 echo "☠ WIP implementations moved to wip/"
-

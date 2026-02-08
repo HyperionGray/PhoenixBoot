@@ -2,7 +2,10 @@
 set -euo pipefail
 # Save caller's working directory to resolve relative paths correctly
 ORIG_PWD=$(pwd)
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+cd "${SCRIPT_DIR}/../.."
+# shellcheck disable=SC1091
+source scripts/lib/common.sh
 
 # Configure utils/pfs_fastpath.ko to autoload and sign it if needed.
 # Usage: kmod-setup-fastpath.sh [module_path]
@@ -56,8 +59,11 @@ if [ -z "${KMOD_CERT:-}" ] || [ -z "${KMOD_KEY:-}" ]; then
 fi
 
 # Sign the module (needs kernel headers installed)
-PY=${VENV_BIN:-/home/punk/.venv/bin}/python
-"$PY" utils/pgmodsign.py --cert-path "${KMOD_CERT:-out/keys/mok/PGMOK.crt}" --key-path "${KMOD_KEY:-out/keys/mok/PGMOK.key}" "$MOD_PATH" || true
+if PY="$(resolve_python)"; then
+  "$PY" utils/pgmodsign.py --cert-path "${KMOD_CERT:-out/keys/mok/PGMOK.crt}" --key-path "${KMOD_KEY:-out/keys/mok/PGMOK.key}" "$MOD_PATH" || true
+else
+  warn "No usable Python found; skipping module signing"
+fi
 
 # Install module into extra/ and depmod
 REL=$(uname -r)

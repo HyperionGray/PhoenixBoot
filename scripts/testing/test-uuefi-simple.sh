@@ -2,7 +2,8 @@
 # Simplified UUEFI test script - creates minimal ESP and tests UUEFI boot
 
 set -euo pipefail
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+cd "${SCRIPT_DIR}/../.."
 
 echo "🧪 Testing UUEFI application..."
 

@@ -414,7 +414,7 @@ sudo ./pf.py secure-env
 
 ```bash
 # Sign kernel modules
-PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 ```
 
 ### Complete Security Hardening Workflow
@@ -442,7 +442,7 @@ sudo out/remediation/kernel_remediation.sh
 ./pf.py mok-flow
 
 # 8. Sign kernel modules
-PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 
 # 9. Verify firmware checksums
 FIRMWARE_PATH=/sys/firmware/efi ./pf.py firmware-checksum-verify

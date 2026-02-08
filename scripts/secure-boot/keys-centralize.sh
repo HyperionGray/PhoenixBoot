@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+cd "${SCRIPT_DIR}/../.."
 
 # Migrate legacy key layout into a centralized structure:
 #   out/keys/mok          -> MOK: certs/keys for kernel module signing
 #   out/keys/secure_boot  -> Secure Boot PK/KEK/db materials
 # Optionally prune legacy locations after creating a backup archive.
 # Usage:
-#   scripts/keys-centralize.sh [--prune]
-# Env:
-#   PRUNE=1   # same as --prune
-#   DRY_RUN=1 # show actions without making changes
+#   scripts/keys-centralize.sh [--prune] [--dry-run]
+# Options:
+#   --prune      move remaining legacy paths into a gzip backup and remove them
+#   --dry-run    show the actions without mutating files
 
 ROOT_OUT="out/keys"
 MOK_DIR="$ROOT_OUT/mok"
@@ -19,9 +20,44 @@ BACKUP_DIR="$ROOT_OUT/backups"
 
 mkdir -p "$MOK_DIR" "$SB_DIR"
 
-DRY_RUN=${DRY_RUN:-0}
-PRUNE=${PRUNE:-0}
-if [ "${1:-}" = "--prune" ]; then PRUNE=1; fi
+DRY_RUN=0
+PRUNE=0
+
+usage() {
+  cat <<EOF
+Usage: $0 [--prune] [--dry-run]
+
+Options:
+  --prune      create a legacy backup and remove migrated paths
+  --dry-run    print actions without modifying files
+  -h, --help   show this message
+EOF
+}
+
+die() {
+  echo "☠ $*" >&2
+  exit 1
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --dry-run)
+      DRY_RUN=1
+      shift
+      ;;
+    --prune)
+      PRUNE=1
+      shift
+      ;;
+    *)
+      die "Unknown option: $1"
+      ;;
+  esac
+done
 
 run() { if [ "$DRY_RUN" = 1 ]; then echo "DRY: $*"; else eval "$*"; fi }
 

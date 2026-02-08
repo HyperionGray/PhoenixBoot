@@ -59,10 +59,10 @@ mokutil --list-enrolled
 ./sign-kernel-modules.sh /path/to/module.ko
 
 # Sign using pf task
-PATH=/lib/modules/$(uname -r)/kernel/drivers/net/wireless/intel/iwlwifi/iwlwifi.ko ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r)/kernel/drivers/net/wireless/intel/iwlwifi/iwlwifi.ko ./pf.py os-kmod-sign
 
 # Force re-sign already signed module
-PATH=/path/to/module.ko FORCE=1 ./pf.py os-kmod-sign
+MODULE_PATH=/path/to/module.ko FORCE=1 ./pf.py os-kmod-sign
 ```
 
 ## 📖 Detailed Scripts Reference
@@ -92,10 +92,12 @@ Generate a new MOK keypair with certificate.
 Enroll MOK certificate into the system.
 
 ```bash
-./scripts/mok-management/enroll-mok.sh <cert.crt> <cert.der>
+./scripts/mok-management/enroll-mok.sh --cert-pem keys/PGMOK.crt --cert-der keys/PGMOK.der [--dry-run]
 
-# Via pf task
-./pf.py os-mok-enroll
+# Via pf task (preferred for repeatable workflows)
+./pf.py os-mok-enroll mok_cert_pem=keys/PGMOK.crt mok_cert_der=keys/PGMOK.der mok_dry_run=0
+
+Set `mok_dry_run=1` to write metadata without importing (useful on CI or when preparing multiple systems).
 ```
 
 **What it does**:
@@ -146,7 +148,7 @@ Verify MOK certificate details and integrity.
 ./scripts/mok-management/mok-verify.sh <cert.crt> <cert.der>
 
 # Via pf task
-MOK_CERT_PEM=out/keys/mok/PGMOK.crt MOK_CERT_DER=out/keys/mok/PGMOK.der ./pf.py secure-mok-verify
+./pf.py secure-mok-verify mok_cert_pem=out/keys/mok/PGMOK.crt mok_cert_der=out/keys/mok/PGMOK.der
 ```
 
 #### `mok-find-enrolled.sh`
@@ -162,15 +164,22 @@ Match local certificates to enrolled MOKs.
 ### Module Signing
 
 #### `sign-kmods.sh`
-Sign kernel modules with MOK certificate.
+Sign all modules listed in memory, DKMS trees, and optional directories.
 
 ```bash
-# Sign single module
-./scripts/mok-management/sign-kmods.sh /path/to/module.ko
+# Sign everything using the default MOK key/cert
+./scripts/mok-management/sign-kmods.sh
 
-# Sign all modules in directory
-./scripts/mok-management/sign-kmods.sh /lib/modules/$(uname -r)/kernel/drivers/
+# Include an additional directory
+./scripts/mok-management/sign-kmods.sh --dir /lib/modules/$(uname -r)/kernel/drivers/
+
+# Override the signing key/cert
+./scripts/mok-management/sign-kmods.sh --key /path/to/mok.key --cert /path/to/mok.crt
 ```
+
+By default the script uses `out/keys/mok/PGMOK.key`/`.crt` and the `sha256` hash algorithm. Override those defaults with `--key`, `--cert`, and `--algo`, and add directories by repeating the `--dir` flag.
+
+It now also auto-prunes duplicate signature blocks before signing, so modules that were signed multiple times in the past won't keep confusing `insmod`.
 
 **Top-level wrapper**: `sign-kernel-modules.sh` (repository root)
 
@@ -208,7 +217,7 @@ Fix module loading order dependencies.
 # Reboot and complete enrollment in MOK Manager
 
 # 2. Sign DKMS modules after installation
-PATH=/lib/modules/$(uname -r)/updates/dkms ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r)/updates/dkms ./pf.py os-kmod-sign
 
 # 3. Load module
 sudo modprobe nvidia
@@ -231,7 +240,7 @@ sudo modprobe rtl8xxxu
 
 ```bash
 # After VirtualBox installation
-PATH=/lib/modules/$(uname -r)/misc FORCE=1 ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r)/misc FORCE=1 ./pf.py os-kmod-sign
 sudo modprobe vboxdrv
 ```
 
@@ -270,7 +279,7 @@ MOK_CERT="/path/to/out/keys/mok/PGMOK.crt"
 **Solutions**:
 1. Verify MOK is enrolled: `mokutil --list-enrolled | grep PhoenixGuard`
 2. Check module signature: `modinfo module.ko | grep signer`
-3. Re-sign with force: `PATH=/path/to/module.ko FORCE=1 ./pf.py os-kmod-sign`
+3. Re-sign with force: `MODULE_PATH=/path/to/module.ko FORCE=1 ./pf.py os-kmod-sign`
 4. Check dmesg for details: `dmesg | grep -i 'module verification'`
 
 ### Wrong Certificate Used for Signing

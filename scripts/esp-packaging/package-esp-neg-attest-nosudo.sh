@@ -2,6 +2,11 @@
 # Description: Creates a negative attestation ESP without sudo by overwriting the hash via mtools.
 
 set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
 SRC=out/esp/esp.img
 DST=out/esp/esp-neg-attest.img
 
@@ -15,4 +20,3 @@ rm -f "$NEG_SHA"
 sha256sum "$DST" > "$DST.sha256"
 
 echo "☠ Negative attestation ESP (no sudo) at $DST"
-

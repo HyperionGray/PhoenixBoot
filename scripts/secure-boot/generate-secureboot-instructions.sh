@@ -3,10 +3,47 @@
 
 set -euo pipefail
 
-DOCS_DIR="${DOCS_DIR:-out/artifacts/docs}"
-mkdir -p "$DOCS_DIR"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
 
-cat > "$DOCS_DIR/SECURE_BOOT_SETUP.md" << 'EOFMARKER'
+OUT_DIR="out/artifacts/docs"
+
+usage() {
+  cat <<EOF
+Usage: $0 [--out-dir DIR]
+
+Options:
+  --out-dir DIR  directory for the generated instructions (default: out/artifacts/docs)
+  -h, --help     show this help message and exit
+EOF
+  exit 1
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --out-dir=*)
+      OUT_DIR="${1#*=}"
+      shift
+      ;;
+    --out-dir)
+      shift
+      OUT_DIR="$1"
+      shift
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      echo "Unknown option: $1"
+      usage
+      ;;
+  esac
+done
+
+mkdir -p "$OUT_DIR"
+
+cat > "$OUT_DIR/SECURE_BOOT_SETUP.md" << 'EOFMARKER'
 # PhoenixGuard Secure Boot Setup Instructions
 
 ## Overview
@@ -130,5 +167,5 @@ sudo kmodsign sha256 keys/mok/PGMOK.key keys/mok/PGMOK.der /path/to/module.ko
 - Linux Secure Boot: https://www.kernel.org/doc/html/latest/admin-guide/module-signing.html
 EOFMARKER
 
-echo "✅ Secure Boot instructions created in $DOCS_DIR/SECURE_BOOT_SETUP.md"
-echo "   View with: cat $DOCS_DIR/SECURE_BOOT_SETUP.md"
+echo "✅ Secure Boot instructions created in $OUT_DIR/SECURE_BOOT_SETUP.md"
+echo "   View with: cat $OUT_DIR/SECURE_BOOT_SETUP.md"

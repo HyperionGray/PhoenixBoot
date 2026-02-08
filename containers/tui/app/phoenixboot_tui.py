@@ -303,6 +303,7 @@ Select a category to get started!
             ("secure-keygen", "Generate SecureBoot keys (PK, KEK, db)"),
             ("secure-make-auth", "Create authenticated variable files"),
             ("secureboot-create", "Create SecureBoot bootable media"),
+            ("secure-enroll-secureboot", "Enroll SecureBoot keys into QEMU OVMF"),
         ]
         return self.create_task_list("SecureBoot & Key Management", tasks)
     
@@ -312,6 +313,8 @@ Select a category to get started!
             ("secure-mok-new", "Generate new MOK certificate"),
             ("os-mok-enroll", "Enroll MOK certificate"),
             ("os-mok-list-keys", "List enrolled MOK keys"),
+            ("secure-mok-verify", "Verify a MOK certificate"),
+            ("secure-enroll-mok", "Enroll PhoenixGuard MOK certificate"),
             ("os-kmod-sign", "Sign kernel module"),
         ]
         return self.create_task_list("MOK & Module Signing", tasks)

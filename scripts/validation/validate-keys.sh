@@ -3,6 +3,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
 SRC_DIR=""
 if [ -f out/securevars/PK.auth ] && [ -f out/securevars/KEK.auth ] && [ -f out/securevars/db.auth ]; then
     SRC_DIR="out/securevars"
@@ -15,4 +19,3 @@ fi
 
 echo "☠ AUTH blobs found in $SRC_DIR"
 ls -l "$SRC_DIR"/{PK,KEK,db}.auth 2>/dev/null || true
-

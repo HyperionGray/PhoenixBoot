@@ -26,6 +26,10 @@ set -euo pipefail
 # - On Secure Boot, prefer shimx64.efi.signed; grubx64.efi must be trusted (MOK/vendor key).
 # - If you do not provide vmlinuz/initrd, the grub.cfg entry can boot the installed OS by UUID.
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
 ESP=
 SHIM=
 GRUB_EFI=

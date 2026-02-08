@@ -3,6 +3,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
 if grep -r "demo/" Makefile* 2>/dev/null | grep -v "demo/makefile" || \
    grep -r "bak/" Makefile* 2>/dev/null || \
    grep -r "example" Makefile* 2>/dev/null; then
@@ -12,4 +16,3 @@ fi
 
 echo "☠ No demo references found in production build system"
 echo "☠ Production builds will reference staging/ only"
-

@@ -28,6 +28,7 @@
 #define MAX_DESCRIPTION_SIZE 512
 #define MAX_DISPLAYED_DELETIONS 10
 #define MAX_BACKUP_VARIABLES 10
+#define EMERGENCY_MARKER_PATH L"\\EFI\\PhoenixGuard\\UUEFI_EMERGENCY.marker"
 
 // UEFI Variable Protection System
 typedef enum {
@@ -85,6 +86,8 @@ STATIC VARIABLE_INFO *gVariables = NULL;
 STATIC UINTN gVariableCount = 0;
 STATIC SUSPICIOUS_ITEM gSuspiciousItems[MAX_SUSPICIOUS_ITEMS];
 STATIC UINTN gSuspiciousCount = 0;
+STATIC EFI_HANDLE gUefiImageHandle = NULL;
+STATIC BOOLEAN gEmergencyCapsule = FALSE;
 
 /**
   Compare two GUIDs
@@ -479,6 +482,10 @@ EnumerateAllVariables(VOID)
   UINTN NameSize;
   UINTN DataSize;
   UINT32 Attributes;
+  if (gVariables != NULL) {
+    FreePool(gVariables);
+    gVariables = NULL;
+  }
   
   Print(L"\n=== Enumerating All EFI Variables ===\n");
   Print(L"This may take a moment...\n\n");
@@ -1267,6 +1274,224 @@ ShowNuclearWipeMenu(VOID)
   }
 }
 
+EFI_STATUS
+ReadVariableSelection(
+  OUT UINTN *SelectionIndex,
+  OUT BOOLEAN *Cancelled
+  )
+{
+  CHAR16 digits[16];
+  UINTN length = 0;
+  EFI_INPUT_KEY Key;
+  UINTN EventIndex;
+
+  *Cancelled = FALSE;
+  Print(L"\nEnter variable index number (digits) or 'Q' to cancel: ");
+
+  while (TRUE) {
+    gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &EventIndex);
+    gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+
+    if (Key.UnicodeChar == L'\r' || Key.UnicodeChar == L'\n') {
+      Print(L"\n");
+      break;
+    }
+
+    if (Key.UnicodeChar == L'Q' || Key.UnicodeChar == L'q') {
+      Print(L"\n");
+      *Cancelled = TRUE;
+      return EFI_SUCCESS;
+    }
+
+    if (Key.UnicodeChar == 0x08 && length > 0) {
+      length--;
+      Print(L"\b \b");
+      continue;
+    }
+
+    if (Key.UnicodeChar >= L'0' && Key.UnicodeChar <= L'9') {
+      if (length < (sizeof(digits) / sizeof(digits[0]) - 1)) {
+        digits[length++] = Key.UnicodeChar;
+        Print(L"%c", Key.UnicodeChar);
+      }
+      continue;
+    }
+  }
+
+  if (length == 0) {
+    Print(L"\n✗ No digits entered\n");
+    return EFI_INVALID_PARAMETER;
+  }
+
+  digits[length] = 0;
+
+  UINT64 value = 0;
+  for (UINTN i = 0; i < length; i++) {
+    value = value * 10 + (digits[i] - L'0');
+  }
+
+  *SelectionIndex = (UINTN)value;
+  return EFI_SUCCESS;
+}
+
+VOID
+ManageVariableEditing(VOID)
+{
+  if (gVariableCount == 0) {
+    Print(L"\nNo EFI variables enumerated yet. Re-scan (option 7) first.\n");
+    return;
+  }
+
+  Print(L"\n╔════════════════════════════════════════════╗\n");
+  Print(L"║           VARIABLE EDITING                ║\n");
+  Print(L"╚════════════════════════════════════════════╝\n");
+  Print(L"\nShowing editable variables (indices shown in brackets):\n\n");
+
+  UINTN editableCount = 0;
+  for (UINTN i = 0; i < gVariableCount; i++) {
+    if (gVariables[i].IsEditable || gVariables[i].Category == VAR_CAT_VENDOR) {
+      Print(L"  [%lu] %s", i, gVariables[i].Name);
+      if (gVariables[i].IsSuspicious) {
+        Print(L" ⚠ SUSPICIOUS");
+      }
+      Print(L"\n    %s\n", gVariables[i].Description[0] ? gVariables[i].Description : L"No description");
+      editableCount++;
+      if (editableCount >= 25) {
+        Print(L"  ... and more editable variables are available\n");
+        break;
+      }
+    }
+  }
+
+  if (editableCount == 0) {
+    Print(L"  No safely editable variables detected\n");
+    return;
+  }
+
+  BOOLEAN cancelled = FALSE;
+  UINTN selection = 0;
+  EFI_STATUS Status = ReadVariableSelection(&selection, &cancelled);
+
+  if (EFI_ERROR(Status) || cancelled) {
+    if (cancelled) {
+      Print(L"Edit cancelled by user\n");
+    }
+    return;
+  }
+
+  if (selection >= gVariableCount) {
+    Print(L"✗ Invalid variable index %lu (max %lu)\n", selection, gVariableCount - 1);
+    return;
+  }
+
+  Status = EditVariable(selection);
+  if (!EFI_ERROR(Status)) {
+    Print(L"\nRescanning variables to refresh the list...\n");
+    EnumerateAllVariables();
+    Print(L"Re-scan complete\n");
+  }
+
+  Print(L"\nPress any key to continue...");
+  EFI_INPUT_KEY Key;
+  UINTN ContinueIndex;
+  gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &ContinueIndex);
+  gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+}
+
+/**
+  Emergency vendor variable clearing unlocked by signed capsule marker
+**/
+VOID
+EmergencyClearVendorVariables(VOID)
+{
+  if (!gEmergencyCapsule) {
+    Print(L"\n✹ Emergency capsule marker not detected. Boot the signed capsule to unlock this option.\n");
+    return;
+  }
+
+  if (gVariableCount == 0) {
+    Print(L"\nNo EFI variables enumerated yet. Re-scan using option 7 before proceeding.\n");
+    return;
+  }
+
+  Print(L"\n╔════════════════════════════════════════════╗\n");
+  Print(L"║      EMERGENCY: CLEAR VENDOR VARIABLES     ║\n");
+  Print(L"╚════════════════════════════════════════════╝\n");
+  Print(L"\nThis operation will DELETE all vendor-specific or editable variables\n");
+  Print(L"while preserving critical boot/security entries. Use only trusted media.\n\n");
+  Print(L"Type 'EMERGENCY' to confirm (case-sensitive): ");
+
+  CHAR16 Confirm[16];
+  UINTN Len = 0;
+  EFI_INPUT_KEY Key;
+  UINTN EventIndex;
+
+  while (TRUE) {
+    gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &EventIndex);
+    gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+
+    if (Key.UnicodeChar == L'\r' || Key.UnicodeChar == L'\n') {
+      Print(L"\n");
+      break;
+    }
+
+    if (Key.UnicodeChar == 0x08 && Len > 0) {
+      Len--;
+      Print(L"\b \b");
+      continue;
+    }
+
+    if (Len < (sizeof(Confirm) / sizeof(Confirm[0]) - 1)) {
+      Confirm[Len++] = Key.UnicodeChar;
+      Print(L"%c", Key.UnicodeChar);
+    }
+  }
+
+  Confirm[Len] = 0;
+
+  if (StrCmp(Confirm, L"EMERGENCY") != 0) {
+    Print(L"\n✗ Confirmation mismatch. Emergency clear aborted.\n");
+    return;
+  }
+
+  UINTN Cleared = 0;
+  EFI_STATUS Status;
+
+  for (UINTN i = 0; i < gVariableCount; i++) {
+    if (gVariables[i].Category == VAR_CAT_VENDOR || gVariables[i].Category == VAR_CAT_UNKNOWN || gVariables[i].IsEditable) {
+      Status = gRT->SetVariable(
+        gVariables[i].Name,
+        &gVariables[i].VendorGuid,
+        0,
+        0,
+        NULL
+      );
+      if (!EFI_ERROR(Status)) {
+        Cleared++;
+        if (Cleared <= 20) {
+          Print(L"  ✓ Cleared: %s\n", gVariables[i].Name);
+        } else if (Cleared == 21) {
+          Print(L"  ... more vendor variables cleared\n");
+        }
+      } else {
+        Print(L"  ✗ Failed to clear %s (status: %r)\n", gVariables[i].Name, Status);
+      }
+    }
+  }
+
+  Print(L"\n✓ Emergency clear completed: %lu variables cleared\n", Cleared);
+  Print(L"  Reboot required for the changes to take effect.\n");
+
+  Print(L"\nRescanning EFI variables...\n");
+  EnumerateAllVariables();
+  Print(L"Rescan complete\n");
+
+  Print(L"\nPress any key to continue...");
+  UINTN ContinueIndex;
+  gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &ContinueIndex);
+  gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+}
+
 /**
   Interactive menu system
 **/
@@ -1294,6 +1519,9 @@ ShowInteractiveMenu(VOID)
     Print(L"7. Re-scan Variables\n");
     Print(L"8. ☢ Nuclear Wipe Menu (EXTREME)\n");
     Print(L"9. 🔒 Validate Secure Boot Configuration\n");
+    if (gEmergencyCapsule) {
+      Print(L"E. ✹ Emergency Capsule Clear (Vendor variables)\n");
+    }
     Print(L"Q. Return to Firmware\n");
     Print(L"\nSelect option: ");
     
@@ -1338,36 +1566,7 @@ ShowInteractiveMenu(VOID)
         break;
         
       case L'6':
-        Print(L"\n╔════════════════════════════════════════════╗\n");
-        Print(L"║           VARIABLE EDITING                ║\n");
-        Print(L"╚════════════════════════════════════════════╝\n");
-        Print(L"\nShowing editable variables:\n\n");
-        
-        // Show editable variables
-        UINTN editableCount = 0;
-        for (UINTN i = 0; i < gVariableCount; i++) {
-          if (gVariables[i].IsEditable) {
-            Print(L"  [%lu] %s\n", i, gVariables[i].Name);
-            Print(L"      %s\n", gVariables[i].Description);
-            editableCount++;
-            if (editableCount >= 20) {
-              Print(L"  ... and more\n");
-              break;
-            }
-          }
-        }
-        
-        if (editableCount == 0) {
-          Print(L"  No safely editable variables found\n");
-        } else {
-          Print(L"\n⚠ Note: Variable indices shown in brackets []\n");
-          Print(L"  To edit: note the index number\n");
-          Print(L"  Feature requires additional implementation for index input\n");
-        }
-        
-        Print(L"\nPress any key to continue...");
-        gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
-        gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        ManageVariableEditing();
         break;
         
       case L'7':
@@ -1375,6 +1574,11 @@ ShowInteractiveMenu(VOID)
         Print(L"\nPress any key to continue...");
         gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
         gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+        break;
+        
+      case L'E':
+      case L'e':
+        EmergencyClearVendorVariables();
         break;
         
       case L'8':
@@ -1928,6 +2132,54 @@ DisplayBuildInfo(
 }
 
 /**
+  Detect whether the signed capsule marker exists on the running ESP
+**/
+BOOLEAN
+DetectEmergencyCapsuleMarker(VOID)
+{
+  EFI_STATUS Status;
+  EFI_LOADED_IMAGE_PROTOCOL *LoadedImage = NULL;
+  EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *Fs = NULL;
+  EFI_FILE_PROTOCOL *Root = NULL;
+  EFI_FILE_PROTOCOL *MarkerFile = NULL;
+  BOOLEAN Found = FALSE;
+
+  if (gUefiImageHandle == NULL) {
+    return FALSE;
+  }
+
+  Status = gBS->HandleProtocol(gUefiImageHandle, &gEfiLoadedImageProtocolGuid, (VOID **)&LoadedImage);
+  if (EFI_ERROR(Status) || LoadedImage == NULL || LoadedImage->DeviceHandle == NULL) {
+    return FALSE;
+  }
+
+  Status = gBS->HandleProtocol(LoadedImage->DeviceHandle,
+    &gEfiSimpleFileSystemProtocolGuid, (VOID **)&Fs);
+  if (EFI_ERROR(Status) || Fs == NULL) {
+    return FALSE;
+  }
+
+  Status = Fs->OpenVolume(Fs, &Root);
+  if (EFI_ERROR(Status) || Root == NULL) {
+    return FALSE;
+  }
+
+  Status = Root->Open(Root, &MarkerFile, EMERGENCY_MARKER_PATH, EFI_FILE_MODE_READ, 0);
+  if (!EFI_ERROR(Status) && MarkerFile != NULL) {
+    Found = TRUE;
+  }
+
+  if (MarkerFile) {
+    MarkerFile->Close(MarkerFile);
+  }
+  if (Root) {
+    Root->Close(Root);
+  }
+
+  return Found;
+}
+
+/**
   Dump variable data in hex and ASCII format
   
   @param VarInfo  Variable information including name and GUID
@@ -2419,7 +2671,7 @@ UefiMain (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  // Clear screen and reset console
+ // Clear screen and reset console
   if (gST && gST->ConOut) {
     gST->ConOut->Reset(gST->ConOut, TRUE);
     gST->ConOut->ClearScreen(gST->ConOut);
@@ -2427,6 +2679,8 @@ UefiMain (
   if (gST && gST->ConIn) {
     gST->ConIn->Reset(gST->ConIn, FALSE);
   }
+
+  gUefiImageHandle = ImageHandle;
 
   // Display banner
   Print(L"\n");
@@ -2464,6 +2718,13 @@ UefiMain (
 
   // Display completion marker
   Print(L"\n[UUEFI-COMPLETE]\n");
+
+  gEmergencyCapsule = DetectEmergencyCapsuleMarker();
+  if (gEmergencyCapsule) {
+    Print(L"\n✹ Emergency capsule marker detected; emergency clear option unlocked.\n");
+  } else {
+    Print(L"\n✹ Capsule marker missing. Boot the signed capsule (with the marker file) to enable emergency clearing.\n");
+  }
 
   // NEW: Interactive menu
   Print(L"\n\nOptions:\n");

@@ -3,6 +3,11 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
+mkdir -p out/audit
 echo '{"staging": [], "dev": [], "wip": [], "demo": []}' > out/audit/report.json
 echo "PhoenixGuard Repository Audit Summary" > out/audit/summary.txt
 echo "===================================" >> out/audit/summary.txt
@@ -36,4 +41,3 @@ echo "WIP: $WIP_COUNT files" >> out/audit/summary.txt
 echo "DEMO: $DEMO_COUNT files" >> out/audit/summary.txt
 
 echo "☠ Audit complete - see out/audit/"
-

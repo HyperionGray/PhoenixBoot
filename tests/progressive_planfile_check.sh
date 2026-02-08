@@ -20,7 +20,23 @@ fi
 echo "Validating planfile: $PLAN"
 
 # Minimal JSON field checks using python (venv if available)
-if [ -x "/home/punk/.venv/bin/python3" ]; then PY="/home/punk/.venv/bin/python3"; else PY="python3"; fi
+PY=""
+if [ -n "${VENV_PY:-}" ] && command -v "${VENV_PY}" >/dev/null 2>&1; then
+  PY="${VENV_PY}"
+elif [ -n "${VENV_BIN:-}" ] && command -v "${VENV_BIN}/python3" >/dev/null 2>&1; then
+  PY="${VENV_BIN}/python3"
+else
+  for cand in "$ROOT_DIR/venv/bin/python3" "$ROOT_DIR/.venv/bin/python3" python3 python; do
+    if command -v "$cand" >/dev/null 2>&1; then
+      PY="$cand"
+      break
+    fi
+  done
+fi
+if [ -z "${PY}" ]; then
+  echo "No usable Python found (tried VENV_PY/VENV_BIN, repo venv/.venv, python3/python)" >&2
+  exit 1
+fi
 
 "$PY" - "$PLAN" <<'PY'
 import sys, json

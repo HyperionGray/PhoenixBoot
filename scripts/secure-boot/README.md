@@ -6,6 +6,16 @@ Complete guide for SecureBoot key management, enrollment, and enablement operati
 
 This directory contains scripts for managing SecureBoot on **physical host machines**. For QEMU/VM operations, see `scripts/qemu/`.
 
+### Toolchain installer
+
+Quickly install the host tools required by the SecureBoot workflow (`sbsigntool`, `mokutil`, `cert-to-efi-sig-list`, etc.) with:
+
+```bash
+./scripts/secure-boot/install-toolchain.sh
+```
+
+Pass `--no-update` to skip `apt update` on Debian/Ubuntu. The script also works on Fedora (`dnf`) or Arch (`pacman`) hosts and will explain what to install manually if it cannot detect a package manager.
+
 ### Key Distinction: Host vs QEMU
 
 - **Host Operations** (this directory): Work on your physical machine's UEFI firmware
@@ -65,17 +75,32 @@ Enroll custom SecureBoot keys into OVMF (QEMU firmware).
 ./pf.py secure-enroll-secureboot
 
 # Or directly
-./scripts/secure-boot/enroll-secureboot.sh
+./scripts/secure-boot/enroll-secureboot.sh [--timeout SECONDS] [--no-kvm]
 ```
 
 **Use case**: Automated key enrollment for QEMU testing
+
+`timeout=SECONDS` and `no_kvm=1` parameters are supported when invoking via `pf.py`; they map to the same CLI flags for the script. Use longer timeouts when the VM boots slowly and `no_kvm=1` when `/dev/kvm` is unavailable.
 
 ### `enroll-secureboot-nosudo.sh`
 Alternative enrollment method without sudo requirements.
 
 ```bash
-./scripts/secure-boot/enroll-secureboot-nosudo.sh
+./scripts/secure-boot/enroll-secureboot-nosudo.sh [--timeout SECONDS] [--no-kvm]
 ```
+
+For any MOK-related pf tasks (`os-mok-enroll`, `secure-enroll-mok`, `secure-mok-verify`) pass `mok_cert_pem`, `mok_cert_der`, and `mok_dry_run` to control which certificates are used. The topology maps directly to the CLI flags supported by `scripts/mok-management/enroll-mok.sh`.
+
+## 📘 Documentation & Media
+
+### `create-secureboot-instructions.sh`
+Generate the SecureBoot quick-start guide and checksum manifest for CD/ISO bundles.
+
+```bash
+./scripts/secure-boot/create-secureboot-instructions.sh --docs-dir /tmp/sec-boot-docs
+```
+
+By default the files land in `out/artifacts/docs`; use `--docs-dir DIR` to keep the output on a different disk or within a container without relying on environment variables.
 
 ## 🔍 Status and Verification
 
@@ -107,21 +132,34 @@ Check SecureBoot status and system capability.
 
 ```bash
 # Via pf task (recommended)
-sudo ./pf.py secureboot-enable-host-kexec
+sudo ./pf.py secureboot-enable-kexec
 
 # Or directly
 sudo ./scripts/secure-boot/enable-secureboot-kexec.sh
 ```
 
-**⚠️ IMPORTANT**: This is a **framework implementation** demonstrating the double kexec workflow. Actual SecureBoot enablement requires hardware-specific code or BIOS setup.
+**⚠️ IMPORTANT**: This is an advanced host workflow. It orchestrates the kexec “double-jump” and can optionally:
+- Enroll PhoenixBoot keys via standard UEFI variables using `efi-updatevar` (Setup Mode required)
+- Run a custom Phase 2 command via `--phase2-cmd '…'` (the script will automatically switch to `--action=run_cmd`)
+
+It does **not** attempt vendor-specific firmware patching, and many platforms still require enabling Secure Boot in BIOS/UEFI settings.
+
+Additional knobs:
+- `--action=auto|enroll_keys|run_cmd|none` controls what Phase 2 does (auto picks the best strategy).
+- `--return-mode=auto|stay` lets you stay in the permissive kernel until you manually resume.
+- `--state-dir DIR` keeps the staging files on any writable path (default `/var/lib/phoenixboot/secureboot-kexec`).
+- `--alt-kernel VER` chooses a specific alternate kernel instead of auto-selecting the newest non-current release.
 
 **What it does**:
-1. Checks prerequisites (kexec, alternate kernels)
-2. Prepares alternate kernel with relaxed security
-3. Framework for switching kernels without reboot
-4. Provides structure for hardware-specific enablement
+1. Phase 1: Preflight checks + stage state + kexec to an alternate kernel
+2. Phase 2: Optional key enrollment and/or your custom command, then kexec back
+3. Phase 3: Cleanup + status summary
 
-**Recommended Approach**: Use BIOS/UEFI setup to enable SecureBoot (safest and most reliable).
+**Useful modes**:
+- Preview only: `./scripts/secure-boot/enable-secureboot-kexec.sh --dry-run`
+- Direct key enrollment (no kexec): `sudo ./scripts/secure-boot/enable-secureboot-kexec.sh --direct`
+
+**Recommended Approach**: BIOS/UEFI setup remains the safest and most reliable way to enable SecureBoot.
 
 ## 🎯 Common Workflows
 
@@ -135,7 +173,7 @@ sudo ./scripts/secure-boot/enable-secureboot-kexec.sh
 ./pf.py secure-make-auth
 
 # 3. Create bootable media
-ISO_PATH=/path/to/ubuntu.iso ./pf.py secureboot-create
+./pf.py secureboot-create iso_path=/path/to/ubuntu.iso
 ```
 
 ### Workflow 2: Check SecureBoot Status
@@ -172,6 +210,8 @@ Move keys from legacy locations to centralized `out/keys/` structure.
 ./pf.py secure-keys-prune
 ```
 
+The script now exposes `--dry-run` for previews and `--prune` directly on the CLI, which archives leftover `keys/`, `secureboot_certs`, and similar paths before removing them. Combine `--dry-run --prune` to simulate the cleanup without mutating files.
+
 **Organizes**:
 - `out/keys/PK/` - Platform Keys
 - `out/keys/KEK/` - Key Exchange Keys
@@ -191,7 +231,7 @@ All these scripts can be run via `pf.py` tasks:
 - `./pf.py secureboot-check` - Check SecureBoot status (HOST)
 
 ### Enablement Tasks
-- `./pf.py secureboot-enable-host-kexec` - Double kexec method (HOST)
+- `./pf.py secureboot-enable-kexec` - Double kexec method (HOST) (alias: `secureboot-enable-host-kexec`)
 - `./pf.py secure-qemu-enable-ui` - Launch QEMU GUI (VM only)
 
 ### Key Management Tasks

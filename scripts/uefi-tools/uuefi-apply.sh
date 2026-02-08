@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+cd "${SCRIPT_DIR}/../.."
+# shellcheck disable=SC1091
 source scripts/lib/common.sh
 
 info "☠ UUEFI apply (set BootNext for selected app)"
@@ -105,4 +107,3 @@ else
   echo "Example: EFI_DISK=/dev/nvme0n1 EFI_PART=1 APP=$APP just uuefi-apply"
   exit 1
 fi
-

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-import sys, io, os
+import os
+import shlex
+import sys
 p = "/usr/local/bin/pf"
 old = (
     "    if op == \"shell\":\n"
-    "        cmd = \" \\".join(args)\n"
+    "        cmd = \" \".join(args)\n"
     "        if not cmd: raise ValueError(\"shell needs a command\")\n"
     "        return run(cmd)\n"
 )

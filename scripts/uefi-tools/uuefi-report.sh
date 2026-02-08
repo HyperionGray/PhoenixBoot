@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+cd "${SCRIPT_DIR}/../.."
+# shellcheck disable=SC1091
 source scripts/lib/common.sh
 
 info "☠ UUEFI report (read-only)"
@@ -37,13 +39,13 @@ fi
 SCRAPER_DIR="nuclear-cd-build/iso/recovery/scripts"
 SCRAPER_PY="$SCRAPER_DIR/universal_hardware_scraper.py"
 if [ -f "$SCRAPER_PY" ]; then
-  if [ -x "/home/punk/.venv/bin/python3" ]; then PY="/home/punk/.venv/bin/python3"; else PY="python3"; fi
-  info "☠ Collecting UEFI variable summary and hardware profile via scraper"
-  "$PY" - <<'PY'
-import sys, json, os
+  if PY="$(resolve_python)"; then
+    info "☠ Collecting UEFI variable summary and hardware profile via scraper"
+    "$PY" - <<'PY'
 from pathlib import Path
 import importlib.util
-root = Path(__file__).resolve().parent.parent
+
+root = Path.cwd()
 scraper_path = root / 'nuclear-cd-build' / 'iso' / 'recovery' / 'scripts' / 'universal_hardware_scraper.py'
 spec = importlib.util.spec_from_file_location('uhs', str(scraper_path))
 uhs = importlib.util.module_from_spec(spec)
@@ -51,7 +53,7 @@ spec.loader.exec_module(uhs)
 s = uhs.UniversalHardwareScraper()
 profile = s.create_hardware_profile()
 s.save_profile_locally(profile)
-# Print concise summary for CLI
+
 vars_total = profile.uefi_variables.get('total_count', 0)
 cats = profile.uefi_variables.get('categories', {})
 print('\nUEFI variables: total=', vars_total)
@@ -61,9 +63,11 @@ for k in ['boot','security','vendor_specific','performance','hardware','unknown'
 print(f"\nHardware ID: {profile.hardware_id}")
 print(f"Manufacturer/Model: {profile.manufacturer} / {profile.model}")
 PY
+  else
+    warn "python3 not found; skipping profile collection"
+  fi
 else
   warn "Hardware scraper not found at $SCRAPER_PY; skipping profile collection"
 fi
 
 ok "UUEFI report complete"
-

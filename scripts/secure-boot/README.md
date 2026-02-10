@@ -245,7 +245,7 @@ All these scripts can be run via `pf.py` tasks:
 
 ## 🔗 Related Documentation
 
-- [SecureBoot Quick Reference](../../SECUREBOOT_QUICKSTART.md)
+- [SecureBoot Quick Reference](../../docs/SECUREBOOT_QUICKSTART.md)
 - [Bootkit Defense Workflow](../../BOOTKIT_DEFENSE_WORKFLOW.md)
 - [MOK Management](../mok-management/README.md)
 - [QEMU Scripts](../qemu/README.md)

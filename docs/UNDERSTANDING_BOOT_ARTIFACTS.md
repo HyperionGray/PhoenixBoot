@@ -324,7 +324,7 @@ mokutil --list-enrolled
 1. This document (you're here!)
 2. `keys/README.md` - SecureBoot key details
 3. `out/keys/mok/README.md` - MOK key details
-4. `SECUREBOOT_QUICKSTART.md` - Quick start guide
+4. `docs/SECUREBOOT_QUICKSTART.md` - Quick start guide
 5. `docs/SECURE_BOOT.md` - Deep dive technical docs
 
 ### External Resources:

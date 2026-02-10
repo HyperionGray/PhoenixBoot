@@ -105,7 +105,7 @@ ISO_PATH=/path/to/your.iso ./pf.py secureboot-create
 
 - **UEFI Specification**: https://uefi.org/specifications
 - **SecureBoot Explained**: See `docs/SECURE_BOOT.md` in this repository
-- **Bootable Media Guide**: See `SECUREBOOT_QUICKSTART.md` in this repository
+- **Bootable Media Guide**: See `docs/SECUREBOOT_QUICKSTART.md` in this repository
 
 ## ❓ Troubleshooting
 

@@ -393,7 +393,7 @@ sudo bash scripts/secure-env-check.sh
 ## See Also
 
 - [PhoenixBoot README](../README.md)
-- [Secure Boot Setup Guide](../SECUREBOOT_QUICKSTART.md)
+- [Secure Boot Setup Guide](./SECUREBOOT_QUICKSTART.md)
 - [Boot Security Analysis](BOOT_SEQUENCE_AND_ATTACK_SURFACES.md)
 - [Firmware Recovery](FIRMWARE_RECOVERY.md)
 

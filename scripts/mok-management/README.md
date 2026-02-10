@@ -318,7 +318,7 @@ MOK_CERT="/path/to/out/keys/mok/PGMOK.crt"
 
 ## 🔗 Related Documentation
 
-- [SecureBoot Quick Reference](../../SECUREBOOT_QUICKSTART.md)
+- [SecureBoot Quick Reference](../../docs/SECUREBOOT_QUICKSTART.md)
 - [Bootkit Defense Workflow](../../BOOTKIT_DEFENSE_WORKFLOW.md)
 - [Sign Kernel Modules Script](../../sign-kernel-modules.sh)
 - [Core Tasks](../../core.pf) - See MOK-related tasks

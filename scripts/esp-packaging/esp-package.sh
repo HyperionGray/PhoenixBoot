@@ -269,7 +269,7 @@ echo "   • If you signed it yourself: You need to enroll your db key first"
 echo ""
 echo "🔗 More info:"
 echo "   • Keys explained: keys/README.md"
-echo "   • SecureBoot setup: SECUREBOOT_QUICKSTART.md"
+echo "   • SecureBoot setup: docs/SECUREBOOT_QUICKSTART.md"
 echo "   • Full docs: docs/SECURE_BOOT.md"
 echo ""
 

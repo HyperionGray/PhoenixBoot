@@ -153,7 +153,7 @@ out/esp/esp.img          # Old ESP image location
 ```
 out/esp/secureboot-bootable.img    # New default name
 FIRST_BOOT_INSTRUCTIONS.txt        # Instructions (new)
-SECUREBOOT_QUICKSTART.md           # Quick reference (new)
+docs/SECUREBOOT_QUICKSTART.md           # Quick reference (new)
 ```
 
 ## What to Keep
@@ -258,7 +258,7 @@ ln -s secureboot-bootable.img out/esp/esp.img
 
 ### New Docs (Read These)
 
-1. **Quick Start:** `SECUREBOOT_QUICKSTART.md`
+1. **Quick Start:** `docs/SECUREBOOT_QUICKSTART.md`
 2. **Full Guide:** `docs/SECUREBOOT_BOOTABLE_MEDIA.md`
 3. **Comparison:** `docs/BEFORE_AND_AFTER.md`
 4. **Testing:** `docs/TESTING_GUIDE.md`
@@ -291,7 +291,7 @@ ln -s secureboot-bootable.img out/esp/esp.img
 If you have issues migrating:
 
 1. **Read the docs:**
-   - `SECUREBOOT_QUICKSTART.md` for quick reference
+   - `docs/SECUREBOOT_QUICKSTART.md` for quick reference
    - `docs/SECUREBOOT_BOOTABLE_MEDIA.md` for details
 
 2. **Check examples:**

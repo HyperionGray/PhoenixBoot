@@ -18,7 +18,7 @@ This comprehensive guide walks you through **stopping bootkits completely** in t
 
 **Also available:**
 - 📚 **[Getting Started Guide](GETTING_STARTED.md)** - Quick introduction for new users
-- 🎯 **[SecureBoot Quick Reference](SECUREBOOT_QUICKSTART.md)** - One-page command reference
+- 🎯 **[SecureBoot Quick Reference](docs/SECUREBOOT_QUICKSTART.md)** - One-page command reference
 
 ## 🎯 Quick Start: Three Ways to Begin
 

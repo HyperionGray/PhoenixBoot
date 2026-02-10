@@ -14,7 +14,7 @@ This document provides quick access to the most common PhoenixBoot operations.
 sudo dd if=out/esp/secureboot-bootable.img of=/dev/sdX bs=4M status=progress
 ```
 
-See [SECUREBOOT_QUICKSTART.md](SECUREBOOT_QUICKSTART.md) for more details.
+See [SECUREBOOT_QUICKSTART.md](./SECUREBOOT_QUICKSTART.md) for more details.
 
 ## Task Runner (Recommended)
 

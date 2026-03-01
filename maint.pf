@@ -1,35 +1,34 @@
 task maint-regen-instructions
   describe Generate copilot-instructions.md
-  shell bash scripts/maintenance/regen-instructions.sh
+  shell bash bashpf/maint-regen-instructions.sh
 end
 
 task maint-lint
   describe Run static analysis
-  shell bash scripts/maintenance/lint.sh
+  shell bash bashpf/maint-lint.sh
 end
 
 task maint-format
   describe Format source code
-  shell bash scripts/maintenance/format.sh
+  shell bash bashpf/maint-format.sh
 end
 
 task maint-docs
   describe Update documentation
-  shell bash -lc 'echo Documentation updated'
+  shell bash bashpf/maint-docs.sh
 end
 
 task maint-clean
   describe Clean build artifacts (DEEP_CLEAN=1 for full ESP clean)
-  shell bash scripts/maintenance/cleanup.sh
+  shell bash bashpf/maint-clean.sh
 end
 
 task maint-install-git-hooks
   describe Install pre-push size guard hook
-  shell mkdir -p .git/hooks && chmod 0755 .git/hooks
-  shell cp scripts/git-hooks/pre-push .git/hooks/pre-push && chmod 0755 .git/hooks/pre-push
+  shell bash bashpf/maint-install-git-hooks.sh
 end
 
 task maint-pre-push-check
   describe Run the size guard check locally (no push)
-  shell bash -lc 'scripts/git-hooks/pre-push <<EOF\n$(git rev-parse HEAD) 0000000000000000000000000000000000000000 refs/heads/main\nEOF'
+  shell bash bashpf/maint-pre-push-check.sh
 end

@@ -3,102 +3,55 @@
 
 task workflow-artifact-create
   describe Create all necessary artifacts for ESP and CD with secure boot support
-  shell ARTIFACT_DIR=out/artifacts ESP_DIR=out/esp KEYS_DIR=out/keys && mkdir -p $ARTIFACT_DIR/esp $ARTIFACT_DIR/cd $ARTIFACT_DIR/docs $ESP_DIR $KEYS_DIR
-  shell bash -c "if [ ! -f staging/boot/NuclearBootEdk2.efi ] || [ ! -f staging/boot/UUEFI.efi ]; then ./pf.py build-build; fi"
-  shell bash -c "KEYS_DIR=out/keys && if [ ! -f $KEYS_DIR/PK/PK.key ]; then ./pf.py secure-keygen; fi"
-  shell bash -c "KEYS_DIR=out/keys && if [ ! -f $KEYS_DIR/PK/PK.auth ]; then ./pf.py secure-make-auth; fi"
-  shell ./pf.py build-package-esp
-  shell bash -c "ARTIFACT_DIR=out/artifacts && if [ -f out/esp/esp.img ]; then cp out/esp/esp.img $ARTIFACT_DIR/esp/; fi"
-  shell ARTIFACT_DIR=out/artifacts && cp staging/boot/NuclearBootEdk2.efi $ARTIFACT_DIR/esp/
-  shell ARTIFACT_DIR=out/artifacts && cp staging/boot/KeyEnrollEdk2.efi $ARTIFACT_DIR/esp/
-  shell ARTIFACT_DIR=out/artifacts && cp staging/boot/UUEFI.efi $ARTIFACT_DIR/esp/
-  shell bash -c "ARTIFACT_DIR=out/artifacts KEYS_DIR=out/keys && if [ -d $KEYS_DIR ]; then cp -r $KEYS_DIR $ARTIFACT_DIR/; fi"
-  shell ARTIFACT_DIR=out/artifacts && echo '✅ Artifacts created in' $ARTIFACT_DIR
-  shell ARTIFACT_DIR=out/artifacts && ls -lh $ARTIFACT_DIR/esp/
+  shell bash bashpf/workflow-artifact-create.sh
 end
 
 task workflow-cd-prepare
   describe Prepare bootable CD/ISO with ESP and secure boot artifacts
-  shell bash -c "ARTIFACT_DIR=out/artifacts && if [ ! -d $ARTIFACT_DIR/esp ]; then echo 'Run workflow-artifact-create first'; exit 1; fi"
-  shell CD_BUILD_DIR=nuclear-cd-build && mkdir -p $CD_BUILD_DIR/boot $CD_BUILD_DIR/efi $CD_BUILD_DIR/keys
-  shell bash -c "ARTIFACT_DIR=out/artifacts CD_BUILD_DIR=nuclear-cd-build && if [ -f $ARTIFACT_DIR/esp/esp.img ]; then cp $ARTIFACT_DIR/esp/esp.img $CD_BUILD_DIR/boot/; fi"
-  shell ARTIFACT_DIR=out/artifacts CD_BUILD_DIR=nuclear-cd-build && cp $ARTIFACT_DIR/esp/*.efi $CD_BUILD_DIR/efi/ || true
-  shell bash -c "ARTIFACT_DIR=out/artifacts CD_BUILD_DIR=nuclear-cd-build && if [ -d $ARTIFACT_DIR/keys ]; then cp -r $ARTIFACT_DIR/keys/* $CD_BUILD_DIR/keys/ || true; fi"
-  shell bash scripts/secure-boot/create-secureboot-instructions.sh
-  shell CD_BUILD_DIR=nuclear-cd-build && echo '✅ CD structure prepared in' $CD_BUILD_DIR
-  shell echo '   Next: Use ISO creation tool to burn to CD'
+  shell bash bashpf/workflow-cd-prepare.sh
 end
 
 task workflow-secureboot-instructions
   describe Generate comprehensive secure boot setup instructions
-  shell bash scripts/secure-boot/generate-secureboot-instructions.sh
+  shell bash bashpf/workflow-secureboot-instructions.sh
 end
 
 task workflow-complete-esp-cd
   describe Complete workflow: Create artifacts, prepare CD, generate instructions
-  shell ./pf.py workflow-artifact-create
-  shell ./pf.py workflow-cd-prepare
-  shell ./pf.py workflow-secureboot-instructions
-  shell echo ""
-  shell echo "✅ Complete ESP and CD workflow finished!"
-  shell echo "   Artifacts: out/artifacts/"
-  shell echo "   CD build:  nuclear-cd-build/"
-  shell echo "   Docs:      out/artifacts/docs/SECURE_BOOT_SETUP.md"
+  shell bash bashpf/workflow-complete-esp-cd.sh
 end
 
 task workflow-verify-artifacts
   describe Verify all created artifacts are valid
-  shell echo 'Verifying artifacts...'
-  shell bash -c "ARTIFACT_DIR=out/artifacts && if [ -f \$ARTIFACT_DIR/esp/esp.img ]; then SIZE=\$(stat -f%z \$ARTIFACT_DIR/esp/esp.img 2>/dev/null || stat -c%s \$ARTIFACT_DIR/esp/esp.img); echo \"ESP image: \$SIZE bytes\"; else echo 'ESP image missing!'; exit 1; fi"
-  shell bash -c "ARTIFACT_DIR=out/artifacts && for bin in NuclearBootEdk2.efi KeyEnrollEdk2.efi UUEFI.efi; do if [ ! -f \$ARTIFACT_DIR/esp/\$bin ]; then echo \"Missing \$bin\"; exit 1; else echo \"Found \$bin\"; fi; done"
-  shell bash -c "ARTIFACT_DIR=out/artifacts && if [ ! -d \$ARTIFACT_DIR/keys ]; then echo 'Keys directory missing!'; exit 1; else echo 'Keys directory found'; fi"
-  shell bash -c "ARTIFACT_DIR=out/artifacts && if command -v fsck.vfat >/dev/null 2>&1; then fsck.vfat -n \$ARTIFACT_DIR/esp/esp.img || echo 'ESP image verification: OK (or fsck not available)'; fi"
-  shell echo '✅ All artifacts verified'
+  shell bash bashpf/workflow-verify-artifacts.sh
 end
 
 task workflow-usb-write
   describe Write artifacts to USB drive (DESTRUCTIVE - requires USB_DEVICE)
-  shell bash -c 'if [ -z "${USB_DEVICE:-}" ]; then echo "ERROR: Set USB_DEVICE=/dev/sdX"; exit 1; fi'
-  shell bash -c 'if [ ! -b "${USB_DEVICE}" ]; then echo "ERROR: ${USB_DEVICE} is not a block device"; exit 1; fi'
-  shell bash -c 'ARTIFACT_DIR=out/artifacts && if [ ! -f $ARTIFACT_DIR/esp/esp.img ]; then echo "ERROR: ESP image not found. Run workflow-artifact-create first"; exit 1; fi'
-  shell bash -c 'sudo umount ${USB_DEVICE}* 2>/dev/null || true'
-  shell bash -c 'echo "Writing ESP image to ${USB_DEVICE}..."'
-  shell bash -c 'ARTIFACT_DIR=out/artifacts && sudo dd if=$ARTIFACT_DIR/esp/esp.img of=${USB_DEVICE} bs=4M status=progress'
-  shell sudo sync
-  shell bash -c 'echo "✅ USB drive written successfully"'
-  shell bash -c 'echo "   Device: ${USB_DEVICE}"'
-  shell echo '   You can now boot from this USB drive'
+  shell bash bashpf/workflow-usb-write.sh
 end
 
 task workflow-test-uuefi
   describe Test UUEFI application in QEMU (requires QEMU, OVMF, mtools)
-  shell bash -c "command -v qemu-system-x86_64 >/dev/null 2>&1 || { echo 'ERROR: qemu-system-x86_64 not found. Install QEMU.'; exit 1; }"
-  shell bash -c "command -v mcopy >/dev/null 2>&1 || { echo 'ERROR: mcopy not found. Install mtools.'; exit 1; }"
-  shell bash -c "if [ ! -f out/esp/esp.img ]; then echo 'Building ESP image...'; ./pf.py build-package-esp; fi"
-  shell bash -c "if [ ! -f staging/boot/UUEFI.efi ]; then echo 'ERROR: UUEFI.efi not found'; exit 1; fi"
-  shell ./pf.py test-qemu-uuefi
-  shell echo ''
-  shell echo 'Test results:'
-  shell bash -c "if [ -f out/qemu/serial-uuefi.log ]; then echo '  Log: out/qemu/serial-uuefi.log'; wc -l out/qemu/serial-uuefi.log; else echo '  No log file generated'; fi"
-  shell bash -c "if [ -f out/qemu/report-uuefi.xml ]; then echo '  Report: out/qemu/report-uuefi.xml'; grep -o 'failures=\"[0-9]*\"' out/qemu/report-uuefi.xml; fi"
+  shell bash bashpf/workflow-test-uuefi.sh
 end
 
 task workflow-usb-prepare
   describe Prepare USB media structure (requires USB_DEVICE)
-  shell bash scripts/usb-tools/usb-prepare.sh
+  shell bash bashpf/workflow-usb-prepare.sh
 end
 
 task workflow-usb-write-dd
   describe Write image to USB using dd (DESTRUCTIVE - requires USB_DEVICE and IMG_PATH)
-  shell bash scripts/usb-tools/usb-write-dd.sh
+  shell bash bashpf/workflow-usb-write-dd.sh
 end
 
 task workflow-recovery-reboot-metal
   describe Reboot to normal metal boot (exit recovery environment)
-  shell bash scripts/recovery/reboot-to-metal.sh
+  shell bash bashpf/workflow-recovery-reboot-metal.sh
 end
 
 task workflow-recovery-reboot-vm
   describe Reboot to VM/recovery environment
-  shell bash scripts/recovery/reboot-to-vm.sh
+  shell bash bashpf/workflow-recovery-reboot-vm.sh
 end

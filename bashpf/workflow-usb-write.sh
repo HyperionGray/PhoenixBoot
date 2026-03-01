@@ -11,7 +11,7 @@ if [ ! -b "${USB_DEVICE}" ]; then
 fi
 
 ARTIFACT_DIR=out/artifacts
-if [ ! -f $ARTIFACT_DIR/esp/esp.img ]; then
+if [ ! -f "$ARTIFACT_DIR/esp/esp.img" ]; then
   echo "ERROR: ESP image not found. Run workflow-artifact-create first"
   exit 1
 fi
@@ -19,7 +19,7 @@ fi
 sudo umount ${USB_DEVICE}* 2>/dev/null || true
 
 echo "Writing ESP image to ${USB_DEVICE}..."
-sudo dd if=$ARTIFACT_DIR/esp/esp.img of=${USB_DEVICE} bs=4M status=progress
+sudo dd if="$ARTIFACT_DIR/esp/esp.img" of=${USB_DEVICE} bs=4M status=progress
 
 sudo sync
 

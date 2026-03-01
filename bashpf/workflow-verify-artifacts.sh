@@ -3,8 +3,8 @@
 echo 'Verifying artifacts...'
 
 ARTIFACT_DIR=out/artifacts
-if [ -f $ARTIFACT_DIR/esp/esp.img ]; then
-  SIZE=$(stat -f%z $ARTIFACT_DIR/esp/esp.img 2>/dev/null || stat -c%s $ARTIFACT_DIR/esp/esp.img)
+if [ -f "$ARTIFACT_DIR/esp/esp.img" ]; then
+  SIZE=$(stat -f%z "$ARTIFACT_DIR/esp/esp.img" 2>/dev/null || stat -c%s "$ARTIFACT_DIR/esp/esp.img")
   echo "ESP image: $SIZE bytes"
 else
   echo 'ESP image missing!'
@@ -12,7 +12,7 @@ else
 fi
 
 for bin in NuclearBootEdk2.efi KeyEnrollEdk2.efi UUEFI.efi; do
-  if [ ! -f $ARTIFACT_DIR/esp/$bin ]; then
+  if [ ! -f "$ARTIFACT_DIR/esp/$bin" ]; then
     echo "Missing $bin"
     exit 1
   else
@@ -20,7 +20,7 @@ for bin in NuclearBootEdk2.efi KeyEnrollEdk2.efi UUEFI.efi; do
   fi
 done
 
-if [ ! -d $ARTIFACT_DIR/keys ]; then
+if [ ! -d "$ARTIFACT_DIR/keys" ]; then
   echo 'Keys directory missing!'
   exit 1
 else
@@ -28,7 +28,7 @@ else
 fi
 
 if command -v fsck.vfat >/dev/null 2>&1; then
-  fsck.vfat -n $ARTIFACT_DIR/esp/esp.img || echo 'ESP image verification: OK (or fsck not available)'
+  fsck.vfat -n "$ARTIFACT_DIR/esp/esp.img" || echo 'ESP image verification: OK (or fsck not available)'
 fi
 
 echo '✅ All artifacts verified'

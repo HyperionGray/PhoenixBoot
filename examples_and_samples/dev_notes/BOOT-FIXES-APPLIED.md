@@ -32,7 +32,7 @@
 - Manually set environment variables
 
 **Fix Applied:**
-- Created `phoenix-boot` command that works from anywhere
+- Created `phoenixboot` command that works from anywhere
 - Auto-detects PhoenixGuard installation directory
 - Simple commands: `build`, `usb`, `test`, `status`, `fix`
 - Clear error messages and guidance
@@ -63,7 +63,7 @@
 ### What Works Now:
 1. **ESP Image**: Minimal 128MB (was 3.8GB)
 2. **Boot Process**: Finds files dynamically using search
-3. **User Commands**: Simple `./phoenix-boot` interface
+3. **User Commands**: Simple `./phoenixboot` interface
 4. **Module Loading**: Correct order enforced
 5. **Testing**: QEMU properly configured
 
@@ -86,21 +86,21 @@ out/esp/esp.img (128MB)
 ### From ANY Directory:
 ```bash
 # Check status
-/path/to/PhoenixGuard/phoenix-boot status
+/path/to/PhoenixBoot/phoenixboot status
 
 # Build system
-/path/to/PhoenixGuard/phoenix-boot build
+/path/to/PhoenixBoot/phoenixboot build
 
 # Test in VM
-/path/to/PhoenixGuard/phoenix-boot test
+/path/to/PhoenixBoot/phoenixboot test
 
 # Write to USB
-/path/to/PhoenixGuard/phoenix-boot usb /dev/sdb
+/path/to/PhoenixBoot/phoenixboot usb /dev/sdb
 ```
 
 ### Or Set Alias:
 ```bash
-alias pb="/home/punk/Projects/edk2-bootkit-defense/PhoenixGuard/phoenix-boot"
+alias pb="/path/to/PhoenixBoot/phoenixboot"
 pb status
 pb build
 pb test
@@ -138,9 +138,9 @@ FORCE_MINIMAL=1
 
 If you still get errors:
 
-1. **"Memory full"**: Run `./phoenix-boot fix` to rebuild minimal ESP
+1. **"Memory full"**: Run `./phoenixboot fix` to rebuild minimal ESP
 2. **"ISO not found"**: ISOs go on separate USB, not in ESP
-3. **"Path not found"**: Run from PhoenixGuard dir or use full path
+3. **"Path not found"**: Run from PhoenixBoot dir or use full path
 4. **"Module errors"**: Run `scripts/fix-module-order.sh`
 
 ## Performance Comparison
@@ -163,7 +163,7 @@ ls -lh out/esp/esp.img
 env | grep ISO_PATH
 
 # Test boot
-./phoenix-boot test
+./phoenixboot test
 ```
 
 ---

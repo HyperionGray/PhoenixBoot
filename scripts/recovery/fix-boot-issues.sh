@@ -224,7 +224,7 @@ echo "☠ Issue 4: Poor user experience"
 echo "   Fix: Creating user-friendly commands"
 
 # Main user entry point
-cat > phoenix-boot << 'USERBOOT'
+cat > phoenixboot << 'USERBOOT'
 #!/usr/bin/env bash
 # PhoenixGuard Boot - User-friendly launcher
 # Run this from ANYWHERE - it handles paths correctly
@@ -302,8 +302,8 @@ case "${1:-help}" in
 esac
 USERBOOT
 
-chmod +x phoenix-boot
-ln -sf phoenix-boot pb  # Short alias
+chmod +x phoenixboot
+ln -sf phoenixboot pb  # Short alias
 
 # 5. FIX QEMU TEST CONFIGURATION
 echo ""
@@ -412,13 +412,13 @@ echo "☠ Summary of changes:"
 echo "  1. ESP size reduced from 3.8GB to 128MB"
 echo "  2. Removed embedded ISO from ESP" 
 echo "  3. Fixed GRUB paths to use search instead of hardcoded"
-echo "  4. Created user-friendly 'phoenix-boot' command"
+echo "  4. Created user-friendly 'phoenixboot' command"
 echo "  5. Fixed module loading order"
 echo "  6. Created proper test configuration"
 echo ""
 echo "☠ Next steps:"
-echo "  1. Build fresh: ./phoenix-boot build"
-echo "  2. Test: ./phoenix-boot test"
-echo "  3. Deploy to USB: ./phoenix-boot usb /dev/sdX"
+echo "  1. Build fresh: ./phoenixboot build"
+echo "  2. Test: ./phoenixboot test"
+echo "  3. Deploy to USB: ./phoenixboot usb /dev/sdX"
 echo ""
 echo "The system is now ACTUALLY production ready."

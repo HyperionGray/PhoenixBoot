@@ -97,19 +97,19 @@ Clean up PhoenixBoot documentation to focus on essential files (README.md, QUICK
 
 #### Final Structure (Clean and Focused)
 ```
-Root Documentation (Essential - 9 files):
+Root Documentation (Essential - 8 files):
 ├── README.md (main documentation - comprehensive overview)
 ├── GETTING_STARTED.md (beginner-friendly guide)
 ├── QUICKSTART.md (quick reference)
 ├── ARCHITECTURE.md (system design) ⭐ NEW
 ├── FEATURES.md (feature status) ⭐ NEW
-├── docs/SECUREBOOT_QUICKSTART.md (specific feature quickstart)
 ├── TESTING_SUMMARY.md (test status)
 ├── SECURITY_REVIEW_2025-12-07.md (latest security audit)
 └── LICENSE.md (required)
 
 Detailed Documentation:
 └── docs/ (30+ technical documents organized by topic)
+    ├── SECUREBOOT_QUICKSTART.md (specific feature quickstart)
     ├── Container architecture docs
     ├── Core technical docs
     ├── UUEFI docs

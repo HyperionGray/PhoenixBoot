@@ -103,7 +103,7 @@ Root Documentation (Essential - 9 files):
 ├── QUICKSTART.md (quick reference)
 ├── ARCHITECTURE.md (system design) ⭐ NEW
 ├── FEATURES.md (feature status) ⭐ NEW
-├── SECUREBOOT_QUICKSTART.md (specific feature quickstart)
+├── docs/SECUREBOOT_QUICKSTART.md (specific feature quickstart)
 ├── TESTING_SUMMARY.md (test status)
 ├── SECURITY_REVIEW_2025-12-07.md (latest security audit)
 └── LICENSE.md (required)

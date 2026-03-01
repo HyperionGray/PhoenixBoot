@@ -96,7 +96,7 @@ PhoenixBoot/
 
 **Documentation:**
 - `SECURE_BOOT_IMPLEMENTATION_SUMMARY.md` - Complete implementation guide
-- `SECUREBOOT_QUICKSTART.md` - User quick reference
+ - `../SECUREBOOT_QUICKSTART.md` - User quick reference
 - `docs/SECUREBOOT_BOOTABLE_MEDIA.md` - Bootable media guide
 
 ### Security Summary
@@ -201,7 +201,7 @@ Essential Documentation (Root):
 ├── ARCHITECTURE.md                   # System design ⭐ NEW
 ├── FEATURES.md                       # Feature tracking ⭐ NEW
 ├── BOOTKIT_DEFENSE_WORKFLOW.md       # User workflow ⭐ NEW
-├── SECUREBOOT_QUICKSTART.md          # SecureBoot reference
+├── ../SECUREBOOT_QUICKSTART.md       # SecureBoot reference
 ├── LICENSE.md                        # Apache 2.0 license
 └── TESTING_SUMMARY.md                # Test status
 

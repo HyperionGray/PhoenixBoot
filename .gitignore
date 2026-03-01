@@ -58,3 +58,10 @@ nohup*.out
 # Generated documentation files
 copilot-instructions.md
 WARP.md
+
+# Container/Podman runtime artifacts
+db.sql
+storage.lock
+userns.lock
+.bish.sqlite
+.bish-index

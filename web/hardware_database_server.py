@@ -39,6 +39,10 @@ if app.config['SECRET_KEY'] == 'phoenix_guard_hardware_db':
     print("   Generate with: python -c 'import secrets; print(secrets.token_hex(32))'", file=sys.stderr)
     print("=" * 80, file=sys.stderr)
 
+    # In production environments, fail fast
+    if os.environ.get('FLASK_ENV') == 'production' or os.environ.get('ENVIRONMENT') == 'production':
+        raise ValueError("Cannot start in production with insecure default SECRET_KEY!")
+
 # Database setup
 DB_PATH = Path("hardware_profiles.db")
 UPLOADS_PATH = Path("hardware_uploads") 

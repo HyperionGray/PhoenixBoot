@@ -36,6 +36,10 @@ build/
 
 # Large demo archives
 examples_and_samples/demo/**/*.tar.gz
+examples_and_samples/demo/legacy/bak/
+examples_and_samples/demo/legacy-old/examples/nuclear-boot-rust/target/
+examples_and_samples/demo/legacy-old/examples/nuclear-boot-rust/debug.log
+examples_and_samples/demo/makefile/Makefile.old
 
 # Session/process leftovers
 # Prevent accidental inclusion of nohup outputs anywhere in the tree

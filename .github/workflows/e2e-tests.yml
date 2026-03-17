@@ -66,7 +66,7 @@ jobs:
           ./pf.py build-package-esp
       
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: build-artifacts
           path: |
@@ -113,7 +113,7 @@ jobs:
       
       - name: Upload Test Logs
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: basic-boot-logs
           path: |
@@ -185,7 +185,7 @@ jobs:
       
       - name: Upload SecureBoot Test Logs
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: secureboot-logs
           path: |
@@ -238,7 +238,7 @@ jobs:
       
       - name: Upload Strict Test Logs
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: secureboot-strict-logs
           path: out/qemu/
@@ -303,7 +303,7 @@ jobs:
       
       - name: Upload Attestation Test Logs
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: attestation-logs
           path: |
@@ -365,7 +365,7 @@ jobs:
       
       - name: Upload UUEFI Test Logs
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: uuefi-logs
           path: |
@@ -475,7 +475,7 @@ jobs:
       
       - name: Upload Cloud-Init Test Logs
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: cloud-init-logs
           path: |

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["MemoryRegionKind","Optional","PixelFormat"],"struct":["BootInfo","FrameBuffer","FrameBufferInfo","MemoryRegion","MemoryRegions","TlsTemplate"]};

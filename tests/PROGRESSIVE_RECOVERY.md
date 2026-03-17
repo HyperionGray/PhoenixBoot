@@ -20,4 +20,6 @@ Manual steps (for now):
 3) ESP validation
    just validate verify-esp-robust
 
-Future work: add a small shell harness to parse planfile and assert required fields without jq dependency.
+Automated checks:
+- `tests/progressive_planfile_check.sh` validates required planfile fields.
+- `python3 -m unittest tests/test_command_safety.py` validates dry-run planfile generation and safe command execution.

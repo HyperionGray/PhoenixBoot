@@ -21,7 +21,7 @@ Scripts for system recovery and remediation.
 ## VM-Based Recovery
 
 - `install_kvm_snapshot_jump.sh` - Install KVM snapshot jump
-- `phoenix_progressive.py` - Progressive recovery system
+- `phoenix_progressive.py` - Progressive recovery system (supports `--dry-run`, `--auto-yes`, `--plan-out`)
 
 ## Usage
 
@@ -34,6 +34,9 @@ sudo ./scripts/recovery/reboot-to-metal.sh
 
 # EXTREME CAUTION: Nuclear wipe
 sudo ./scripts/recovery/nuclear-wipe.sh
+
+# Progressive workflow (plan-only, no execution)
+python3 ./scripts/recovery/phoenix_progressive.py --dry-run --auto-yes --plan-out plans/progressive.json
 ```
 
 **WARNING**: The nuclear-wipe script performs complete system sanitization. Only use in extreme malware situations!

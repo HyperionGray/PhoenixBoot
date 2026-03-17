@@ -17,55 +17,143 @@ Each level requires user confirmation and explains the escalation.
 Users can stop at any level or let it auto-escalate to success.
 """
 
+import argparse
 import os
 import sys
 import json
+import shlex
 import subprocess
-import time
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import List, Optional, Sequence, Tuple
 
 class PhoenixProgressiveRecovery:
-    def __init__(self):
+    TOOL_NAME = "phoenix_progressive"
+    TOOL_VERSION = "2.0.0"
+
+    def __init__(self, dry_run: bool = False, auto_yes: bool = False, plan_out: Optional[str] = None):
         self.risk_level = "UNKNOWN"
         self.results = {}
         self.escalation_level = 0
         self.max_level = 6
-        
+        self.dry_run = dry_run
+        self.auto_yes = auto_yes
+        self.plan_out = Path(plan_out) if plan_out else None
+        self.run_id = str(uuid.uuid4())
+
+        self.plan = {
+            "tool": {
+                "name": self.TOOL_NAME,
+                "version": self.TOOL_VERSION
+            },
+            "run": {
+                "run_id": self.run_id,
+                "created_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                "dry_run": self.dry_run,
+                "auto_yes": self.auto_yes,
+                "cwd": os.getcwd(),
+                "user": os.environ.get("USER", "unknown"),
+            },
+            "levels": [],
+            "outputs": {
+                "logs_dir": "out/logs",
+                "plan_path": ""
+            },
+            "errors": []
+        }
+
     def print_banner(self):
         """Print the PhoenixGuard banner"""
         print("☠ PHOENIXGUARD - Progressive Bootkit Defense & Recovery")
         print("=" * 56)
         print("☠ Intelligent escalation from safest to most extreme recovery methods")
+        if self.dry_run:
+            print("☠ DRY-RUN mode: commands are logged but not executed")
+        if self.auto_yes:
+            print("☠ AUTO-YES mode: interactive confirmations use safe defaults")
         print()
-    
-    def run_command(self, cmd, description="", check=True, capture_output=True):
-        """Run a command with error handling
-        
-        SECURITY: This function uses shell=True for command execution.
-        Current usage is safe as commands are hardcoded strings (e.g., "make scan-bootkits"),
-        but NEVER pass user input directly to this function without validation.
-        TODO: Refactor to use command lists instead of shell strings.
-        """
+
+    def _render_command(self, cmd: Sequence[str]) -> str:
+        return shlex.join([str(part) for part in cmd])
+
+    def run_command(
+        self,
+        cmd: Sequence[str],
+        description: str = "",
+        check: bool = True,
+        capture_output: bool = True
+    ) -> Tuple[str, str, int]:
+        """Run commands safely without invoking a shell."""
         if description:
             print(f"☠ {description}")
-        
+
+        rendered_cmd = self._render_command(cmd)
+        if self.dry_run:
+            print(f"☠ [dry-run] would run: {rendered_cmd}")
+            return "", "", 0
+
         try:
             if capture_output:
-                result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=check)
+                result = subprocess.run(list(cmd), capture_output=True, text=True, check=check)
                 return result.stdout, result.stderr, result.returncode
-            else:
-                result = subprocess.run(cmd, shell=True, check=check)
-                return "", "", result.returncode
+            result = subprocess.run(list(cmd), check=check)
+            return "", "", result.returncode
         except subprocess.CalledProcessError as e:
             if check:
-                print(f"☠ Command failed: {cmd}")
+                print(f"☠ Command failed: {rendered_cmd}")
                 print(f"   Error: {e}")
                 return "", str(e), e.returncode
             return "", str(e), e.returncode
         except Exception as e:
-            print(f"☠ Unexpected error running: {cmd}")
+            print(f"☠ Unexpected error running: {rendered_cmd}")
             print(f"   Error: {e}")
             return "", str(e), 1
+
+    def prompt_yes_no(self, prompt: str, default: bool = False, force_yes_when_auto: bool = False) -> bool:
+        """Prompt for yes/no with automation-friendly defaults."""
+        if self.auto_yes:
+            auto_response = True if force_yes_when_auto else default
+            shown = "y" if auto_response else "n"
+            print(f"{prompt} [{'Y/n' if default else 'y/N'}]: {shown} (auto)")
+            return auto_response
+
+        response = input(f"{prompt} [{'Y/n' if default else 'y/N'}]: ").strip().lower()
+        if not response:
+            return default
+        return response == "y"
+
+    def prompt_choice(self, prompt: str, choices: Sequence[str], default: str) -> str:
+        if self.auto_yes:
+            print(f"{prompt}: {default} (auto)")
+            return default
+
+        response = input(f"{prompt}: ").strip()
+        if response in choices:
+            return response
+        return default
+
+    def prompt_text(self, prompt: str, default: str = "") -> str:
+        if self.auto_yes:
+            print(f"{prompt}: {default} (auto)")
+            return default
+        return input(f"{prompt}: ").strip()
+
+    def _default_plan_path(self) -> Path:
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        return Path("plans") / f"phoenix_progressive_{timestamp}.json"
+
+    def write_planfile(self) -> Path:
+        """Persist run metadata to a JSON planfile."""
+        plan_path = self.plan_out if self.plan_out else self._default_plan_path()
+        plan_path.parent.mkdir(parents=True, exist_ok=True)
+        self.plan["outputs"]["plan_path"] = str(plan_path)
+
+        with plan_path.open("w", encoding="utf-8") as handle:
+            json.dump(self.plan, handle, indent=2, sort_keys=True)
+
+        print(f"☠ Planfile written: {plan_path}")
+        return plan_path
 
     def level_1_detect(self):
         """Level 1: Software-based bootkit detection (safest)"""
@@ -81,7 +169,10 @@ class PhoenixProgressiveRecovery:
             return False
             
         # Run bootkit detection
-        stdout, stderr, returncode = self.run_command("make scan-bootkits", "Running bootkit detection scan")
+        stdout, stderr, returncode = self.run_command(
+            ["make", "scan-bootkits"],
+            "Running bootkit detection scan"
+        )
         
         # Check results
         if os.path.exists("bootkit_scan_results.json"):
@@ -123,12 +214,18 @@ class PhoenixProgressiveRecovery:
             return False
             
         # Build and deploy recovery ISO
-        stdout, stderr, returncode = self.run_command("make build-nuclear-cd", "Building Nuclear Boot recovery ISO")
+        stdout, stderr, returncode = self.run_command(
+            ["make", "build-nuclear-cd"],
+            "Building Nuclear Boot recovery ISO"
+        )
         if returncode != 0:
             print("☠ Failed to build recovery ISO")
             return False
             
-        stdout, stderr, returncode = self.run_command("sudo make deploy-esp-iso", "Deploying recovery ISO to ESP")
+        stdout, stderr, returncode = self.run_command(
+            ["sudo", "make", "deploy-esp-iso"],
+            "Deploying recovery ISO to ESP"
+        )
         if returncode != 0:
             print("☠ Failed to deploy recovery ISO")
             return False
@@ -141,9 +238,8 @@ class PhoenixProgressiveRecovery:
         print()
         
         # Ask if user wants to proceed immediately
-        choice = input("☠ Boot recovery environment now? [y/N]: ").strip().lower()
-        if choice == 'y':
-            self.run_command("make boot-from-esp-iso", capture_output=False)
+        if self.prompt_yes_no("☠ Boot recovery environment now?", default=False):
+            self.run_command(["make", "boot-from-esp-iso"], capture_output=False)
             
         return True  # User can handle recovery from here
         
@@ -178,20 +274,20 @@ class PhoenixProgressiveRecovery:
         print("  [3] Write clean firmware (DANGEROUS)")
         print("  [4] Skip to next level")
         
-        choice = input("Select operation [1-4]: ").strip()
+        choice = self.prompt_choice("Select operation [1-4]", ["1", "2", "3", "4"], default="4")
         
         if choice == "1":
-            cmd = "sudo make secure-firmware-access ARGS='--backup current-firmware.bin'"
+            cmd = ["sudo", "make", "secure-firmware-access", "ARGS=--backup current-firmware.bin"]
             self.run_command(cmd, "Backing up firmware securely", capture_output=False)
             
         elif choice == "2":
-            cmd = "sudo make secure-firmware-access ARGS='--read suspicious-firmware.bin'"
+            cmd = ["sudo", "make", "secure-firmware-access", "ARGS=--read suspicious-firmware.bin"]
             self.run_command(cmd, "Reading firmware for analysis", capture_output=False)
             
         elif choice == "3":
             print("☠ WARNING: This will overwrite your firmware!")
             if self.confirm_escalation("write clean firmware (DANGEROUS)"):
-                cmd = f"sudo make secure-firmware-access ARGS='--write {clean_firmware}'"
+                cmd = ["sudo", "make", "secure-firmware-access", f"ARGS=--write {clean_firmware}"]
                 self.run_command(cmd, "Writing clean firmware", capture_output=False)
                 print("☠ Firmware recovery completed! System should be clean now.")
                 return True
@@ -232,7 +328,7 @@ class PhoenixProgressiveRecovery:
         if not os.path.exists(recovery_image):
             if os.path.exists(base_image):
                 print("☠ Enhanced recovery image not found - creating it...")
-                stdout, stderr, rc = self.run_command("sudo scripts/enhance_kvm_recovery.sh")
+                stdout, stderr, rc = self.run_command(["sudo", "scripts/enhance_kvm_recovery.sh"])
                 if rc != 0:
                     print("☠ Failed to create enhanced recovery image")
                     print(f"   Using base image: {base_image}")
@@ -257,8 +353,8 @@ class PhoenixProgressiveRecovery:
         print("   6. Run 'make reboot-to-metal' when done to return to normal")
         print()
         
-        if input("Proceed with reboot? [y/N]: ").strip().lower() == 'y':
-            self.run_command("sudo make reboot-to-vm", capture_output=False)
+        if self.prompt_yes_no("Proceed with reboot?", default=False):
+            self.run_command(["sudo", "make", "reboot-to-vm"], capture_output=False)
             return True
             
         return False
@@ -290,7 +386,7 @@ class PhoenixProgressiveRecovery:
             
         # Install Xen snapshot jump
         stdout, stderr, returncode = self.run_command(
-            "sudo make install-phoenix",
+            ["sudo", "make", "install-phoenix"],
             "Installing Xen Snapshot Jump configuration"
         )
         
@@ -307,8 +403,8 @@ class PhoenixProgressiveRecovery:
         print("   4. Hardware firmware access via dom0")
         print()
         
-        if input("Reboot to Xen now? [y/N]: ").strip().lower() == 'y':
-            self.run_command("sudo reboot", capture_output=False)
+        if self.prompt_yes_no("Reboot to Xen now?", default=False):
+            self.run_command(["sudo", "reboot"], capture_output=False)
             return True
             
         return False
@@ -346,19 +442,18 @@ class PhoenixProgressiveRecovery:
         print("   Do you have the exact firmware dump for your hardware?")
         print()
         
-        safety_check = input("Type 'I UNDERSTAND THE RISKS' to proceed: ").strip()
+        safety_check = self.prompt_text("Type 'I UNDERSTAND THE RISKS' to proceed", default="")
         if safety_check != "I UNDERSTAND THE RISKS":
             print("Hardware recovery cancelled.")
             return False
             
         # Proceed with hardware recovery
-        self.run_command("make hardware-recovery", capture_output=False)
+        self.run_command(["make", "hardware-recovery"], capture_output=False)
         return True
         
     def confirm_escalation(self, action):
         """Ask user to confirm escalation to next level"""
-        response = input(f"☠ Proceed to {action}? [y/N]: ").strip().lower()
-        return response == 'y'
+        return self.prompt_yes_no(f"☠ Proceed to {action}?", default=False, force_yes_when_auto=True)
         
     def run_progressive_recovery(self):
         """Run the progressive recovery workflow"""
@@ -378,48 +473,75 @@ class PhoenixProgressiveRecovery:
             ("☠ XEN", "Xen hypervisor isolation", self.level_5_xen),
             ("☠ HARDWARE", "Direct SPI flash recovery", self.level_6_hardware),
         ]
-        
-        for level_num, (icon, description, handler) in enumerate(levels, 1):
-            print(f"\n{'='*60}")
-            print(f"{icon} LEVEL {level_num}: {description.upper()}")
-            print(f"{'='*60}")
-            
-            try:
-                success = handler()
-                if success:
-                    print(f"\n☠ Level {level_num} completed successfully!")
-                    print("☠ PhoenixGuard recovery workflow complete.")
-                    
-                    if level_num < 4:  # Software-only levels
-                        print("\n☠ Recommended next steps:")
-                        print("  1. Verify system integrity with additional scans")
-                        print("  2. Monitor system behavior for anomalies")
-                        print("  3. Consider upgrading to hardware-based protection")
-                    
-                    return True
-                    
-            except KeyboardInterrupt:
-                print("\n\n☠ Recovery cancelled by user.")
-                return False
-            except Exception as e:
-                print(f"\n☠ Level {level_num} failed: {e}")
-                print("   Continuing to next escalation level...")
-                
-        print("\n☠ All escalation levels attempted.")
-        print("☠ If system is still infected, consider:")
-        print("  • Professional malware analysis service")
-        print("  • Hardware replacement (motherboard)")
-        print("  • Complete system rebuild from scratch")
-        return False
+
+        completed = False
+        try:
+            for level_num, (icon, description, handler) in enumerate(levels, 1):
+                print(f"\n{'='*60}")
+                print(f"{icon} LEVEL {level_num}: {description.upper()}")
+                print(f"{'='*60}")
+
+                level_entry = {
+                    "level": level_num,
+                    "icon": icon,
+                    "description": description,
+                    "ok": False,
+                    "error": None
+                }
+                self.plan["levels"].append(level_entry)
+
+                try:
+                    success = handler()
+                    level_entry["ok"] = bool(success)
+                    if success:
+                        print(f"\n☠ Level {level_num} completed successfully!")
+                        print("☠ PhoenixGuard recovery workflow complete.")
+
+                        if level_num < 4:  # Software-only levels
+                            print("\n☠ Recommended next steps:")
+                            print("  1. Verify system integrity with additional scans")
+                            print("  2. Monitor system behavior for anomalies")
+                            print("  3. Consider upgrading to hardware-based protection")
+
+                        completed = True
+                        break
+
+                except KeyboardInterrupt:
+                    print("\n\n☠ Recovery cancelled by user.")
+                    level_entry["error"] = "cancelled by user"
+                    break
+                except Exception as e:
+                    print(f"\n☠ Level {level_num} failed: {e}")
+                    print("   Continuing to next escalation level...")
+                    level_entry["error"] = str(e)
+
+            if not completed:
+                print("\n☠ All escalation levels attempted.")
+                print("☠ If system is still infected, consider:")
+                print("  • Professional malware analysis service")
+                print("  • Hardware replacement (motherboard)")
+                print("  • Complete system rebuild from scratch")
+
+            return completed
+        finally:
+            self.write_planfile()
 
 def main():
     """Main entry point"""
+    parser = argparse.ArgumentParser(description="PhoenixGuard Progressive Recovery")
+    parser.add_argument("--dry-run", action="store_true", help="Record and simulate actions without executing commands")
+    parser.add_argument("--auto-yes", action="store_true", help="Use automation defaults for prompts")
+    parser.add_argument("--plan-out", help="Write planfile to an explicit path")
+    args = parser.parse_args()
+
     if os.geteuid() != 0:
         print("☠  Note: Some operations require root privileges.")
         print("   PhoenixGuard will prompt for sudo when needed.")
         print()
-    
-    recovery = PhoenixProgressiveRecovery()
+
+    # Dry-run should never block on prompts in automation environments.
+    auto_yes = args.auto_yes or args.dry_run
+    recovery = PhoenixProgressiveRecovery(dry_run=args.dry_run, auto_yes=auto_yes, plan_out=args.plan_out)
     try:
         success = recovery.run_progressive_recovery()
         exit_code = 0 if success else 1

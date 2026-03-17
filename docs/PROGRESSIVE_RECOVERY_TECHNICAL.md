@@ -15,6 +15,10 @@ Commands
 - Dry run (planfile only, no changes):
   just nuke progressive-dry-run
 
+- Direct script usage (automation-friendly):
+  python3 scripts/recovery/phoenix_progressive.py --dry-run --auto-yes
+  python3 scripts/recovery/phoenix_progressive.py --plan-out plans/incident-123.json
+
 - Individual levels:
   - Level 1 — Detect (read-only)
     just nuke level1-scan
@@ -42,6 +46,7 @@ Planfile output
   - levels attempted with ok/err details
   - outputs: logs_dir and plan_path
   - errors: top-level unexpected errors
+- You can override the output path with `--plan-out <path>`.
 
 Baseline and scanning
 - The scanner script (scripts/scan-bootkits.sh) will:

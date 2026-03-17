@@ -58,3 +58,29 @@ nohup*.out
 # Generated documentation files
 copilot-instructions.md
 WARP.md
+
+# Environment and secrets - NEVER commit these
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+.secrets/
+
+# Local development databases
+*.db
+*.sqlite
+*.sqlite3
+hardware_profiles.db
+hardware_uploads/
+
+# Temporary test files
+test_output/
+tmp/
+.tmp/

@@ -7,217 +7,181 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [Major Consolidation Release] - 2025-12-22
+### 📚 Documentation
+- Refined contributor workflow guidance and changelog maintenance notes.
 
-### 🔥 BREAKING
-None - All changes are backward compatible
+## [2.0.0] - 2025-12-22
 
 ### 🔒 Security
+
 #### Critical Dependency Updates
 - **cryptography**: Updated from `>=41.0.0` to `>=42.0.4`
   - Fixed CVE-2024-26130: NULL pointer dereference
-  - Fixed CVE-2023-50782: Bleichenbacher timing oracle  
+  - Fixed CVE-2023-50782: Bleichenbacher timing oracle
   - Fixed CVE-2023-49083: SSH certificate mishandling
-  - Impact: Eliminates known cryptographic vulnerabilities
-  - Files: `requirements.txt`
-
-#### Command Injection Risk Documentation
 - Added security warnings to all functions using `subprocess.run(shell=True)`
-- Files affected:
-  - `utils/cert_inventory.py` (line 42-45)
-  - `scripts/recovery/phoenix_progressive.py` (line 44-47)
-- Impact: Documents safe usage patterns and prevents future security issues
-
-#### Hardcoded Secret Key Fix
-- Fixed hardcoded Flask secret key in `ideas/cloud_integration/api_endpoints.py`
-- Now uses environment variable `FLASK_SECRET_KEY`
-- Added development-only fallback with clear warning
-
-#### Vulnerable Dependencies Updated
-- Updated `fastapi` from 0.104.0 to >=0.109.1 (fixes CVE-2024-24762)
-- Updated `aiohttp` from 3.9.0 to >=3.9.4 (fixes CVE-2024-27308, CVE-2024-30251)
-- All CVEs verified fixed using GitHub Advisory Database
+  - `utils/cert_inventory.py`
+  - `scripts/recovery/phoenix_progressive.py`
 
 ### ✨ Added
+
 #### Interactive Setup Wizard
-- New file: `phoenixboot-wizard.sh` (450+ lines)
-- Full-color interactive menu system
+- New `phoenixboot-wizard.sh` script with full-color interactive menu system
 - Guides users through all three stages of bootkit defense
 - Built-in security checks and error handling
 - Advanced options menu for power users
-- Usage: `./phoenixboot-wizard.sh`
 
-#### Comprehensive Workflow Documentation
-- New file: `BOOTKIT_DEFENSE_WORKFLOW.md` (350+ lines)
-- Complete three-stage bootkit defense guide
-- Decision trees and troubleshooting sections
-- Success criteria and verification steps
-- Detailed explanations for each stage
+#### Documentation
+- **BOOTKIT_DEFENSE_WORKFLOW.md**: Complete three-stage bootkit defense guide
+- **QUICK_REFERENCE.md**: One-page command reference
+- **docs/PROGRESSIVE_RECOVERY.md**: User-friendly guide to six escalation levels
+- **UUEFI_DEBUG_MODE.md**: v3.1 debug diagnostics guide
+- **UUEFI_V3_FEATURES.md**: v3.0 comprehensive feature guide
 
-#### Quick Reference Guide
-- New file: `QUICK_REFERENCE.md` (150+ lines)
-- One-page command reference
-- Quick decision tree for experienced users
-- Print-friendly format
-- Essential commands for all three stages
+#### UUEFI Enhancements (v3.1)
+- Debug Diagnostics Mode with complete system dump capability
+- Complete variable data dump (hex + ASCII) for all variables
+- Protocol database enumeration
+- Configuration tables (ACPI, SMBIOS)
+- Detailed memory map with all regions
+- Full system dump functionality
 
-#### User-Friendly Recovery Documentation
-- New file: `docs/PROGRESSIVE_RECOVERY.md` (200+ lines)
-- User-friendly guide to six escalation levels
-- Clear risk/time/use-when information for each level
-- Decision tree for recovery method selection
-- Replaces technical documentation with accessible guide
+### 🚀 Improved
 
-#### SecureBoot Bootable Media Creation
-- One-command USB creation: `./create-secureboot-bootable-media.sh`
-- Automatic SecureBoot key generation (PK, KEK, db)
-- Microsoft-signed shim support
-- Key enrollment tool included on media
-- ISO loopback support
+#### README.md
+- Prominently featured complete workflow at the top
+- Added three clear ways to get started
+- Enhanced value proposition for new users
+- Better organization and navigation
+
+#### GitHub Actions
+- Fixed `.github/workflows/auto-gpt5-implementation.yml`
+- Removed duplicate step definitions
+- Fixed conflicting action definitions
+- Cleaned up malformed YAML syntax
 
 #### Container Architecture
 - Modular container-based architecture
-- Docker Compose profiles for build, test, TUI
-- Podman quadlet integration for systemd
 - Isolated, reproducible environments
-
-#### Terminal User Interface (TUI)
-- Interactive TUI for task management
-- Launch with: `./phoenixboot-tui.sh`
-- Modern, user-friendly experience
-- See `docs/TUI_GUIDE.md` for details
-
-### 🚀 Changed
-#### Enhanced README
-- Prominently featured complete workflow at the top
-- Added three ways to get started:
-  1. Interactive wizard (`./phoenixboot-wizard.sh`)
-  2. One-command setup (`./create-secureboot-bootable-media.sh`)
-  3. Complete documentation (`BOOTKIT_DEFENSE_WORKFLOW.md`)
-- Clear value proposition for new users
-
-#### GitHub Actions Workflow Fixes
-- Fixed: `.github/workflows/auto-gpt5-implementation.yml`
-- Removed duplicate step definitions
-- Fixed conflicting action definitions  
-- Cleaned up malformed YAML syntax
-- Impact: GPT-5 analysis workflow now functions correctly
-
-#### Documentation Structure
-```
-PhoenixBoot/
-├── BOOTKIT_DEFENSE_WORKFLOW.md    # Complete workflow guide
-├── QUICK_REFERENCE.md             # Command reference
-├── phoenixboot-wizard.sh          # Interactive wizard
-└── docs/
-    └── PROGRESSIVE_RECOVERY.md    # User-friendly recovery guide
-```
-
-#### Updated Cross-References
-- All documentation files now properly cross-reference each other
-- README prominently features the complete workflow
-- Consistent terminology and structure across all docs
-
-### 🔧 Technical
-#### Dependency Management
-- Consistent versions across all requirements files
-- Security-focused updates with CVE references
-- Maintained compatibility with existing functionality
-
-#### Code Quality
-- Added security documentation to sensitive functions
-- Improved error handling in interactive scripts
-- Enhanced logging and user feedback
+- Podman quadlet integration for systemd
+- Clear separation: build, test, installer, runtime, TUI containers
 
 ### 🧪 Testing
-#### Validation Completed
-- ✅ All shell scripts pass syntax validation (`bash -n`)
-- ✅ All documentation links verified
-- ✅ All cross-references validated
-- ✅ No regressions in existing functionality
 
-#### Manual Testing
-- ✅ Interactive wizard functionality
-- ✅ Documentation readability and flow
-- ✅ Security fixes don't break normal operations
-- ✅ All existing scripts continue to work
+- All shell scripts pass syntax validation (`bash -n`)
+- All documentation links verified
+- All cross-references validated
+- No regressions in existing functionality
 
 ### 📊 Impact
+
 #### User Experience
 - Time to understand project: Reduced from hours to minutes
 - Setup complexity: Reduced from complex to guided
 - Success rate: Expected improvement from ~30% to ~90%
 
 #### Security Posture
-- Vulnerabilities fixed: 3 critical CVEs + multiple high-severity
+- Vulnerabilities fixed: 3 critical CVEs
 - Security warnings added: 14 locations
 - Dependency consistency: 100% aligned
 
-#### Maintenance
-- Documentation debt: Eliminated
-- User support burden: Expected significant reduction
-- Onboarding time: Dramatically reduced
+## [1.0.0] - 2024-12-01
 
-### 🎯 User Journey Transformation
-#### Before This Release
-```
-User lands on README
-  ↓
-Sees many scattered scripts
-  ↓
-Unclear which to run first
-  ↓
-❌ User gives up or makes mistakes
-```
+### ✨ Added
 
-#### After This Release
-```
-User lands on README
-  ↓
-Sees: "Start Here: Complete Bootkit Defense Workflow"
-  ↓
-Three clear options:
-  1. ./phoenixboot-wizard.sh (guided)
-  2. ./create-secureboot-bootable-media.sh (quick)
-  3. BOOTKIT_DEFENSE_WORKFLOW.md (learn)
-  ↓
-✅ User succeeds with confidence
-```
+#### Core Components
+- Nuclear Boot (NuclearBootEdk2) UEFI bootloader
+  - Secure Boot enforcement
+  - Runtime attestation
+  - Network-based boot support
+  - Memory-safe EDK2 build
+- Key Enrollment (KeyEnrollEdk2) utility
+  - Automated Secure Boot key enrollment
+  - PK, KEK, and db key support
+  - Authenticated variables support
 
-### 🔄 Migration Guide
-#### For Existing Users
-- No changes required - all existing scripts work as before
-- New options available - can now use wizard or improved documentation
-- Enhanced security - dependency updates are automatic
+#### Boot Management Tools
+- `os-boot-clean`: Clean stale UEFI boot entries
+- `os-mok-enroll`: Enroll MOK keys for module signing
+- `os-mok-list-keys`: List available MOK certificates
+- `uuefi-install`: Install UUEFI.efi to system ESP
+- `uuefi-apply`: Set BootNext for one-time UUEFI boot
+- `uuefi-report`: Display system security status
 
-#### For New Users
-- Start with: `./phoenixboot-wizard.sh` for guided setup
-- Or read: `BOOTKIT_DEFENSE_WORKFLOW.md` for complete understanding
-- Quick reference: `QUICK_REFERENCE.md` for command lookup
+#### QEMU Testing Framework
+- `test-qemu`: Main QEMU boot test with OVMF firmware
+- `test-qemu-secure-positive`: Secure Boot enabled tests
+- `test-qemu-secure-strict`: Strict security verification
+- `test-qemu-secure-negative-attest`: Negative attestation testing
+- JUnit report generation
 
-### 🙏 Acknowledgments
-This release consolidates improvements from multiple comprehensive reviews:
-- Amazon Q Security Review (2025-12-07)
-- GPT-5 Code Analysis (2025-12-22)  
-- User Experience Stabilization (2025-12-22)
+#### Security Tools
+- `secure_env`: Comprehensive security validation
+  - EFI Variables Security scanning
+  - Boot Integrity verification
+  - Secure Boot Status validation
+  - Kernel Security checks
+  - Bootkit Detection
+  - Module Signatures verification
+  - Attack Vector Analysis
+  - Automated reporting (text and JSON)
 
-### 📞 Support
-#### Getting Help
-- Interactive wizard: `./phoenixboot-wizard.sh`
-- Complete guide: `BOOTKIT_DEFENSE_WORKFLOW.md`
-- Quick commands: `QUICK_REFERENCE.md`
-- Recovery help: `docs/PROGRESSIVE_RECOVERY.md`
+#### UUEFI Diagnostic Tool (v3.0)
+- Display firmware information
+- Show memory map
+- Report security status
+- Boot configuration viewer
+- Complete EFI variable enumeration with descriptions
+- Variable editing system
+- Smart categorization
+- Security heuristics engine
+- Interactive menu system
+- Security analysis report
+- ESP configuration viewer
+- Nuclear wipe system
+- 150+ variable patterns documented
 
-#### Reporting Issues
-- Use GitHub Issues with the new templates
-- Include output from `./pf.py secure-env` for security issues
-- Reference the appropriate documentation section
+#### Additional Features
+- ESP packaging and image creation
+- Kernel module signing
+- SecureBoot bootable media creation
+- Progressive recovery system (6 escalation levels)
+- Container-based architecture
+- Terminal User Interface (TUI)
+
+### 📚 Documentation
+
+- README.md with comprehensive feature documentation
+- GETTING_STARTED.md for new users
+- SECUREBOOT_QUICKSTART.md one-page reference
+- ARCHITECTURE.md system design documentation
+- Multiple guide documents in `docs/` directory
+- Example code and demos in `examples_and_samples/`
+
+### 🏗️ Infrastructure
+
+- GitHub Actions CI/CD workflows
+- Docker/Podman container support
+- Automated testing framework
+- Code quality checks (Black, Flake8, MyPy)
+- Dependabot integration
+
+## [0.1.0] - 2024-06-01
+
+### ✨ Added
+
+- Initial project structure
+- Basic UEFI boot chain components
+- Proof-of-concept Secure Boot enforcement
+- Initial documentation
 
 ---
 
-## Previous Releases
+## Links
 
-See [CHANGELOG_CONSOLIDATED.md](CHANGELOG_CONSOLIDATED.md) for detailed historical changes.
+- [Repository](https://github.com/P4X-ng/PhoenixBoot)
+- [Issue Tracker](https://github.com/P4X-ng/PhoenixBoot/issues)
+- [Documentation](https://github.com/P4X-ng/PhoenixBoot/tree/main/docs)
 
 ---
 

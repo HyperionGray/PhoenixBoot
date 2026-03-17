@@ -2,235 +2,306 @@
 
 Thank you for your interest in contributing to PhoenixBoot! This document provides guidelines for contributing to the project.
 
-## 🚀 Quick Start
-
-1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/PhoenixBoot.git`
-3. Create a branch: `git checkout -b feature/your-feature-name`
-4. Make your changes
-5. Test your changes thoroughly
-6. Commit your changes: `git commit -m "Description of changes"`
-7. Push to your fork: `git push origin feature/your-feature-name`
-8. Open a Pull Request
-
-## 📋 Code of Conduct
-
-Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
-
-## 🎯 Types of Contributions
-
-We welcome the following types of contributions:
-
-### �� Bug Reports
-- Use the GitHub issue tracker
-- Include system information (OS, UEFI version, hardware)
-- Provide steps to reproduce
-- Include relevant logs and error messages
-
-### ✨ Feature Requests
-- Check existing issues first
-- Clearly describe the feature and its use case
-- Explain why it would be valuable to PhoenixBoot users
-
-### 💻 Code Contributions
-- Bug fixes
-- New features
-- Documentation improvements
-- Test coverage improvements
-- Performance optimizations
-
-### 📚 Documentation
-- Fix typos or clarify existing documentation
-- Add examples and use cases
-- Translate documentation
-- Improve README and guides
-
-## 🔧 Development Setup
+## 🚀 Getting Started
 
 ### Prerequisites
-- Python 3.11 or higher
+
+- Python 3.8 or higher
+- Podman (for container-based workflows)
 - Git
-- Linux environment (or WSL2 on Windows)
-- Root/sudo access for UEFI operations
+- QEMU (for testing UEFI components)
+- EDK2 toolchain (for UEFI firmware development)
 
-### Setting Up Development Environment
+### Setting Up Your Development Environment
 
-```bash
-# Clone the repository
-git clone https://github.com/P4X-ng/PhoenixBoot.git
-cd PhoenixBoot
+1. Fork and clone the repository:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/PhoenixBoot.git
+   cd PhoenixBoot
+   ```
 
-# Install dependencies
-pip install -r requirements.txt
+2. If you are contributing from a fork, add the main repository as `upstream`:
+   ```bash
+   git remote add upstream https://github.com/P4X-ng/PhoenixBoot.git
+   ```
 
-# Run tests
-pytest tests/
+3. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-# Try the interactive wizard
-./phoenixboot-wizard.sh
-```
+4. Verify your setup:
+   ```bash
+   ./pf.py --help
+   ```
 
-### Using Docker for Development
+## 📋 How to Contribute
 
-```bash
-# Build all containers
-docker-compose --profile build up
+### Reporting Bugs
 
-# Run tests
-docker-compose --profile test up
+Before creating a bug report, please check existing issues to avoid duplicates.
+Use the bug report template when it fits the issue.
 
-# Launch TUI
-docker-compose --profile tui up
-```
+When reporting a bug, include:
+- A clear and descriptive title
+- Steps to reproduce the issue
+- Expected vs. actual behavior
+- Your environment (OS, Python version, UEFI firmware version)
+- Output from `./pf.py secure-env` for security-related issues
+- Relevant logs or error messages
 
-## 📝 Coding Standards
+### Suggesting Enhancements
+
+Enhancement suggestions are welcome! Please include:
+- A clear description of the proposed feature
+- Use cases and benefits
+- Any potential drawbacks or implementation challenges
+- Mock-ups or examples if applicable
+
+Use the feature request template when it fits the proposal.
+
+### Pull Requests
+
+For significant changes, open or reference an issue first so the direction is clear before you start.
+
+1. **Create a branch** for your changes:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Make your changes**:
+   - Follow the existing code style
+   - Add tests for new functionality
+   - Update documentation as needed
+   - Keep commits focused and atomic
+
+3. **Test your changes**:
+   ```bash
+   # Run linting
+   black . && flake8
+   
+   # Run tests
+   pytest tests/
+   
+   # Test UEFI components (if applicable)
+   ./pf.py workflow-test-uuefi
+   ```
+
+4. **Commit your changes**:
+   - Use clear, descriptive commit messages
+   - Follow conventional commits format: `type(scope): description`
+   - Examples: `feat(uuefi): add variable editing`, `fix(secure-boot): handle missing keys`
+
+5. **Push and create a pull request**:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+6. **Before opening the pull request, verify the checklist**:
+   - Tests added or updated when behavior changed
+   - Documentation updated where needed
+   - Security-sensitive changes clearly called out
+   - No merge conflicts with the current `main` branch
+
+## 🎨 Code Style
 
 ### Python Code
+
 - Follow PEP 8 style guidelines
+- Use Black for code formatting: `black .`
 - Use type hints where appropriate
-- Write docstrings for functions and classes
-- Keep functions focused and small
-- Add comments for complex logic
+- Maximum line length: 100 characters
+- Write docstrings for all public functions and classes
 
 ### Shell Scripts
+
 - Use `#!/bin/bash` shebang
-- Quote variables: `"$variable"`
-- Check command success: `|| exit 1`
-- Add help messages: `-h` or `--help`
-- Test with `shellcheck`
+- Include error handling with `set -e` or explicit error checks
+- Add comments for complex logic
+- Test scripts with `shellcheck`
 
-### Security Requirements
-- Never commit secrets or credentials
-- Use environment variables for sensitive data
-- Avoid `subprocess.run(shell=True)` when possible
-- Validate all user inputs
-- Document security considerations
+### C/UEFI Code
 
-### Documentation
-- Use clear, concise language
-- Include code examples
-- Add screenshots for UI changes
-- Keep documentation up to date with code changes
+- Follow EDK2 coding standards
+- Use proper memory management
+- Include error checking for all EFI function calls
+- Document non-obvious behavior
 
 ## 🧪 Testing
 
 ### Running Tests
 
 ```bash
-# Run all tests
-pytest
+# Unit tests
+pytest tests/
 
-# Run specific test file
-pytest tests/test_specific.py
+# Integration tests
+pytest tests/ -m integration
 
-# Run with coverage
-pytest --cov=./ --cov-report=html
+# UEFI component tests
+./pf.py workflow-test-uuefi
+
+# Container-based tests
+podman compose --profile test up
 ```
 
 ### Writing Tests
-- Write tests for new features
-- Update tests when modifying existing code
-- Aim for good coverage of critical paths
-- Use meaningful test names
+
+- Write tests for all new functionality
+- Follow existing test patterns in `tests/` directory
+- Use descriptive test names: `test_function_name_scenario_expected_result`
 - Include both positive and negative test cases
 
-## 📤 Submitting Changes
+## 🔒 Security
 
-### Pull Request Process
+### Security-Sensitive Code
 
-1. **Before submitting:**
-   - Ensure all tests pass
-   - Update documentation
-   - Add entry to CHANGELOG.md if applicable
-   - Verify no security vulnerabilities (run `gh-advisory-database` check)
+When working with security-critical components:
+- Avoid `subprocess.run(shell=True)` - use command lists instead
+- Validate all user inputs
+- Use cryptography library functions correctly
+- Document security implications in code comments
+- Add security warnings for sensitive operations
 
-2. **Pull Request Description:**
-   - Clear title describing the change
-   - Reference any related issues
-   - List what was changed and why
-   - Include screenshots for UI changes
-   - Note any breaking changes
+### Reporting Security Vulnerabilities
 
-3. **Review Process:**
-   - Maintainers will review your PR
-   - Address feedback and questions
-   - Keep PR focused on a single change
-   - Be patient and respectful
+**Do not report security vulnerabilities through public GitHub issues.**
 
-### Commit Messages
+Instead, please report them by:
+1. Using GitHub's Security Advisory feature
+2. Or emailing the maintainers privately (see SECURITY.md)
 
-Write clear commit messages:
+Include:
+- Description of the vulnerability
+- Steps to reproduce
+- Potential impact
+- Suggested fixes (if any)
 
-```
-Short summary (50 chars or less)
+## 📚 Documentation
 
-More detailed explanation if needed. Wrap at 72 characters.
-Explain what and why, not how.
+### Documentation Standards
 
-- Bullet points are okay
-- Reference issues: Fixes #123
+- Write clear, concise documentation
+- Include code examples where helpful
+- Keep documentation up-to-date with code changes
+- Use proper Markdown formatting
 
-Co-authored-by: Name <email@example.com>
-```
+### Documentation Files
+
+When updating documentation:
+- **README.md**: High-level project overview and quick start
+- **docs/**: Detailed guides and tutorials
+- **Code comments**: Explain "why", not just "what"
+- **Docstrings**: Document function parameters, return values, and exceptions
 
 ## 🏗️ Project Structure
 
 ```
 PhoenixBoot/
-├── core.pf              # Core functionality
-├── secure.pf            # Secure boot components
-├── workflows.pf         # Workflow definitions
-├── pf.py               # Main Python script
-├── scripts/            # Utility scripts
-│   ├── recovery/       # Recovery tools
-│   ├── secure-boot/    # Secure boot tools
-│   └── testing/        # Test scripts
-├── utils/              # Utility modules
-├── docs/               # Documentation
-├── tests/              # Test suite
-└── examples_and_samples/ # Example code
+├── pf.py                   # Main task runner
+├── pf_parser.py            # Task parser
+├── scripts/                # Utility scripts
+├── staging/                # UEFI component staging
+│   └── src/                # UEFI source code (C)
+├── utils/                  # Python utility modules
+├── tests/                  # Test suite
+├── docs/                   # Documentation
+├── examples_and_samples/   # Example code and demos
+└── containers/             # Container definitions
 ```
 
-## 🔒 Security
+## 📝 Commit Message Guidelines
 
-### Reporting Security Vulnerabilities
+Use conventional commits format:
 
-**DO NOT** open public issues for security vulnerabilities.
+```
+type(scope): subject
 
-Please see [SECURITY.md](SECURITY.md) for how to report security issues.
+[optional body]
 
-### Security Best Practices
-- Review [SECURITY.md](SECURITY.md) before contributing
-- Run security scans before submitting PRs
-- Follow secure coding guidelines
-- Be cautious with dependencies
+[optional footer]
+```
 
-## 📞 Getting Help
+**Types:**
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, etc.)
+- `refactor`: Code refactoring
+- `test`: Test additions or changes
+- `chore`: Build process or auxiliary tool changes
+- `security`: Security fixes or improvements
 
-### Resources
-- **Documentation:** [README.md](README.md)
-- **Quick Start:** [GETTING_STARTED.md](GETTING_STARTED.md)
-- **Workflow Guide:** [BOOTKIT_DEFENSE_WORKFLOW.md](BOOTKIT_DEFENSE_WORKFLOW.md)
-- **Architecture:** [ARCHITECTURE.md](ARCHITECTURE.md)
+**Examples:**
+```
+feat(uuefi): add EFI variable editing functionality
 
-### Community
-- GitHub Issues: Ask questions, report bugs
-- Pull Requests: Submit code changes
-- Discussions: Share ideas and get feedback
+Implements safe variable editing with validation and
+rollback support for UUEFI diagnostic tool.
+
+Closes #123
+```
+
+```
+fix(secure-boot): handle missing key enrollment
+
+Adds proper error handling when PK key is missing
+during enrollment process.
+```
+
+## 🤝 Community Guidelines
+
+### Code of Conduct
+
+We are committed to providing a welcoming and inclusive environment. Please:
+- Be respectful and considerate
+- Focus on constructive feedback
+- Help others learn and grow
+- Report unacceptable behavior
+
+See CODE_OF_CONDUCT.md for full details.
+
+### Communication Channels
+
+- **GitHub Issues**: Bug reports and feature requests
+- **GitHub Discussions**: General questions and discussions
+- **Pull Requests**: Code contributions and reviews
+
+## 🏆 Recognition
+
+Contributors are recognized in:
+- Git commit history
+- Release notes and changelogs
+- Project documentation
+
+Significant contributions may be highlighted in:
+- Project README
+- Special acknowledgments sections
 
 ## 📜 License
 
-By contributing, you agree that your contributions will be licensed under the Apache License 2.0. See [LICENSE](LICENSE) for details.
+By contributing to PhoenixBoot, you agree that your contributions will be licensed under the Apache License 2.0 (see LICENSE.md).
 
-## �� Recognition
+## 🎯 Priority Areas
 
-Contributors will be recognized in:
-- The project README
-- Release notes
-- CHANGELOG.md
+Current priority areas for contributions:
 
-Thank you for making PhoenixBoot better!
+1. **Testing**: Expand test coverage for UEFI components
+2. **Documentation**: Improve guides and tutorials
+3. **Hardware Support**: Test and document support for additional hardware
+4. **Security**: Security audits and vulnerability fixes
+5. **User Experience**: Improve interactive tools and wizards
+
+## 📞 Questions?
+
+If you have questions about contributing:
+- Check existing documentation
+- Search through GitHub issues
+- Open a new discussion on GitHub
+- Review similar pull requests
+
+Thank you for contributing to PhoenixBoot! Together, we can build a more secure boot process for everyone.
 
 ---
 
-**Questions?** Open an issue with the "question" label or reach out through GitHub Discussions.
+**🔥 PhoenixBoot: Stop bootkits, period.**

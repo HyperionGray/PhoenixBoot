@@ -1,0 +1,5 @@
+./cloud_integration/api_endpoints.py
+./cloud_integration/README.md
+./cloud_integration/demo_integration.py
+./cloud_integration/fastapi_endpoints.py
+./cloud_integration/cooperative_phoenixguard.py

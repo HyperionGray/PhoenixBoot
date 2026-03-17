@@ -725,6 +725,7 @@ PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 
 ### Additional Resources
 
+- **[CI/CD Review Rollup](CICD_REVIEW_ROLLUP.md)** - Comprehensive project review and status
 - **[Feature Status](FEATURES.md)** - Complete feature implementation status
 - **[Security Review](SECURITY_REVIEW_2025-12-07.md)** - Latest security audit
 - **[SecureBoot Bootable Media](docs/SECUREBOOT_BOOTABLE_MEDIA.md)** - Create bootable media guide

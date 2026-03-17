@@ -31,7 +31,10 @@ This directory contains comprehensive test suites for the PhoenixBoot command-li
 
 **test-all-cli-tui.sh** - Runs all test suites in sequence
 - Executes all three test suites
-- Provides comprehensive summary
+- Writes per-suite logs to `out/test-results/cli-tui/`
+- Supports suite filtering for faster local/CI runs
+- Can emit machine-readable JSON summaries
+- Provides comprehensive summary with per-suite duration
 - Returns exit code 0 only if all tests pass
 
 ## Running Tests
@@ -40,6 +43,26 @@ This directory contains comprehensive test suites for the PhoenixBoot command-li
 ```bash
 # From PhoenixBoot root directory
 ./scripts/testing/test-all-cli-tui.sh
+```
+
+### Run Only Selected Suites
+```bash
+# Run only CLI and PF suite
+./scripts/testing/test-all-cli-tui.sh --suite cli,pf
+
+# Equivalent with repeated flags
+./scripts/testing/test-all-cli-tui.sh --suite cli --suite pf
+```
+
+### Generate JSON Report (CI-friendly)
+```bash
+./scripts/testing/test-all-cli-tui.sh \
+  --json-report out/test-results/cli-tui/summary.json
+```
+
+### Stop Early on Failure
+```bash
+./scripts/testing/test-all-cli-tui.sh --stop-on-fail
 ```
 
 ### Run Individual Test Suites
@@ -63,6 +86,19 @@ This directory contains comprehensive test suites for the PhoenixBoot command-li
 ./phoenixboot test-cli
 ./phoenixboot test-tui
 ./phoenixboot test-pf
+```
+
+### Environment Variable Controls
+```bash
+# Select suites via environment variable
+PB_TEST_SUITES=cli,tui ./scripts/testing/test-all-cli-tui.sh
+
+# Write JSON report via environment variable
+PB_TEST_JSON_REPORT=out/test-results/cli-tui/summary.json \
+  ./scripts/testing/test-all-cli-tui.sh
+
+# Stop on first failure via environment variable
+PB_TEST_STOP_ON_FAIL=1 ./scripts/testing/test-all-cli-tui.sh
 ```
 
 ## Test Results
@@ -152,6 +188,15 @@ To add new tests:
 
 - **0** - All tests passed
 - **1** - One or more tests failed
+
+## Artifacts
+
+When running `test-all-cli-tui.sh`, artifacts are stored in:
+
+- `out/test-results/cli-tui/cli.log`
+- `out/test-results/cli-tui/tui.log`
+- `out/test-results/cli-tui/pf.log`
+- Optional summary JSON path passed via `--json-report`
 
 ## Maintenance
 

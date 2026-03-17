@@ -11,6 +11,8 @@ echo
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$PROJECT_ROOT"
+LIST_OUTPUT_FILE="$(mktemp)"
+trap 'rm -f "$LIST_OUTPUT_FILE"' EXIT
 
 PASSED=0
 FAILED=0
@@ -79,9 +81,9 @@ fi
 
 # Test 6: Test phoenixboot list command
 echo "[TEST 6] Testing phoenixboot list..."
-if ./phoenixboot list > /tmp/phoenixboot_list_output.txt 2>&1; then
+if ./phoenixboot list > "$LIST_OUTPUT_FILE" 2>&1; then
     pass "phoenixboot list works"
-elif grep -qi "fabric\|module.*not.*found" /tmp/phoenixboot_list_output.txt; then
+elif grep -qi "fabric\|module.*not.*found" "$LIST_OUTPUT_FILE"; then
     skip "phoenixboot list requires fabric module (not in test env)"
 else
     fail "phoenixboot list failed"

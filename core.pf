@@ -170,6 +170,11 @@ task os-mok-list-keys
   shell bash scripts/mok-management/mok-list-keys.sh
 end
 
+task os-mok-preflight
+  describe Validate MOK enrollment/signing readiness (set MOK_STRICT=1 to fail on warnings)
+  shell bash scripts/mok-management/mok-preflight.sh --cert "${MOK_CERT_PEM:-out/keys/mok/PGMOK.crt}" --der "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}" --key "${MOK_CERT_KEY:-out/keys/mok/PGMOK.key}"
+end
+
 task secure-mok-new
   describe Generate new PhoenixGuard MOK keypair (use NAME and CN env)
   shell bash scripts/mok-management/mok-new.sh "${NAME:-PGMOK}" "${CN:-PhoenixGuard Module Key}"

@@ -24,7 +24,17 @@ NAME=MyMOK CN="My Custom MOK" ./pf.py secure-mok-new
 - `PGMOK.der` - DER format certificate
 - `PGMOK.pem` - Combined key+cert
 
-### Step 2: Enroll MOK on Your System
+### Step 2: Run preflight checks
+
+```bash
+# Validate enrollment readiness (files, permissions, Secure Boot state, pending/enrolled status)
+./pf.py os-mok-preflight
+
+# Strict mode: fail when any warning is present
+MOK_STRICT=1 ./pf.py os-mok-preflight
+```
+
+### Step 3: Enroll MOK on Your System
 
 ```bash
 # Enroll the MOK certificate
@@ -33,7 +43,7 @@ NAME=MyMOK CN="My Custom MOK" ./pf.py secure-mok-new
 # You'll be prompted to set a password - remember it!
 ```
 
-### Step 3: Reboot and Complete Enrollment
+### Step 4: Reboot and Complete Enrollment
 
 After running the enroll command:
 1. **Reboot your system**
@@ -42,7 +52,7 @@ After running the enroll command:
 4. **Enter the password** you set in Step 2
 5. **Confirm** and continue boot
 
-### Step 4: Verify Enrollment
+### Step 5: Verify Enrollment
 
 ```bash
 # Check MOK status
@@ -52,7 +62,7 @@ After running the enroll command:
 mokutil --list-enrolled
 ```
 
-### Step 5: Sign Kernel Modules
+### Step 6: Sign Kernel Modules
 
 ```bash
 # Sign a single module
@@ -138,6 +148,26 @@ List available MOK certificates in the repository.
 - All MOK certificates in `out/keys/mok/`
 - Certificate details (subject, fingerprint, validity)
 - Enrollment status
+
+#### `mok-preflight.sh`
+Run MOK readiness checks before enrollment or module signing.
+
+```bash
+./scripts/mok-management/mok-preflight.sh
+./scripts/mok-management/mok-preflight.sh --strict
+./scripts/mok-management/mok-preflight.sh --json
+
+# Via pf task
+./pf.py os-mok-preflight
+MOK_STRICT=1 ./pf.py os-mok-preflight
+```
+
+**Checks**:
+- UEFI availability, `openssl`, and `mokutil`
+- Certificate/key/DER presence and key permissions
+- Secure Boot state
+- Enrolled and pending enrollment status for the selected cert
+- Metadata presence in `out/keys/mok/*.meta.json`
 
 #### `mok-verify.sh`
 Verify MOK certificate details and integrity.
@@ -319,7 +349,7 @@ MOK_CERT="/path/to/out/keys/mok/PGMOK.crt"
 ## 🔗 Related Documentation
 
 - [SecureBoot Quick Reference](../../SECUREBOOT_QUICKSTART.md)
-- [Bootkit Defense Workflow](../../BOOTKIT_DEFENSE_WORKFLOW.md)
+- [Bootkit Defense Workflow](../../docs/BOOTKIT_DEFENSE_WORKFLOW.md)
 - [Sign Kernel Modules Script](../../sign-kernel-modules.sh)
 - [Core Tasks](../../core.pf) - See MOK-related tasks
 

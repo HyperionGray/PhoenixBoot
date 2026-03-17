@@ -2,7 +2,9 @@
 set -euo pipefail
 # Save caller's working directory to resolve relative paths correctly
 ORIG_PWD=$(pwd)
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+cd "${REPO_ROOT}"
 
 # Configure utils/pfs_fastpath.ko to autoload and sign it if needed.
 # Usage: kmod-setup-fastpath.sh [module_path]
@@ -56,8 +58,14 @@ if [ -z "${KMOD_CERT:-}" ] || [ -z "${KMOD_KEY:-}" ]; then
 fi
 
 # Sign the module (needs kernel headers installed)
-PY=${VENV_BIN:-/home/punk/.venv/bin}/python
-"$PY" utils/pgmodsign.py --cert-path "${KMOD_CERT:-out/keys/mok/PGMOK.crt}" --key-path "${KMOD_KEY:-out/keys/mok/PGMOK.key}" "$MOD_PATH" || true
+if [ -n "${VENV_BIN:-}" ] && [ -x "${VENV_BIN}/python" ]; then
+  PY="${VENV_BIN}/python"
+elif [ -x /home/punk/.venv/bin/python ]; then
+  PY="/home/punk/.venv/bin/python"
+else
+  PY="${PYTHON:-python3}"
+fi
+"${PY}" utils/pgmodsign.py --cert-path "${KMOD_CERT:-out/keys/mok/PGMOK.crt}" --key-path "${KMOD_KEY:-out/keys/mok/PGMOK.key}" "$MOD_PATH" || true
 
 # Install module into extra/ and depmod
 REL=$(uname -r)

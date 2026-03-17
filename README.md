@@ -7,7 +7,7 @@
 
 ## 🚀 New to PhoenixBoot?
 
-**👉 [Start Here: Complete Bootkit Defense Workflow](BOOTKIT_DEFENSE_WORKFLOW.md) 👈**
+**👉 [Start Here: Complete Bootkit Defense Workflow](docs/BOOTKIT_DEFENSE_WORKFLOW.md) 👈**
 
 This comprehensive guide walks you through **stopping bootkits completely** in three stages:
 1. 🔐 **Enable SecureBoot from the start** - Create install media with custom keys
@@ -230,6 +230,7 @@ Tools for managing UEFI boot entries:
 - `os-boot-clean`: Clean stale UEFI boot entries
 - `os-mok-enroll`: Enroll MOK keys for module signing
 - `os-mok-list-keys`: List available MOK certificates
+- `os-mok-preflight`: Check MOK enrollment/signing readiness
 - `uuefi-install`: Install UUEFI.efi to system ESP
 - `uuefi-apply`: Set BootNext for one-time UUEFI boot
 - `uuefi-report`: Display system security status
@@ -421,6 +422,7 @@ Available in `core.pf`:
 
 # MOK management and module signing
 ./pf.py secure-mok-new
+./pf.py os-mok-preflight
 ./pf.py os-mok-enroll
 ./pf.py os-mok-list-keys
 PATH=/path/to/module ./pf.py os-kmod-sign

@@ -3,7 +3,13 @@
 
 set -euo pipefail
 
-VENV_PY=${VENV_BIN:-/home/punk/.venv/bin}/python
+if [ -n "${VENV_BIN:-}" ] && [ -x "${VENV_BIN}/python" ]; then
+  VENV_PY="${VENV_BIN}/python"
+elif [ -x /home/punk/.venv/bin/python ]; then
+  VENV_PY="/home/punk/.venv/bin/python"
+else
+  VENV_PY="${PYTHON:-python3}"
+fi
 
 echo "☠ MOK and Secure Boot Status"
 echo "============================="

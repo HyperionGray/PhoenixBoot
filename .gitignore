@@ -58,3 +58,14 @@ nohup*.out
 # Generated documentation files
 copilot-instructions.md
 WARP.md
+
+# Local container runtime residue (root-level)
+/defaultNetworkBackend
+/db.sql
+/storage.lock
+/userns.lock
+/issues.txt
+/overlay/
+/overlay-containers/
+/overlay-images/
+/overlay-layers/

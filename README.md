@@ -466,6 +466,10 @@ bash scripts/os-boot-clean.sh
 bash scripts/enroll-mok.sh <cert.crt> <cert.der> [dry_run]
 bash scripts/mok-list-keys.sh
 
+# Repository hygiene audit
+bash scripts/maintenance/audit-tree.sh
+bash scripts/maintenance/audit-tree.sh --cleanup-stray
+
 # Testing
 bash scripts/qemu-test.sh
 bash scripts/qemu-test-uuefi.sh
@@ -727,6 +731,7 @@ PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 
 - **[Feature Status](FEATURES.md)** - Complete feature implementation status
 - **[Security Review](SECURITY_REVIEW_2025-12-07.md)** - Latest security audit
+- **[Repository Hygiene Audit](docs/REPO_HYGIENE.md)** - Keep the repository clean and enforce hygiene checks
 - **[SecureBoot Bootable Media](docs/SECUREBOOT_BOOTABLE_MEDIA.md)** - Create bootable media guide
 - **[Container README](containers/README.md)** - Container directory overview
 - **[Quick Reference](docs/QUICK_REFERENCE.md)** - Command cheat sheet

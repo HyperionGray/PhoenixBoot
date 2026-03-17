@@ -23,6 +23,21 @@ task maint-clean
   shell bash scripts/maintenance/cleanup.sh
 end
 
+task maint-audit-tree
+  describe Audit repository structure and hygiene findings
+  shell bash scripts/maintenance/audit-tree.sh
+end
+
+task maint-audit-tree-clean
+  describe Audit repository and remove known stray runtime artifacts
+  shell bash scripts/maintenance/audit-tree.sh --cleanup-stray
+end
+
+task maint-audit-tree-strict
+  describe Audit repository and fail on stale or unfinished findings
+  shell bash scripts/maintenance/audit-tree.sh --fail-on-findings
+end
+
 task maint-install-git-hooks
   describe Install pre-push size guard hook
   shell mkdir -p .git/hooks && chmod 0755 .git/hooks

@@ -123,6 +123,22 @@ else
     skip "Error handling behavior unclear"
 fi
 
+# Test 11: Check legacy phoenix-boot compatibility shim exists
+echo "[TEST 11] Checking legacy phoenix-boot compatibility..."
+if [ -f "phoenix-boot" ] && [ -x "phoenix-boot" ]; then
+    pass "phoenix-boot compatibility shim exists"
+else
+    fail "phoenix-boot compatibility shim missing"
+fi
+
+# Test 12: Test legacy phoenix-boot help command
+echo "[TEST 12] Testing legacy phoenix-boot help..."
+if ./phoenix-boot help > /dev/null 2>&1; then
+    pass "phoenix-boot compatibility shim works"
+else
+    fail "phoenix-boot compatibility shim failed"
+fi
+
 # Summary
 echo
 echo "======================="

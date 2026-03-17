@@ -2,8 +2,12 @@
 # PhoenixBoot - User-friendly launcher
 # Run this from ANYWHERE - it handles paths correctly
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Find the PhoenixBoot directory
-if [ -f "pf.py" ] && [ -d "scripts" ]; then
+if [ -f "${SCRIPT_DIR}/pf.py" ] && [ -d "${SCRIPT_DIR}/scripts" ]; then
+    PHOENIX_ROOT="${SCRIPT_DIR}"
+elif [ -f "pf.py" ] && [ -d "scripts" ]; then
     PHOENIX_ROOT="$(pwd)"
 elif [ -f "Pfyfile.pf" ] && [ -d "scripts" ]; then
     PHOENIX_ROOT="$(pwd)"
@@ -41,8 +45,8 @@ case "${1:-help}" in
         fi
         echo "📝 Writing to USB: $2"
         echo "⚠️  This will ERASE $2! Press Ctrl+C to cancel, Enter to continue"
-        read
-        ./pf.py workflow-usb-write-dd USB_DEVICE="$2"
+        read -r
+        USB_DEVICE="$2" USB_DEVICE_CONFIRM=I_UNDERSTAND ./pf.py workflow-usb-write-dd
         ;;
     
     test)

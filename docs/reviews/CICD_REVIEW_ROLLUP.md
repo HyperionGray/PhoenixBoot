@@ -572,7 +572,7 @@ PhoenixBoot is a professionally developed, well-tested, thoroughly documented, a
 5. `DOCUMENTATION_CLEANUP_SUMMARY.md` - Documentation improvements
 6. `PF_TASK_CHECK_SUMMARY.md` - Task system validation
 7. `SECURE_BOOT_IMPLEMENTATION_SUMMARY.md` - SecureBoot implementation
-8. `IMPLEMENTATION_SUMMARY.md` - User-facing stabilization
+8. `docs/implementation/IMPLEMENTATION_SUMMARY.md` - User-facing stabilization
 9. `ISSUE_RESOLUTION_SUMMARY.md` - Amazon Q issue resolution
 
 ### Key Documentation

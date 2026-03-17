@@ -135,6 +135,8 @@ done
 # Select alternate kernel for first kexec (with relaxed security)
 ALTERNATE_KERNEL="${KERNELS[0]}"
 echo -e "\nUsing alternate kernel: ${ALTERNATE_KERNEL}"
+TARGET_HARDENED_KERNEL="${CURRENT_KERNEL}"
+echo "Target hardened kernel for final return: ${TARGET_HARDENED_KERNEL}"
 
 # Check if we need to prepare a special kernel
 echo -e "\n${YELLOW}[3] Analyzing kernel configurations...${NC}"
@@ -238,6 +240,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
+TARGET_HARDENED_KERNEL="__TARGET_HARDENED_KERNEL__"
 
 echo -e "${BLUE}═══════════════════════════════════════════════════════════════════${NC}"
 echo -e "${BLUE}    PhoenixBoot - Secure Boot Framework Phase 2                    ${NC}"
@@ -297,16 +300,47 @@ echo
 echo "After enabling Secure Boot (via BIOS setup or other means),"
 echo "the system will kexec back to the hardened kernel."
 
-# TODO: Kexec back to hardened kernel
-# For now, just inform the user
+# Attempt to load hardened kernel for final return
+HARD_VMLINUZ="/boot/vmlinuz-${TARGET_HARDENED_KERNEL}"
+HARD_INITRD="/boot/initrd.img-${TARGET_HARDENED_KERNEL}"
+CMDLINE="$(cat /proc/cmdline)"
+
 echo
-echo -e "${BLUE}To complete the process:${NC}"
-echo "  1. Enable Secure Boot through BIOS/UEFI setup"
-echo "  2. Reboot into the hardened kernel"
+echo -e "${BLUE}Preparing final return to hardened kernel:${NC} ${TARGET_HARDENED_KERNEL}"
+
+if [ -f "${HARD_VMLINUZ}" ] && [ -f "${HARD_INITRD}" ]; then
+    if kexec -l "${HARD_VMLINUZ}" --initrd="${HARD_INITRD}" --command-line="${CMDLINE}" --reuse-cmdline; then
+        echo -e "${GREEN}✓ Hardened kernel loaded for final kexec${NC}"
+        echo
+        read -p "Execute final kexec back to hardened kernel now? [y/N] " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo -e "${YELLOW}Executing final kexec...${NC}"
+            kexec -e
+        else
+            echo -e "${YELLOW}Final kexec deferred.${NC}"
+            echo "Run this when ready:"
+            echo "  kexec -e"
+        fi
+    else
+        echo -e "${RED}✗ Failed to load hardened kernel for final kexec${NC}"
+        echo "Fallback:"
+        echo "  1. Enable Secure Boot through BIOS/UEFI setup"
+        echo "  2. Reboot into the hardened kernel"
+    fi
+else
+    echo -e "${RED}✗ Hardened kernel artifacts not found${NC}"
+    echo "  Expected: ${HARD_VMLINUZ} and ${HARD_INITRD}"
+    echo "Fallback:"
+    echo "  1. Enable Secure Boot through BIOS/UEFI setup"
+    echo "  2. Reboot into the hardened kernel"
+fi
+
 echo "  3. Verify: ./pf.py secureboot-check"
 
 EOF
 
+sed -i "s|__TARGET_HARDENED_KERNEL__|${TARGET_HARDENED_KERNEL}|g" "$TEMP_SCRIPT"
 chmod +x "$TEMP_SCRIPT"
 
 echo -e "\n${YELLOW}[6] Performing first kexec to alternate kernel...${NC}"
@@ -358,8 +392,7 @@ echo
 echo "Complete implementation would require:"
 echo "  1. Automated phase 2 script execution after kexec"
 echo "  2. Hardware-specific Secure Boot enablement code"
-echo "  3. Automatic kexec back to hardened kernel"
-echo "  4. Comprehensive error handling and rollback"
+echo "  3. Comprehensive error handling and rollback"
 echo
 echo "For production use, consider:"
 echo "  - Using BIOS/UEFI setup to enable Secure Boot (safest)"

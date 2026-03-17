@@ -24,6 +24,7 @@ PhoenixBoot provides an advanced **framework** for enabling Secure Boot from the
 - ✅ Kernel configuration profiles (permissive, hardened, balanced)
 - ✅ Status detection and analysis tools
 - ✅ Prerequisites checking and validation
+- ✅ Phase 2 helper that can preload and execute the final kexec back to the hardened kernel
 - ✅ Educational demonstration of the technique
 
 **What this does NOT provide:**

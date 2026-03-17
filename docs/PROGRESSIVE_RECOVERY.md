@@ -125,6 +125,11 @@ bash scripts/recovery/hardware-recovery.sh
 python3 scripts/recovery/phoenix_progressive.py
 ```
 
+Automation-friendly mode:
+```bash
+python3 scripts/recovery/phoenix_progressive.py --dry-run --yes
+```
+
 This intelligent system:
 1. Detects threat level
 2. Recommends appropriate escalation

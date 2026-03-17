@@ -14,6 +14,11 @@ Commands
 
 - Dry run (planfile only, no changes):
   just nuke progressive-dry-run
+  python3 scripts/recovery/phoenix_progressive.py --dry-run --yes
+
+- Script mode (direct):
+  python3 scripts/recovery/phoenix_progressive.py
+  python3 scripts/recovery/phoenix_progressive.py --yes
 
 - Individual levels:
   - Level 1 — Detect (read-only)
@@ -39,9 +44,11 @@ Safety gates
 Planfile output
 - Written to plans/phoenix_progressive_<timestamp>.json, includes:
   - run metadata: run_id, created_utc, environment
+  - run status: success | exhausted | cancelled | failed
   - levels attempted with ok/err details
   - outputs: logs_dir and plan_path
   - errors: top-level unexpected errors
+- Note: even failed/cancelled runs now emit a planfile in the same format.
 
 Baseline and scanning
 - The scanner script (scripts/scan-bootkits.sh) will:

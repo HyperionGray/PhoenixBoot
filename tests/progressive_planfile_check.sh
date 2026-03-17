@@ -11,6 +11,10 @@ latest_plan() {
   ls -1 "$PLANS_DIR"/phoenix_progressive_*.json 2>/dev/null | tail -n1
 }
 
+# Generate a fresh planfile in dry-run mode.
+if [ -x "/home/punk/.venv/bin/python3" ]; then PY="/home/punk/.venv/bin/python3"; else PY="python3"; fi
+"$PY" "$ROOT_DIR/scripts/recovery/phoenix_progressive.py" --dry-run --yes >/dev/null 2>&1 || true
+
 PLAN="$(latest_plan || true)"
 if [ -z "${PLAN:-}" ]; then
   echo "No progressive planfile found in $PLANS_DIR" >&2
@@ -20,8 +24,6 @@ fi
 echo "Validating planfile: $PLAN"
 
 # Minimal JSON field checks using python (venv if available)
-if [ -x "/home/punk/.venv/bin/python3" ]; then PY="/home/punk/.venv/bin/python3"; else PY="python3"; fi
-
 "$PY" - "$PLAN" <<'PY'
 import sys, json
 p=sys.argv[1]

@@ -20,4 +20,5 @@ Manual steps (for now):
 3) ESP validation
    just validate verify-esp-robust
 
-Future work: add a small shell harness to parse planfile and assert required fields without jq dependency.
+Planfile harness:
+- `tests/progressive_planfile_check.sh` now generates a dry-run planfile and validates required fields without jq.

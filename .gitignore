@@ -43,6 +43,18 @@ nohup.out
 nohup.out*
 nohup*.out
 
+# Container runtime artifacts
+storage.lock
+userns.lock
+defaultNetworkBackend
+overlay/.has-mount-program
+overlay-containers/*.lock
+overlay-images/*.lock
+overlay-layers/*.lock
+
+# Local automation scratch files
+issues.txt
+
 # Editor backup files
 *~
 *.bak

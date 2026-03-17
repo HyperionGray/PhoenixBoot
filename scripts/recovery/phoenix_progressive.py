@@ -22,7 +22,6 @@ import sys
 import json
 import shlex
 import subprocess
-import time
 from pathlib import Path
 from typing import List
 

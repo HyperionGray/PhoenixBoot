@@ -221,6 +221,11 @@ fi
 
 # Create a script that will run after first kexec
 TEMP_SCRIPT="/tmp/phoenixboot_secureboot_enable_phase2.sh"
+PHASE2_STATE_FILE="/tmp/phoenixboot_secureboot_hardened_kernel"
+
+# Persist the original hardened kernel so phase 2 can kexec back safely.
+printf '%s\n' "$CURRENT_KERNEL" > "$PHASE2_STATE_FILE"
+chmod 600 "$PHASE2_STATE_FILE"
 
 cat > "$TEMP_SCRIPT" << 'EOF'
 #!/bin/bash
@@ -297,12 +302,44 @@ echo
 echo "After enabling Secure Boot (via BIOS setup or other means),"
 echo "the system will kexec back to the hardened kernel."
 
-# TODO: Kexec back to hardened kernel
-# For now, just inform the user
+STATE_FILE="/tmp/phoenixboot_secureboot_hardened_kernel"
+TARGET_KERNEL=""
+
+if [ -f "$STATE_FILE" ]; then
+    TARGET_KERNEL="$(cat "$STATE_FILE" 2>/dev/null || true)"
+fi
+
+if [ -n "$TARGET_KERNEL" ]; then
+    TARGET_VMLINUZ="/boot/vmlinuz-${TARGET_KERNEL}"
+    TARGET_INITRD="/boot/initrd.img-${TARGET_KERNEL}"
+
+    echo
+    echo -e "${BLUE}Hardened kernel handoff:${NC}"
+    echo "  Target kernel: ${TARGET_KERNEL}"
+
+    if [ -f "$TARGET_VMLINUZ" ] && [ -f "$TARGET_INITRD" ]; then
+        read -p "Attempt kexec back to hardened kernel now? [y/N] " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            CMDLINE="$(cat /proc/cmdline)"
+            if kexec -l "$TARGET_VMLINUZ" --initrd="$TARGET_INITRD" --command-line="$CMDLINE" --reuse-cmdline; then
+                echo -e "${GREEN}✓ Hardened kernel loaded; executing kexec...${NC}"
+                kexec -e
+            else
+                echo -e "${RED}✗ Failed to load hardened kernel for kexec${NC}"
+            fi
+        fi
+    else
+        echo -e "${YELLOW}⚠ Hardened kernel artifacts not found${NC}"
+        echo "  Expected: ${TARGET_VMLINUZ}"
+        echo "            ${TARGET_INITRD}"
+    fi
+fi
+
 echo
 echo -e "${BLUE}To complete the process:${NC}"
 echo "  1. Enable Secure Boot through BIOS/UEFI setup"
-echo "  2. Reboot into the hardened kernel"
+echo "  2. If not already done above, reboot into the hardened kernel"
 echo "  3. Verify: ./pf.py secureboot-check"
 
 EOF

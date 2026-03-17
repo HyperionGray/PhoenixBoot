@@ -22,6 +22,7 @@ Scripts for testing PhoenixBoot functionality using QEMU and other methods.
 
 - `test_kvm_install.sh` - Test KVM installation
 - `test-uuefi-simple.sh` - Simple UUEFI test
+- `test-mok-inventory-json.sh` - Validate machine-readable MOK inventory output
 - `iso-run.sh` - Run ISO tests
 
 ## Usage

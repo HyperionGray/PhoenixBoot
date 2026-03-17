@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ✨ Added
+- `mok-list-keys.sh --json` for machine-readable MOK key inventory output.
+- `mok-list-keys.sh --enrolled-only` and `--skip-enrollment-check` filtering modes.
+
+### 🛠️ Fixed
+- `secure-mok-inventory` task now emits actual JSON by invoking `mok-list-keys.sh --json`.
+- `mok-list-keys.sh` now resolves paths from repository root correctly.
+- Corrected direct-script paths in README for UEFI, validation, boot management, and testing tools.
+
 ### 📚 Documentation
 - Refined contributor workflow guidance and changelog maintenance notes.
 

@@ -132,12 +132,23 @@ List available MOK certificates in the repository.
 
 # Via pf task
 ./pf.py os-mok-list-keys
+
+# JSON inventory for automation
+./scripts/mok-management/mok-list-keys.sh --json
+
+# Only enrolled certs (for quick host checks)
+./scripts/mok-management/mok-list-keys.sh --enrolled-only
 ```
 
 **Shows**:
 - All MOK certificates in `out/keys/mok/`
 - Certificate details (subject, fingerprint, validity)
 - Enrollment status
+
+**Options**:
+- `--json` - emits machine-readable inventory with summary fields
+- `--enrolled-only` - filters output to enrolled certs
+- `--skip-enrollment-check` - avoids `mokutil` calls (useful in CI/containers)
 
 #### `mok-verify.sh`
 Verify MOK certificate details and integrity.

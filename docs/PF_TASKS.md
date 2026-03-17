@@ -50,6 +50,7 @@ test-qemu-secure-positive - Secure Boot positive test
 test-qemu-secure-strict  - Secure Boot strict mode test
 test-qemu-secure-negative-attest - NuclearBoot corruption detection
 test-qemu-uuefi          - UUEFI application test
+test-mok-inventory-json  - Validate JSON MOK inventory output
 ```
 
 ### Secure Boot & Keys
@@ -151,10 +152,10 @@ secureboot-create-usb    - Create SecureBoot USB and write directly
 ```
 secure-keys-centralize   - Centralize keys into out/keys
 secure-keys-prune        - Backup + remove legacy key locations
-secure-mok-inventory     - JSON inventory of keys and enrollment
+secure-mok-inventory     - JSON inventory of keys and enrollment (machine-readable)
 secure-der-extract       - Convert DER/PKCS#12 bundle into PEM (set DER_PATH, OUT_DIR, NAME)
 secure-package-esp-enroll - Package enrollment ESP
-secure-qemu-run-secure-ui - Launch QEMU GUI to enable Secure Boot
+secure-qemu-enable-ui    - Launch QEMU GUI to enable Secure Boot
 ```
 
 ## Usage

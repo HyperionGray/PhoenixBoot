@@ -272,6 +272,11 @@ task test-pf
   shell bash scripts/testing/test-pf-tasks.sh
 end
 
+task test-mok-inventory-json
+  describe Validate JSON MOK inventory output
+  shell bash scripts/testing/test-mok-inventory-json.sh
+end
+
 task test-cli-tui-all
   describe Run comprehensive CLI and TUI test suite
   shell bash scripts/testing/test-all-cli-tui.sh

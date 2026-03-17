@@ -7,14 +7,9 @@ on:
   issues:
     types: [opened]
 
-permissions:
-  issues: write
-
 jobs:
   label:
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
+    runs-on: [self-hosted, linux, x64, big]
     steps:
       - name: Add labels
         uses: actions/github-script@main

@@ -1,4 +1,4 @@
-name: Trigger Workflow on All Repos
+name: "Trigger Workflow on All Repos"
 
 on:
   workflow_dispatch:
@@ -25,7 +25,7 @@ on:
 
 jobs:
   trigger-all:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, big]
     steps:
       - name: Checkout repository
         uses: actions/checkout@main

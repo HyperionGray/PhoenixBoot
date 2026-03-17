@@ -33,6 +33,12 @@ if ! command -v openssl >/dev/null 2>&1; then
 fi
 if [ ! -f "$MOK_CERT_PEM" ]; then
     echo "☠ ERROR: MOK PEM certificate not found: $MOK_CERT_PEM"
+    echo ""
+    echo "💡 TIP: You need to generate MOK keys first. Try one of these:"
+    echo "   1. Run: ./pf.py mok-flow          (full workflow: generate + enroll)"
+    echo "   2. Run: ./pf.py secure-mok-new    (just generate keys)"
+    echo "   3. Run: ./phoenixboot-wizard.sh   (guided wizard)"
+    echo ""
     exit 1
 fi
 

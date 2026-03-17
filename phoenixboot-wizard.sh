@@ -386,9 +386,16 @@ advanced_menu() {
                 ;;
             3)
                 echo ""
-                print_info "Enrolling MOK certificate..."
-                if ! ./pf.py os-mok-enroll; then
+                print_info "Generating and enrolling MOK certificate..."
+                print_info "This will generate a new MOK key if it doesn't exist, then enroll it."
+                echo ""
+                # Use the full workflow that generates keys first
+                if ./pf.py mok-flow; then
+                    print_success "MOK generated and queued for enrollment!"
+                    print_info "You'll need to reboot and confirm MOK enrollment in the UEFI MOK Manager"
+                else
                     print_error "Failed to enroll MOK - check output above for details"
+                    print_info "Tip: Make sure you have mokutil installed and UEFI firmware is accessible"
                 fi
                 read -p "Press Enter to continue..."
                 ;;

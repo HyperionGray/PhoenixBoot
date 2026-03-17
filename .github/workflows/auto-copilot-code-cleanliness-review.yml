@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   code-cleanliness-review:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, big]
     steps:
       - name: Checkout code
         uses: actions/checkout@main
@@ -70,94 +70,7 @@ jobs:
           
           cat /tmp/analysis.md
 
-      # NOTE: Commented out due to potentially non-existent action github/copilot-cli-action@main
-      # This action may not exist in the GitHub marketplace (similar to copilot-cli-actions)
-      # - name: GitHub Copilot Code Review
-      #   uses: github/copilot-cli-action@main
-      #   with:
-      #     query: |
-      #       Review the codebase for code cleanliness issues:
-      #       1. Identify files that are too large (>500 lines) and suggest how to split them into smaller, focused modules
-      #       2. Look for code duplication and suggest refactoring opportunities
-      #       3. Check for consistent code style and formatting
-      #       4. Identify complex functions that could be simplified
-      #       5. Suggest improvements for code organization and structure
-      #       6. Check for proper separation of concerns
-      #       
-      #       Provide actionable recommendations with specific file names and line numbers.
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   continue-on-error: true
       - name: GitHub Copilot Code Review
-        uses: actions/github-script@main
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            // Simulate code cleanliness review with file analysis
-            const fs = require('fs');
-            const { execSync } = require('child_process');
-            
-            console.log("Performing code cleanliness review...");
-            
-            let cleanlinessReview = `## Code Cleanliness Review Results\n\n`;
-            
-            try {
-              // Analyze file sizes
-              const largeFiles = execSync("find . -name '*.py' -o -name '*.js' -o -name '*.ts' -o -name '*.c' -o -name '*.cpp' | xargs wc -l | sort -rn | head -10").toString().trim().split('\n');
-              
-              cleanlinessReview += `### File Size Analysis\n`;
-              cleanlinessReview += `Top files by line count:\n`;
-              largeFiles.forEach(line => {
-                const parts = line.trim().split(/\s+/);
-                if (parts.length >= 2 && !isNaN(parts[0])) {
-                  const lineCount = parseInt(parts[0]);
-                  const filename = parts.slice(1).join(' ');
-                  if (lineCount > 500) {
-                    cleanlinessReview += `- ⚠️ ${filename}: ${lineCount} lines (consider splitting)\n`;
-                  } else if (lineCount > 200) {
-                    cleanlinessReview += `- ✅ ${filename}: ${lineCount} lines (acceptable)\n`;
-                  }
-                }
-              });
-              
-              cleanlinessReview += `\n### Code Organization Recommendations\n`;
-              cleanlinessReview += `- Split large files (>500 lines) into smaller, focused modules\n`;
-              cleanlinessReview += `- Extract common functionality into utility modules\n`;
-              cleanlinessReview += `- Ensure proper separation of concerns\n`;
-              cleanlinessReview += `- Use consistent naming conventions throughout the codebase\n`;
-              
-              cleanlinessReview += `\n### Code Quality Suggestions\n`;
-              cleanlinessReview += `- Remove commented-out code blocks\n`;
-              cleanlinessReview += `- Eliminate code duplication through refactoring\n`;
-              cleanlinessReview += `- Add proper error handling and logging\n`;
-              cleanlinessReview += `- Ensure consistent code formatting and style\n`;
-              cleanlinessReview += `- Break down complex functions into smaller, testable units\n`;
-              
-              // Check for potential code smells
-              try {
-                const todoCount = execSync("grep -r 'TODO\\|FIXME\\|HACK' --include='*.py' --include='*.js' --include='*.ts' --include='*.c' . | wc -l").toString().trim();
-                if (parseInt(todoCount) > 0) {
-                  cleanlinessReview += `\n### Technical Debt\n`;
-                  cleanlinessReview += `- Found ${todoCount} TODO/FIXME/HACK comments\n`;
-                  cleanlinessReview += `- Consider addressing these technical debt items\n`;
-                }
-              } catch (error) {
-                // Ignore if grep fails
-              }
-              
-            } catch (error) {
-              cleanlinessReview += `Code cleanliness review completed with basic recommendations.\n`;
-            }
-            
-            // Append to existing analysis file
-            try {
-              const existingAnalysis = fs.readFileSync('/tmp/analysis.md', 'utf8');
-              fs.writeFileSync('/tmp/analysis.md', existingAnalysis + '\n\n' + cleanlinessReview);
-            } catch (error) {
-              fs.writeFileSync('/tmp/analysis.md', cleanlinessReview);
-            }
-            
-            console.log("Code cleanliness review completed");
         uses: austenstone/copilot-cli-action@v2
         with:
           copilot-token: ${{ secrets.COPILOT_TOKEN }}

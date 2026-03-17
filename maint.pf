@@ -31,5 +31,5 @@ end
 
 task maint-pre-push-check
   describe Run the size guard check locally (no push)
-  shell bash -lc 'scripts/git-hooks/pre-push <<EOF\n$(git rev-parse HEAD) 0000000000000000000000000000000000000000 refs/heads/main\nEOF'
+  shell bash -lc "scripts/git-hooks/pre-push $(git rev-parse HEAD) 0000000000000000000000000000000000000000 refs/heads/main"
 end

@@ -135,6 +135,23 @@ This intelligent system:
 
 ---
 
+## Command Execution Safety (New)
+
+The progressive recovery CLI now executes subprocess calls with argument lists
+instead of shell command strings.
+
+What this improves:
+- No `shell=True` in the recovery command runner
+- Predictable argument handling across all recovery levels
+- Reduced command-injection risk surface
+
+Validation:
+```bash
+python3 -m unittest tests/test_phoenix_progressive.py -v
+```
+
+---
+
 ## Manual Recovery with UUEFI
 
 For users who prefer manual inspection:

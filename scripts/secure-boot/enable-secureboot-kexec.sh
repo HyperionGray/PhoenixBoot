@@ -297,17 +297,47 @@ echo
 echo "After enabling Secure Boot (via BIOS setup or other means),"
 echo "the system will kexec back to the hardened kernel."
 
-# TODO: Kexec back to hardened kernel
-# For now, just inform the user
+HARDENED_KERNEL="__PHOENIXBOOT_HARDENED_KERNEL__"
+TARGET_VMLINUZ="/boot/vmlinuz-${HARDENED_KERNEL}"
+TARGET_INITRD="/boot/initrd.img-${HARDENED_KERNEL}"
+TARGET_CMDLINE="$(cat /proc/cmdline)"
+
 echo
 echo -e "${BLUE}To complete the process:${NC}"
 echo "  1. Enable Secure Boot through BIOS/UEFI setup"
-echo "  2. Reboot into the hardened kernel"
+echo "  2. Run this script with PHOENIXBOOT_AUTO_KEXEC_BACK=1 to return via kexec"
+echo "     Example: PHOENIXBOOT_AUTO_KEXEC_BACK=1 ${BASH_SOURCE[0]}"
 echo "  3. Verify: ./pf.py secureboot-check"
+
+if [ "${PHOENIXBOOT_AUTO_KEXEC_BACK:-0}" != "1" ]; then
+    echo
+    echo "Auto kexec-back is disabled (set PHOENIXBOOT_AUTO_KEXEC_BACK=1 to enable)."
+    exit 0
+fi
+
+echo
+echo -e "${YELLOW}Attempting kexec back to hardened kernel: ${HARDENED_KERNEL}${NC}"
+if [ ! -f "${TARGET_VMLINUZ}" ] || [ ! -f "${TARGET_INITRD}" ]; then
+    echo -e "${RED}✗ Hardened kernel artifacts not found${NC}"
+    echo "  Expected: ${TARGET_VMLINUZ} and ${TARGET_INITRD}"
+    echo "  Fall back to a normal reboot after enabling Secure Boot."
+    exit 1
+fi
+
+if ! kexec -l "${TARGET_VMLINUZ}" --initrd="${TARGET_INITRD}" --command-line="${TARGET_CMDLINE}" --reuse-cmdline; then
+    echo -e "${RED}✗ Failed to load hardened kernel for kexec${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✓ Hardened kernel loaded successfully${NC}"
+echo "Executing kexec in 2 seconds..."
+sleep 2
+exec kexec -e
 
 EOF
 
 chmod +x "$TEMP_SCRIPT"
+sed -i "s|__PHOENIXBOOT_HARDENED_KERNEL__|${CURRENT_KERNEL}|g" "$TEMP_SCRIPT"
 
 echo -e "\n${YELLOW}[6] Performing first kexec to alternate kernel...${NC}"
 echo
@@ -346,6 +376,7 @@ echo
 echo -e "${YELLOW}⚠ About to execute kexec...${NC}"
 echo "  The system will switch to the alternate kernel immediately"
 echo "  Run the phase 2 script after kexec: ${TEMP_SCRIPT}"
+echo "  Optional auto-return: PHOENIXBOOT_AUTO_KEXEC_BACK=1 ${TEMP_SCRIPT}"
 echo
 
 # Note: In a real implementation, we would set up the phase 2 script

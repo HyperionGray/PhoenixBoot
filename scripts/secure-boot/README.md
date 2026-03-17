@@ -120,6 +120,7 @@ sudo ./scripts/secure-boot/enable-secureboot-kexec.sh
 2. Prepares alternate kernel with relaxed security
 3. Framework for switching kernels without reboot
 4. Provides structure for hardware-specific enablement
+5. Optional Phase-2 prompt to kexec back to a selected hardened kernel
 
 **Recommended Approach**: Use BIOS/UEFI setup to enable SecureBoot (safest and most reliable).
 

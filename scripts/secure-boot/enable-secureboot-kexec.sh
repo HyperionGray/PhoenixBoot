@@ -298,8 +298,37 @@ echo
 echo "After enabling Secure Boot (via BIOS setup or other means),"
 echo "the system will kexec back to the hardened kernel."
 
-# TODO: Kexec back to hardened kernel
-# For now, just inform the user
+# Optional: kexec back to hardened kernel if user provides target kernel
+echo
+echo -e "${YELLOW}Optional: kexec back to hardened kernel${NC}"
+read -r -p "Enter hardened kernel version to kexec back into (blank to skip): " HARDENED_KERNEL
+
+if [ -n "${HARDENED_KERNEL}" ]; then
+    HARDENED_VMLINUZ="/boot/vmlinuz-${HARDENED_KERNEL}"
+    HARDENED_INITRD="/boot/initrd.img-${HARDENED_KERNEL}"
+
+    if [ ! -f "${HARDENED_VMLINUZ}" ] || [ ! -f "${HARDENED_INITRD}" ]; then
+        echo -e "${RED}✗ Hardened kernel artifacts not found${NC}"
+        echo "  Expected:"
+        echo "    ${HARDENED_VMLINUZ}"
+        echo "    ${HARDENED_INITRD}"
+        echo "  Falling back to manual reboot instructions."
+    elif ! command -v kexec >/dev/null 2>&1; then
+        echo -e "${RED}✗ kexec command is unavailable${NC}"
+        echo "  Falling back to manual reboot instructions."
+    else
+        CMDLINE=$(cat /proc/cmdline)
+        echo "Loading hardened kernel: ${HARDENED_KERNEL}"
+        if kexec -l "${HARDENED_VMLINUZ}" --initrd="${HARDENED_INITRD}" --command-line="${CMDLINE}" --reuse-cmdline; then
+            echo -e "${GREEN}✓ Hardened kernel loaded. Executing kexec now...${NC}"
+            kexec -e
+        else
+            echo -e "${RED}✗ Failed to load hardened kernel for kexec${NC}"
+            echo "  Falling back to manual reboot instructions."
+        fi
+    fi
+fi
+
 echo
 echo -e "${BLUE}To complete the process:${NC}"
 echo "  1. Enable Secure Boot through BIOS/UEFI setup"

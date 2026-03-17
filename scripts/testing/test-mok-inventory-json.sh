@@ -26,13 +26,14 @@ openssl x509 -in "$TEST_CERT" -outform DER -out "$TEST_DER"
 
 json_output="$(bash scripts/mok-management/mok-list-keys.sh --json --skip-enrollment-check)"
 
-printf '%s' "$json_output" | python3 - "$TEST_CERT" "$TEST_KEY" <<'PY'
+JSON_PAYLOAD="$json_output" python3 - "$TEST_CERT" "$TEST_KEY" <<'PY'
 import json
+import os
 import sys
 
 cert_path = sys.argv[1]
 key_path = sys.argv[2]
-data = json.load(sys.stdin)
+data = json.loads(os.environ["JSON_PAYLOAD"])
 
 if data.get("enrollment_check") != "skipped":
     raise SystemExit("expected enrollment_check=skipped")

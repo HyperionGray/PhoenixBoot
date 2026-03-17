@@ -22,10 +22,17 @@ Scripts for system recovery and remediation.
 
 - `install_kvm_snapshot_jump.sh` - Install KVM snapshot jump
 - `phoenix_progressive.py` - Progressive recovery system
+- `hardware_compat_probe.py` - Preflight host compatibility checks
 
 ## Usage
 
 ```bash
+# Run preflight compatibility probe
+python3 ./scripts/recovery/hardware_compat_probe.py
+
+# Probe only through progressive workflow
+python3 ./scripts/recovery/phoenix_progressive.py --probe-only
+
 # Return to normal boot
 sudo ./scripts/recovery/reboot-to-metal.sh
 

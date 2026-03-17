@@ -461,6 +461,10 @@ bash scripts/nuclear-wipe.sh           # Nuclear system wipe (EXTREME CAUTION)
 # Security environment check
 bash scripts/secure-env-check.sh
 
+# Recovery preflight probe
+python3 scripts/recovery/hardware_compat_probe.py
+python3 scripts/recovery/phoenix_progressive.py --probe-only
+
 # Boot management
 bash scripts/os-boot-clean.sh
 bash scripts/enroll-mok.sh <cert.crt> <cert.der> [dry_run]
@@ -706,6 +710,7 @@ PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 - **[Secure Boot Implementation](docs/SECURE_BOOT.md)** - Secure Boot guide
 - **[Boot Security Analysis](docs/BOOT_SEQUENCE_AND_ATTACK_SURFACES.md)** - Attack surface analysis
 - **[Firmware Recovery](docs/FIRMWARE_RECOVERY.md)** - Recovery procedures
+- **[Hardware Compatibility Probe](docs/HARDWARE_COMPAT_PROBE.md)** - Preflight recovery readiness checks
 - **[Hardware Access Deep Dive](docs/HARDWARE_ACCESS_DEEP_DIVE.md)** - Hardware-level operations
 - **[Security Environment Command](docs/SECURE_ENV_COMMAND.md)** - Security scanning guide
 - **[Kernel Hardening Guide](docs/KERNEL_HARDENING_GUIDE.md)** - Kernel security configuration
@@ -792,6 +797,7 @@ The other modes and other stuff - they need a good amount of testing before they
 - [x] Module signing integration
 - [x] UUEFI source code
 - [ ] Build UUEFI binary (requires EDK2)
+- [x] Recovery hardware compatibility probe (baseline)
 - [ ] Hardware firmware recovery automation
 - [ ] Cloud attestation API
 - [ ] P4X OS integration

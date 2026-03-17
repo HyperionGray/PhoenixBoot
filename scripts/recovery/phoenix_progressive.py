@@ -17,12 +17,18 @@ Each level requires user confirmation and explains the escalation.
 Users can stop at any level or let it auto-escalate to success.
 """
 
+import argparse
 import os
 import sys
 import json
+import shlex
 import subprocess
-import time
-from pathlib import Path
+from typing import Sequence, Union
+
+try:
+    from hardware_compat_probe import run_probe
+except ImportError:
+    run_probe = None
 
 class PhoenixProgressiveRecovery:
     def __init__(self):
@@ -38,34 +44,63 @@ class PhoenixProgressiveRecovery:
         print("☠ Intelligent escalation from safest to most extreme recovery methods")
         print()
     
-    def run_command(self, cmd, description="", check=True, capture_output=True):
-        """Run a command with error handling
-        
-        SECURITY: This function uses shell=True for command execution.
-        Current usage is safe as commands are hardcoded strings (e.g., "make scan-bootkits"),
-        but NEVER pass user input directly to this function without validation.
-        TODO: Refactor to use command lists instead of shell strings.
-        """
+    def run_command(self, cmd: Union[str, Sequence[str]], description="", check=True, capture_output=True):
+        """Run a command with error handling using argument lists."""
         if description:
             print(f"☠ {description}")
-        
+
+        cmd_parts = shlex.split(cmd) if isinstance(cmd, str) else [str(part) for part in cmd]
+        cmd_display = shlex.join(cmd_parts)
+
         try:
             if capture_output:
-                result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=check)
+                result = subprocess.run(cmd_parts, shell=False, capture_output=True, text=True, check=check)
                 return result.stdout, result.stderr, result.returncode
             else:
-                result = subprocess.run(cmd, shell=True, check=check)
+                result = subprocess.run(cmd_parts, shell=False, check=check)
                 return "", "", result.returncode
         except subprocess.CalledProcessError as e:
             if check:
-                print(f"☠ Command failed: {cmd}")
+                print(f"☠ Command failed: {cmd_display}")
                 print(f"   Error: {e}")
                 return "", str(e), e.returncode
             return "", str(e), e.returncode
         except Exception as e:
-            print(f"☠ Unexpected error running: {cmd}")
+            print(f"☠ Unexpected error running: {cmd_display}")
             print(f"   Error: {e}")
             return "", str(e), 1
+
+    def run_preflight_probe(self):
+        """Run hardware compatibility checks before escalation."""
+        print("☠ PREFLIGHT: Hardware compatibility probe")
+        print("=" * 50)
+
+        if run_probe is None:
+            print("☠ Probe module unavailable; skipping compatibility preflight.")
+            return True
+
+        report = run_probe()
+        self.results["preflight_probe"] = report
+
+        print(f"☠ Overall status: {report.get('overall_status', 'UNKNOWN').upper()}")
+        print("☠ Level readiness:")
+        for level_name, ready in report.get("level_readiness", {}).items():
+            marker = "READY" if ready else "MISSING PREREQUISITES"
+            print(f"  - {level_name}: {marker}")
+
+        blocking = report.get("blocking_issues", [])
+        if blocking:
+            print()
+            print("☠ Blocking issues detected:")
+            for issue in blocking:
+                print(f"  - {issue}")
+            print()
+            print("☠ You can continue, but impacted levels are likely to fail.")
+            return False
+
+        print("☠ Compatibility probe passed with no blocking issues.")
+        print()
+        return True
 
     def level_1_detect(self):
         """Level 1: Software-based bootkit detection (safest)"""
@@ -81,7 +116,7 @@ class PhoenixProgressiveRecovery:
             return False
             
         # Run bootkit detection
-        stdout, stderr, returncode = self.run_command("make scan-bootkits", "Running bootkit detection scan")
+        stdout, stderr, returncode = self.run_command(["make", "scan-bootkits"], "Running bootkit detection scan")
         
         # Check results
         if os.path.exists("bootkit_scan_results.json"):
@@ -123,12 +158,12 @@ class PhoenixProgressiveRecovery:
             return False
             
         # Build and deploy recovery ISO
-        stdout, stderr, returncode = self.run_command("make build-nuclear-cd", "Building Nuclear Boot recovery ISO")
+        stdout, stderr, returncode = self.run_command(["make", "build-nuclear-cd"], "Building Nuclear Boot recovery ISO")
         if returncode != 0:
             print("☠ Failed to build recovery ISO")
             return False
             
-        stdout, stderr, returncode = self.run_command("sudo make deploy-esp-iso", "Deploying recovery ISO to ESP")
+        stdout, stderr, returncode = self.run_command(["sudo", "make", "deploy-esp-iso"], "Deploying recovery ISO to ESP")
         if returncode != 0:
             print("☠ Failed to deploy recovery ISO")
             return False
@@ -143,7 +178,7 @@ class PhoenixProgressiveRecovery:
         # Ask if user wants to proceed immediately
         choice = input("☠ Boot recovery environment now? [y/N]: ").strip().lower()
         if choice == 'y':
-            self.run_command("make boot-from-esp-iso", capture_output=False)
+            self.run_command(["make", "boot-from-esp-iso"], capture_output=False)
             
         return True  # User can handle recovery from here
         
@@ -181,17 +216,17 @@ class PhoenixProgressiveRecovery:
         choice = input("Select operation [1-4]: ").strip()
         
         if choice == "1":
-            cmd = "sudo make secure-firmware-access ARGS='--backup current-firmware.bin'"
+            cmd = ["sudo", "make", "secure-firmware-access", "ARGS=--backup current-firmware.bin"]
             self.run_command(cmd, "Backing up firmware securely", capture_output=False)
             
         elif choice == "2":
-            cmd = "sudo make secure-firmware-access ARGS='--read suspicious-firmware.bin'"
+            cmd = ["sudo", "make", "secure-firmware-access", "ARGS=--read suspicious-firmware.bin"]
             self.run_command(cmd, "Reading firmware for analysis", capture_output=False)
             
         elif choice == "3":
             print("☠ WARNING: This will overwrite your firmware!")
             if self.confirm_escalation("write clean firmware (DANGEROUS)"):
-                cmd = f"sudo make secure-firmware-access ARGS='--write {clean_firmware}'"
+                cmd = ["sudo", "make", "secure-firmware-access", f"ARGS=--write {clean_firmware}"]
                 self.run_command(cmd, "Writing clean firmware", capture_output=False)
                 print("☠ Firmware recovery completed! System should be clean now.")
                 return True
@@ -232,7 +267,7 @@ class PhoenixProgressiveRecovery:
         if not os.path.exists(recovery_image):
             if os.path.exists(base_image):
                 print("☠ Enhanced recovery image not found - creating it...")
-                stdout, stderr, rc = self.run_command("sudo scripts/enhance_kvm_recovery.sh")
+                stdout, stderr, rc = self.run_command(["sudo", "scripts/enhance_kvm_recovery.sh"])
                 if rc != 0:
                     print("☠ Failed to create enhanced recovery image")
                     print(f"   Using base image: {base_image}")
@@ -258,7 +293,7 @@ class PhoenixProgressiveRecovery:
         print()
         
         if input("Proceed with reboot? [y/N]: ").strip().lower() == 'y':
-            self.run_command("sudo make reboot-to-vm", capture_output=False)
+            self.run_command(["sudo", "make", "reboot-to-vm"], capture_output=False)
             return True
             
         return False
@@ -290,7 +325,7 @@ class PhoenixProgressiveRecovery:
             
         # Install Xen snapshot jump
         stdout, stderr, returncode = self.run_command(
-            "sudo make install-phoenix",
+            ["sudo", "make", "install-phoenix"],
             "Installing Xen Snapshot Jump configuration"
         )
         
@@ -308,7 +343,7 @@ class PhoenixProgressiveRecovery:
         print()
         
         if input("Reboot to Xen now? [y/N]: ").strip().lower() == 'y':
-            self.run_command("sudo reboot", capture_output=False)
+            self.run_command(["sudo", "reboot"], capture_output=False)
             return True
             
         return False
@@ -352,7 +387,7 @@ class PhoenixProgressiveRecovery:
             return False
             
         # Proceed with hardware recovery
-        self.run_command("make hardware-recovery", capture_output=False)
+        self.run_command(["make", "hardware-recovery"], capture_output=False)
         return True
         
     def confirm_escalation(self, action):
@@ -360,9 +395,21 @@ class PhoenixProgressiveRecovery:
         response = input(f"☠ Proceed to {action}? [y/N]: ").strip().lower()
         return response == 'y'
         
-    def run_progressive_recovery(self):
+    def run_progressive_recovery(self, skip_probe=False, probe_only=False):
         """Run the progressive recovery workflow"""
         self.print_banner()
+
+        if not skip_probe:
+            preflight_ok = self.run_preflight_probe()
+            if probe_only:
+                return preflight_ok
+            if not preflight_ok:
+                if input("☠ Continue despite probe blockers? [y/N]: ").strip().lower() != "y":
+                    print("☠ Recovery cancelled due to compatibility blockers.")
+                    return False
+        elif probe_only:
+            print("☠ --probe-only requires probe execution; remove --skip-probe.")
+            return False
         
         print("☠ PhoenixGuard will try each recovery method in order of safety:")
         print("   Each level requires your confirmation before proceeding.")
@@ -414,6 +461,19 @@ class PhoenixProgressiveRecovery:
 
 def main():
     """Main entry point"""
+    parser = argparse.ArgumentParser(description="PhoenixGuard progressive recovery runner")
+    parser.add_argument(
+        "--skip-probe",
+        action="store_true",
+        help="Skip preflight hardware compatibility probe",
+    )
+    parser.add_argument(
+        "--probe-only",
+        action="store_true",
+        help="Only run the compatibility probe and exit",
+    )
+    args = parser.parse_args()
+
     if os.geteuid() != 0:
         print("☠  Note: Some operations require root privileges.")
         print("   PhoenixGuard will prompt for sudo when needed.")
@@ -421,7 +481,10 @@ def main():
     
     recovery = PhoenixProgressiveRecovery()
     try:
-        success = recovery.run_progressive_recovery()
+        success = recovery.run_progressive_recovery(
+            skip_probe=args.skip_probe,
+            probe_only=args.probe_only,
+        )
         exit_code = 0 if success else 1
     except KeyboardInterrupt:
         print("\n\n☠ PhoenixGuard recovery cancelled.")

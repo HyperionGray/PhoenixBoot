@@ -12,41 +12,70 @@ import sys
 import json
 import logging
 import subprocess
+import shlex
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Sequence
 
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('/var/log/phoenixguard/cert_inventory.log'),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
 logger = logging.getLogger(__name__)
+if not logging.getLogger().handlers:
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[logging.StreamHandler(sys.stdout)]
+    )
 
 class PhoenixGuardCertInventory:
-    def __init__(self, cert_dir: str = None):
-        self.cert_dir = cert_dir or "/home/punk/Projects/edk2-bootkit-defense/PhoenixGuard/secureboot_certs"
+    def __init__(self, cert_dir: str = None, openssl_bin: str = "openssl"):
+        self.repo_root = Path(__file__).resolve().parents[1]
+        self.openssl_bin = openssl_bin
+        self.cert_dir = self._resolve_cert_dir(cert_dir)
+        self.default_output_dir = self.repo_root / "out" / "reports"
         self.cert_data = {}
         self.conversion_log = []
-        
-        # Ensure log directory exists
-        os.makedirs("/var/log/phoenixguard", exist_ok=True)
-        
-    def run_command(self, cmd: str, check: bool = True) -> subprocess.CompletedProcess:
-        """Run shell command with logging
-        
-        SECURITY: This function uses shell=True for command execution.
-        Current usage is safe as commands are internally generated, but
-        NEVER pass user input directly to this function without validation.
-        TODO: Refactor to use command lists instead of shell strings.
-        """
-        logger.info(f"Running command: {cmd}")
+
+        self._configure_file_logging()
+
+    def _resolve_cert_dir(self, cert_dir: Optional[str]) -> str:
+        if cert_dir:
+            return str(Path(cert_dir).expanduser())
+
+        candidates = [
+            self.repo_root / "out" / "keys" / "mok",
+            self.repo_root / "out" / "keys",
+            self.repo_root / "keys",
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                return str(candidate)
+        return str(candidates[0])
+
+    def _configure_file_logging(self) -> None:
+        """Attach file logging in a writable project-local path."""
+        log_dir = self.repo_root / "out" / "logs"
         try:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=check)
+            log_dir.mkdir(parents=True, exist_ok=True)
+            log_path = log_dir / "cert_inventory.log"
+            has_handler = any(
+                isinstance(handler, logging.FileHandler)
+                and Path(handler.baseFilename) == log_path
+                for handler in logger.handlers
+            )
+            if not has_handler:
+                file_handler = logging.FileHandler(log_path)
+                file_handler.setFormatter(
+                    logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+                )
+                logger.addHandler(file_handler)
+        except OSError as exc:
+            logger.warning(f"Unable to configure file logging at {log_dir}: {exc}")
+
+    def run_command(self, cmd: Sequence[str], check: bool = True) -> subprocess.CompletedProcess:
+        """Run a command securely with explicit arguments (shell disabled)."""
+        cmd_list = [str(part) for part in cmd]
+        logger.info(f"Running command: {shlex.join(cmd_list)}")
+        try:
+            result = subprocess.run(cmd_list, capture_output=True, text=True, check=check)
             if result.stdout:
                 logger.debug(f"STDOUT: {result.stdout}")
             if result.stderr:
@@ -110,8 +139,18 @@ class PhoenixGuardCertInventory:
             return str(pem_path)
         
         try:
-            cmd = f"openssl x509 -inform der -in '{der_file}' -outform pem -out '{pem_path}'"
-            self.run_command(cmd)
+            self.run_command([
+                self.openssl_bin,
+                "x509",
+                "-inform",
+                "der",
+                "-in",
+                der_file,
+                "-outform",
+                "pem",
+                "-out",
+                str(pem_path),
+            ])
             
             self.conversion_log.append({
                 'timestamp': datetime.now().isoformat(),
@@ -140,31 +179,22 @@ class PhoenixGuardCertInventory:
             # Determine input format
             file_ext = Path(cert_file).suffix.lower()
             inform = 'der' if file_ext == '.der' else 'pem'
-            
-            # Get certificate text info
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -text -noout"
-            result = self.run_command(cmd)
-            cert_text = result.stdout
-            
-            # Get subject
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -subject -noout"
-            result = self.run_command(cmd)
-            subject = result.stdout.strip().replace('subject=', '')
-            
-            # Get issuer
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -issuer -noout"
-            result = self.run_command(cmd)
-            issuer = result.stdout.strip().replace('issuer=', '')
-            
-            # Get fingerprint
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -fingerprint -noout"
-            result = self.run_command(cmd)
-            fingerprint = result.stdout.strip().replace('SHA1 Fingerprint=', '')
-            
-            # Get validity dates
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -dates -noout"
-            result = self.run_command(cmd)
-            dates = result.stdout.strip()
+
+            base_cmd = [
+                self.openssl_bin,
+                "x509",
+                "-inform",
+                inform,
+                "-in",
+                cert_file,
+            ]
+
+            cert_text = self.run_command(base_cmd + ["-text", "-noout"]).stdout
+            subject = self.run_command(base_cmd + ["-subject", "-noout"]).stdout.strip().replace('subject=', '', 1)
+            issuer = self.run_command(base_cmd + ["-issuer", "-noout"]).stdout.strip().replace('issuer=', '', 1)
+            fingerprint_line = self.run_command(base_cmd + ["-fingerprint", "-noout"]).stdout.strip()
+            fingerprint = fingerprint_line.split("=", 1)[-1] if "=" in fingerprint_line else fingerprint_line
+            dates = self.run_command(base_cmd + ["-dates", "-noout"]).stdout.strip()
             
             return {
                 'file_path': cert_file,
@@ -270,13 +300,16 @@ class PhoenixGuardCertInventory:
         """Save inventory to JSON file"""
         if not output_file:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            output_file = f"/home/punk/Projects/edk2-bootkit-defense/PhoenixGuard/cert_inventory_{timestamp}.json"
-        
-        with open(output_file, 'w') as f:
+            output_file = str(self.default_output_dir / f"cert_inventory_{timestamp}.json")
+
+        output_path = Path(output_file).expanduser()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(output_path, 'w') as f:
             json.dump(inventory, f, indent=2, sort_keys=True)
-        
-        logger.info(f"Certificate inventory saved to: {output_file}")
-        return output_file
+
+        logger.info(f"Certificate inventory saved to: {output_path}")
+        return str(output_path)
 
 def main():
     """Main entry point"""
@@ -285,6 +318,8 @@ def main():
     parser = argparse.ArgumentParser(description='PhoenixGuard Certificate Inventory Tool')
     parser.add_argument('--cert-dir', help='Certificate directory path')
     parser.add_argument('--output', '-o', help='Output JSON file path')
+    parser.add_argument('--openssl-bin', default=os.environ.get("OPENSSL_BIN", "openssl"),
+                        help='OpenSSL binary to use (default: openssl)')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose logging')
     
     args = parser.parse_args()
@@ -293,7 +328,7 @@ def main():
         logging.getLogger().setLevel(logging.DEBUG)
     
     try:
-        inventory_tool = PhoenixGuardCertInventory(args.cert_dir)
+        inventory_tool = PhoenixGuardCertInventory(args.cert_dir, openssl_bin=args.openssl_bin)
         inventory = inventory_tool.inventory_all_certificates()
         output_file = inventory_tool.save_inventory(inventory, args.output)
         

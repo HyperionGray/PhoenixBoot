@@ -74,7 +74,17 @@ Scan and catalog available SecureBoot certificates:
 
 # Save inventory to custom location
 ./cert_inventory.py --cert-dir ../secureboot_certs --output inventory.json
+
+# Use a specific OpenSSL binary
+./cert_inventory.py --openssl-bin /usr/bin/openssl
 ```
+
+If `--cert-dir` is not set, `cert_inventory.py` now auto-discovers certificates from:
+1. `out/keys/mok/`
+2. `out/keys/`
+3. `keys/`
+
+Default report output is now written under `out/reports/` as `cert_inventory_<timestamp>.json`.
 
 **Sample Output:**
 ```json

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Refactored command execution in:
+  - `utils/cert_inventory.py`
+  - `scripts/recovery/phoenix_progressive.py`
+- Removed string-based `shell=True` subprocess calls in favor of explicit argument lists.
+
+### Added
+- `utils/cert_inventory.py` now supports `--openssl-bin` to select the OpenSSL executable.
+- `utils/cert_inventory.py` now auto-discovers certificate directories in project-local paths and writes default reports to `out/reports/`.
+
 ### 📚 Documentation
 - Refined contributor workflow guidance and changelog maintenance notes.
 

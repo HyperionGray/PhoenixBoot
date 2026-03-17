@@ -12,6 +12,8 @@ AUTOMATION.txt
 # Production-first hygiene additions
 # Build artifacts and outputs
 out/
+*.ko
+*.ko.unsigned
 
 # Object/library artifacts
 utils/*.o
@@ -79,6 +81,9 @@ secrets/
 *.sqlite3
 hardware_profiles.db
 hardware_uploads/
+.bish-index
+scripts/.bish-index
+defaultNetworkBackend
 
 # Temporary test files
 test_output/

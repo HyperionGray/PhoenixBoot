@@ -121,6 +121,7 @@ Sign kernel modules with PhoenixGuard certificates:
 - Comprehensive logging and audit trails
 - Verification of signed modules
 - Support for custom hash algorithms
+- Uses argument-list subprocess execution (no shell evaluation) for OpenSSL operations
 
 ### 3. Module Verification (C Library)
 

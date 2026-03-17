@@ -23,6 +23,9 @@ Scripts for system recovery and remediation.
 - `install_kvm_snapshot_jump.sh` - Install KVM snapshot jump
 - `phoenix_progressive.py` - Progressive recovery system
 
+`phoenix_progressive.py` executes recovery commands with explicit argument lists
+instead of shell-evaluated strings, reducing command-injection risk.
+
 ## Usage
 
 ```bash

@@ -26,7 +26,7 @@ end
 
 task secure-mok-verify
   describe Verify MOK certificate details
-  shell bash -lc 'scripts/mok-management/mok-verify.sh "${MOK_CERT_PEM:-out/keys/mok/PGMOK.crt}" "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}"'
+  shell bash scripts/mok-management/mok-verify.sh "${MOK_CERT_PEM:-out/keys/mok/PGMOK.crt}" "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}"
 end
 
 task secure-mok-find-enrolled
@@ -36,15 +36,15 @@ end
 
 task secure-enroll-mok
   describe Enroll PhoenixGuard MOK certificate
-  shell bash -lc 'scripts/mok-management/enroll-mok.sh "${MOK_CERT_PEM:-out/keys/mok/PGMOK.crt}" "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}" ${MOK_DRY_RUN:-0}'
+  shell bash scripts/mok-management/enroll-mok.sh "${MOK_CERT_PEM:-out/keys/mok/PGMOK.crt}" "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}" "${MOK_DRY_RUN:-0}"
 end
 
 # Note: secure-mok-new moved to core.pf to avoid duplication
 
 task secure-mok-enroll-new
   describe Generate + enroll PhoenixGuard MOK (reboot to complete)
-  shell bash -lc 'scripts/mok-management/mok-new.sh "${NAME:-PGMOK}" "${CN:-PhoenixGuard Module Key}"'
-  shell bash -lc 'scripts/mok-management/enroll-mok.sh "out/keys/${NAME:-PGMOK}.crt" "out/keys/${NAME:-PGMOK}.der" ${MOK_DRY_RUN:-0}'
+  shell bash scripts/mok-management/mok-new.sh "${NAME:-PGMOK}" "${CN:-PhoenixGuard Module Key}"
+  shell bash scripts/mok-management/enroll-mok.sh "out/keys/${NAME:-PGMOK}.crt" "out/keys/${NAME:-PGMOK}.der" "${MOK_DRY_RUN:-0}"
 end
 
 task secure-keys-centralize
@@ -64,10 +64,10 @@ end
 
 task secure-unenroll-mok
   describe Remove PhoenixGuard MOK certificate
-  shell bash -lc 'scripts/mok-management/unenroll-mok.sh "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}"'
+  shell bash scripts/mok-management/unenroll-mok.sh "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}"
 end
 
 task secure-der-extract
   describe Convert DER/PKCS#12 bundle into PEM cert and key (set DER_PATH, OUT_DIR, NAME)
-  shell bash -lc 'scripts/secure-boot/der-extract.sh "${DER_PATH:-}" "${OUT_DIR:-out/keys}" "${NAME:-PGMOK}"'
+  shell bash scripts/secure-boot/der-extract.sh "${DER_PATH:-}" "${OUT_DIR:-out/keys}" "${NAME:-PGMOK}"
 end

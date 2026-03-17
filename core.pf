@@ -162,7 +162,7 @@ end
 # --- MOK (Machine Owner Key) Management ---
 task os-mok-enroll
   describe Enroll host MOK for module signing
-  shell bash -lc 'scripts/mok-management/enroll-mok.sh "${MOK_CERT_PEM:-out/keys/mok/PGMOK.crt}" "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}" ${MOK_DRY_RUN:-0}'
+  shell bash scripts/mok-management/enroll-mok.sh "${MOK_CERT_PEM:-out/keys/mok/PGMOK.crt}" "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}" "${MOK_DRY_RUN:-0}"
 end
 
 task os-mok-list-keys
@@ -172,7 +172,7 @@ end
 
 task secure-mok-new
   describe Generate new PhoenixGuard MOK keypair (use NAME and CN env)
-  shell bash -lc 'scripts/mok-management/mok-new.sh "${NAME:-PGMOK}" "${CN:-PhoenixGuard Module Key}"'
+  shell bash scripts/mok-management/mok-new.sh "${NAME:-PGMOK}" "${CN:-PhoenixGuard Module Key}"
 end
 
 # --- Module Signing ---
@@ -276,4 +276,3 @@ task test-cli-tui-all
   describe Run comprehensive CLI and TUI test suite
   shell bash scripts/testing/test-all-cli-tui.sh
 end
-

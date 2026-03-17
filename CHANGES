@@ -9,6 +9,7 @@ For recent development updates, see:
 
 - [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) - Recent implementation work
 - [ISSUE_RESOLUTION_SUMMARY.md](ISSUE_RESOLUTION_SUMMARY.md) - Issue tracking
+- [docs/implementation/COMMAND_EXECUTION_HARDENING_2026-03-17.md](docs/implementation/COMMAND_EXECUTION_HARDENING_2026-03-17.md) - Subprocess safety hardening and logging reliability
 
 For project reviews and improvements:
 

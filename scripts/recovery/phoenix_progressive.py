@@ -20,9 +20,9 @@ Users can stop at any level or let it auto-escalate to success.
 import os
 import sys
 import json
+import shlex
 import subprocess
-import time
-from pathlib import Path
+from typing import Sequence, Union
 
 class PhoenixProgressiveRecovery:
     def __init__(self):
@@ -38,32 +38,53 @@ class PhoenixProgressiveRecovery:
         print("☠ Intelligent escalation from safest to most extreme recovery methods")
         print()
     
-    def run_command(self, cmd, description="", check=True, capture_output=True):
-        """Run a command with error handling
-        
-        SECURITY: This function uses shell=True for command execution.
-        Current usage is safe as commands are hardcoded strings (e.g., "make scan-bootkits"),
-        but NEVER pass user input directly to this function without validation.
-        TODO: Refactor to use command lists instead of shell strings.
+    def _normalize_command(self, cmd: Union[str, Sequence[str]]) -> list[str]:
+        """Normalize command input into argv for subprocess."""
+        if isinstance(cmd, str):
+            return shlex.split(cmd)
+
+        if isinstance(cmd, Sequence):
+            return [str(part) for part in cmd]
+
+        raise TypeError(f"Unsupported command type: {type(cmd)}")
+
+    def run_command(self, cmd: Union[str, Sequence[str]], description="", check=True, capture_output=True):
+        """Run a command with error handling using argv execution.
+
+        SECURITY: Commands run with shell=False so shell metacharacters are
+        not interpreted by a shell process.
         """
+        cmd_argv = self._normalize_command(cmd)
+        cmd_display = shlex.join(cmd_argv)
+
         if description:
             print(f"☠ {description}")
         
         try:
             if capture_output:
-                result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=check)
+                result = subprocess.run(
+                    cmd_argv,
+                    shell=False,
+                    capture_output=True,
+                    text=True,
+                    check=check,
+                )
                 return result.stdout, result.stderr, result.returncode
             else:
-                result = subprocess.run(cmd, shell=True, check=check)
+                result = subprocess.run(cmd_argv, shell=False, check=check)
                 return "", "", result.returncode
         except subprocess.CalledProcessError as e:
             if check:
-                print(f"☠ Command failed: {cmd}")
+                print(f"☠ Command failed: {cmd_display}")
                 print(f"   Error: {e}")
                 return "", str(e), e.returncode
             return "", str(e), e.returncode
+        except FileNotFoundError as e:
+            print(f"☠ Command not found: {cmd_argv[0]}")
+            print(f"   Error: {e}")
+            return "", str(e), 127
         except Exception as e:
-            print(f"☠ Unexpected error running: {cmd}")
+            print(f"☠ Unexpected error running: {cmd_display}")
             print(f"   Error: {e}")
             return "", str(e), 1
 
@@ -181,17 +202,17 @@ class PhoenixProgressiveRecovery:
         choice = input("Select operation [1-4]: ").strip()
         
         if choice == "1":
-            cmd = "sudo make secure-firmware-access ARGS='--backup current-firmware.bin'"
+            cmd = ["sudo", "make", "secure-firmware-access", "ARGS=--backup current-firmware.bin"]
             self.run_command(cmd, "Backing up firmware securely", capture_output=False)
             
         elif choice == "2":
-            cmd = "sudo make secure-firmware-access ARGS='--read suspicious-firmware.bin'"
+            cmd = ["sudo", "make", "secure-firmware-access", "ARGS=--read suspicious-firmware.bin"]
             self.run_command(cmd, "Reading firmware for analysis", capture_output=False)
             
         elif choice == "3":
             print("☠ WARNING: This will overwrite your firmware!")
             if self.confirm_escalation("write clean firmware (DANGEROUS)"):
-                cmd = f"sudo make secure-firmware-access ARGS='--write {clean_firmware}'"
+                cmd = ["sudo", "make", "secure-firmware-access", f"ARGS=--write {clean_firmware}"]
                 self.run_command(cmd, "Writing clean firmware", capture_output=False)
                 print("☠ Firmware recovery completed! System should be clean now.")
                 return True

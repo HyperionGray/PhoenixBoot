@@ -7,7 +7,7 @@ set -euo pipefail
 [ -f WARP.md ] || echo "[WARP.md missing – add strategic context]" > WARP.md
 [ -f PROJECT.txt ] || echo "[PROJECT.txt missing – add high-level summary]" > PROJECT.txt
 [ -f CHANGES ] || touch CHANGES
-[ -f TODO ] || echo -e "TODO-001: Extend production boot features\nTODO-002: Probe hardware compatibility bugs\nTODO-003: Add secure boot capability" > TODO
+[ -f TODO ] || echo -e "TODO-001: Automate phase-2 handoff in scripts/secure-boot/enable-secureboot-kexec.sh\nTODO-002: Add non-interactive test coverage for scripts/recovery/phoenix_progressive.py\nTODO-003: Migrate remaining non-demo Python subprocess usage to argv + shell=False" > TODO
 [ -f IDEAS ] || touch IDEAS
 [ -f HOTSPOTS ] || touch HOTSPOTS
 

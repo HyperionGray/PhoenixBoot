@@ -54,13 +54,14 @@ fi
 
 # Check if Secure Boot is already enabled
 check_secureboot_enabled() {
-    if [ -f /sys/firmware/efi/efivars/SecureBoot-* ]; then
-        local sb_file=$(ls /sys/firmware/efi/efivars/SecureBoot-* 2>/dev/null | head -1)
-        if [ -n "$sb_file" ]; then
-            local sb_status=$(od -An -t u1 -j 4 -N 1 "$sb_file" 2>/dev/null | tr -d ' ')
+    local sb_file
+    for sb_file in /sys/firmware/efi/efivars/SecureBoot-*; do
+        if [ -f "$sb_file" ]; then
+            local sb_status
+            sb_status=$(od -An -t u1 -j 4 -N 1 "$sb_file" 2>/dev/null | tr -d ' ')
             [ "$sb_status" = "1" ] && return 0
         fi
-    fi
+    done
     return 1
 }
 
@@ -220,7 +221,7 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 fi
 
 # Create a script that will run after first kexec
-TEMP_SCRIPT="/tmp/phoenixboot_secureboot_enable_phase2.sh"
+TEMP_SCRIPT=$(mktemp /tmp/phoenixboot_secureboot_enable_phase2.XXXXXX.sh)
 
 cat > "$TEMP_SCRIPT" << 'EOF'
 #!/bin/bash

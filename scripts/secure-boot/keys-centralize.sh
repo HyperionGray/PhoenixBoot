@@ -23,7 +23,7 @@ DRY_RUN=${DRY_RUN:-0}
 PRUNE=${PRUNE:-0}
 if [ "${1:-}" = "--prune" ]; then PRUNE=1; fi
 
-run() { if [ "$DRY_RUN" = 1 ]; then echo "DRY: $*"; else eval "$*"; fi }
+run() { if [ "$DRY_RUN" = 1 ]; then echo "DRY: $*"; else "$@"; fi }
 
 move_if_exists() {
   local src="$1" dest_dir="$2"

@@ -21,6 +21,7 @@ import os
 import sys
 import json
 import subprocess
+import shlex
 import time
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
@@ -113,17 +114,30 @@ class AutoNuke:
             response = input(f"{Colors.CYAN}Continue? [y/N]: {Colors.END}").strip().lower()
             return response in ['y', 'yes']
     
-    def run_command(self, cmd: str, shell: bool = True) -> Tuple[int, str, str]:
-        """Run a command and return exit code, stdout, stderr"""
+    def run_command(self, cmd: str, shell: bool = False) -> Tuple[int, str, str]:
+        """Run a command and return exit code, stdout, stderr.
+
+        Prefer non-shell execution for safety. Shell mode is reserved for
+        trusted commands that require shell features.
+        """
         self.log(f"Executing: {cmd}")
         try:
-            result = subprocess.run(
-                cmd, 
-                shell=shell, 
-                capture_output=True, 
-                text=True,
-                cwd=self.project_root
-            )
+            if shell:
+                result = subprocess.run(
+                    cmd,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    cwd=self.project_root,
+                )
+            else:
+                result = subprocess.run(
+                    shlex.split(cmd),
+                    shell=False,
+                    capture_output=True,
+                    text=True,
+                    cwd=self.project_root,
+                )
             return result.returncode, result.stdout, result.stderr
         except Exception as e:
             self.log(f"Command failed: {e}", "ERROR")

@@ -7,7 +7,7 @@ Thank you for your interest in contributing to PhoenixBoot! This document provid
 ### Prerequisites
 
 - Python 3.8 or higher
-- Docker or Podman (for container-based workflows)
+- Podman (for container-based workflows)
 - Git
 - QEMU (for testing UEFI components)
 - EDK2 toolchain (for UEFI firmware development)
@@ -20,12 +20,17 @@ Thank you for your interest in contributing to PhoenixBoot! This document provid
    cd PhoenixBoot
    ```
 
-2. Install Python dependencies:
+2. If you are contributing from a fork, add the main repository as `upstream`:
+   ```bash
+   git remote add upstream https://github.com/P4X-ng/PhoenixBoot.git
+   ```
+
+3. Install Python dependencies:
    ```bash
    pip install -r requirements.txt
    ```
 
-3. Verify your setup:
+4. Verify your setup:
    ```bash
    ./pf.py --help
    ```
@@ -35,6 +40,7 @@ Thank you for your interest in contributing to PhoenixBoot! This document provid
 ### Reporting Bugs
 
 Before creating a bug report, please check existing issues to avoid duplicates.
+Use the bug report template when it fits the issue.
 
 When reporting a bug, include:
 - A clear and descriptive title
@@ -52,7 +58,11 @@ Enhancement suggestions are welcome! Please include:
 - Any potential drawbacks or implementation challenges
 - Mock-ups or examples if applicable
 
+Use the feature request template when it fits the proposal.
+
 ### Pull Requests
+
+For significant changes, open or reference an issue first so the direction is clear before you start.
 
 1. **Create a branch** for your changes:
    ```bash
@@ -86,6 +96,12 @@ Enhancement suggestions are welcome! Please include:
    ```bash
    git push origin feature/your-feature-name
    ```
+
+6. **Before opening the pull request, verify the checklist**:
+   - Tests added or updated when behavior changed
+   - Documentation updated where needed
+   - Security-sensitive changes clearly called out
+   - No merge conflicts with the current `main` branch
 
 ## 🎨 Code Style
 
@@ -126,7 +142,7 @@ pytest tests/ -m integration
 ./pf.py workflow-test-uuefi
 
 # Container-based tests
-docker-compose --profile test up
+podman compose --profile test up
 ```
 
 ### Writing Tests

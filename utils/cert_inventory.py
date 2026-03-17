@@ -11,19 +11,33 @@ import os
 import sys
 import json
 import logging
+import shlex
 import subprocess
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Sequence
+
+
+def _build_logging_handlers() -> List[logging.Handler]:
+    """Build logging handlers with a non-root fallback path."""
+    handlers: List[logging.Handler] = [logging.StreamHandler(sys.stdout)]
+    log_path = Path('/var/log/phoenixguard/cert_inventory.log')
+
+    try:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        handlers.insert(0, logging.FileHandler(log_path))
+    except OSError:
+        fallback_path = Path.cwd() / 'cert_inventory.log'
+        handlers.insert(0, logging.FileHandler(fallback_path))
+
+    return handlers
+
 
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('/var/log/phoenixguard/cert_inventory.log'),
-        logging.StreamHandler(sys.stdout)
-    ]
+    handlers=_build_logging_handlers()
 )
 logger = logging.getLogger(__name__)
 
@@ -33,20 +47,15 @@ class PhoenixGuardCertInventory:
         self.cert_data = {}
         self.conversion_log = []
         
-        # Ensure log directory exists
-        os.makedirs("/var/log/phoenixguard", exist_ok=True)
-        
-    def run_command(self, cmd: str, check: bool = True) -> subprocess.CompletedProcess:
-        """Run shell command with logging
-        
-        SECURITY: This function uses shell=True for command execution.
-        Current usage is safe as commands are internally generated, but
-        NEVER pass user input directly to this function without validation.
-        TODO: Refactor to use command lists instead of shell strings.
-        """
-        logger.info(f"Running command: {cmd}")
+    def run_command(self, cmd: Sequence[str], check: bool = True) -> subprocess.CompletedProcess:
+        """Run a command safely with logging."""
+        if not cmd:
+            raise ValueError("Command cannot be empty")
+
+        rendered_cmd = " ".join(shlex.quote(part) for part in cmd)
+        logger.info(f"Running command: {rendered_cmd}")
         try:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=check)
+            result = subprocess.run(list(cmd), capture_output=True, text=True, check=check)
             if result.stdout:
                 logger.debug(f"STDOUT: {result.stdout}")
             if result.stderr:
@@ -110,7 +119,13 @@ class PhoenixGuardCertInventory:
             return str(pem_path)
         
         try:
-            cmd = f"openssl x509 -inform der -in '{der_file}' -outform pem -out '{pem_path}'"
+            cmd = [
+                "openssl", "x509",
+                "-inform", "der",
+                "-in", der_file,
+                "-outform", "pem",
+                "-out", str(pem_path)
+            ]
             self.run_command(cmd)
             
             self.conversion_log.append({
@@ -142,27 +157,27 @@ class PhoenixGuardCertInventory:
             inform = 'der' if file_ext == '.der' else 'pem'
             
             # Get certificate text info
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -text -noout"
+            cmd = ["openssl", "x509", "-inform", inform, "-in", cert_file, "-text", "-noout"]
             result = self.run_command(cmd)
             cert_text = result.stdout
             
             # Get subject
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -subject -noout"
+            cmd = ["openssl", "x509", "-inform", inform, "-in", cert_file, "-subject", "-noout"]
             result = self.run_command(cmd)
             subject = result.stdout.strip().replace('subject=', '')
             
             # Get issuer
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -issuer -noout"
+            cmd = ["openssl", "x509", "-inform", inform, "-in", cert_file, "-issuer", "-noout"]
             result = self.run_command(cmd)
             issuer = result.stdout.strip().replace('issuer=', '')
             
             # Get fingerprint
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -fingerprint -noout"
+            cmd = ["openssl", "x509", "-inform", inform, "-in", cert_file, "-fingerprint", "-noout"]
             result = self.run_command(cmd)
             fingerprint = result.stdout.strip().replace('SHA1 Fingerprint=', '')
             
             # Get validity dates
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -dates -noout"
+            cmd = ["openssl", "x509", "-inform", inform, "-in", cert_file, "-dates", "-noout"]
             result = self.run_command(cmd)
             dates = result.stdout.strip()
             

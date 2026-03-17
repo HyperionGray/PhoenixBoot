@@ -71,7 +71,7 @@ jobs:
           fi
 
       - name: Generate direction and write/update issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           LLM_PROVIDER: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.llm_provider) || vars.AUTOMATION_LLM_PROVIDER || vars.LLM_PROVIDER || 'openai' }}
           LLM_MODEL: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.llm_model) || vars.AUTOMATION_LLM_MODEL || vars.LLM_MODEL || 'gpt-5.2' }}

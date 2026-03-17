@@ -224,51 +224,71 @@ echo "☠ Issue 4: Poor user experience"
 echo "   Fix: Creating user-friendly commands"
 
 # Main user entry point
-cat > phoenix-boot << 'USERBOOT'
+cat > phoenixboot << 'USERBOOT'
 #!/usr/bin/env bash
-# PhoenixGuard Boot - User-friendly launcher
+# PhoenixBoot - User-friendly launcher
 # Run this from ANYWHERE - it handles paths correctly
 
-# Find the PhoenixGuard directory
-if [ -f "Justfile" ] && [ -d "scripts" ]; then
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Find the PhoenixBoot directory
+if [ -f "${SCRIPT_DIR}/pf.py" ] && [ -d "${SCRIPT_DIR}/scripts" ]; then
+    PHOENIX_ROOT="${SCRIPT_DIR}"
+elif [ -f "pf.py" ] && [ -d "scripts" ]; then
     PHOENIX_ROOT="$(pwd)"
-elif [ -f "$HOME/Projects/edk2-bootkit-defense/PhoenixGuard/Justfile" ]; then
-    PHOENIX_ROOT="$HOME/Projects/edk2-bootkit-defense/PhoenixGuard"
+elif [ -f "Pfyfile.pf" ] && [ -d "scripts" ]; then
+    PHOENIX_ROOT="$(pwd)"
+elif [ -n "${PHOENIX_ROOT:-}" ] && [ -f "${PHOENIX_ROOT}/pf.py" ]; then
+    :
 else
-    echo "☠ Cannot find PhoenixGuard installation!"
-    echo "Please run from PhoenixGuard directory or set PHOENIX_ROOT"
+    echo "☠ Cannot find PhoenixBoot installation!"
+    echo "Please run from PhoenixBoot directory or set PHOENIX_ROOT"
     exit 1
 fi
 
 cd "$PHOENIX_ROOT"
-echo "☠ PhoenixGuard Boot System"
+echo "☠ PhoenixBoot System"
 echo "Working from: $PHOENIX_ROOT"
 echo ""
 
 case "${1:-help}" in
     build)
         echo "☠ Building boot system..."
-        just build
+        ./pf.py build-build build-package-esp
+        ;;
+
+    setup)
+        echo "☠ Setting up PhoenixBoot..."
+        ./pf.py setup
         ;;
     
     usb)
         if [ -z "$2" ]; then
             echo "Usage: $0 usb /dev/sdX"
             echo "Available devices:"
-            lsblk -d -o NAME,SIZE,MODEL | grep -E "^sd|^nvme"
+            lsblk -d -o NAME,SIZE,MODEL 2>/dev/null | grep -E "^sd|^nvme" || echo "(lsblk not available)"
             exit 1
         fi
         echo "☠ Writing to USB: $2"
         echo "☠  This will ERASE $2! Press Ctrl+C to cancel, Enter to continue"
-        read
-        sudo dd if=build/esp/esp.img of="$2" bs=4M status=progress
-        sync
+        read -r
+        USB_DEVICE="$2" USB_DEVICE_CONFIRM=I_UNDERSTAND ./pf.py workflow-usb-write-dd
         echo "☠ USB ready!"
         ;;
     
     test)
         echo "☠ Testing in QEMU..."
-        just test-qemu
+        ./pf.py test-qemu
+        ;;
+
+    test-all)
+        echo "☠ Running all tests..."
+        ./pf.py test-qemu test-qemu-secure-positive test-qemu-uuefi
+        ;;
+
+    verify)
+        echo "☠ Verifying system..."
+        ./pf.py verify
         ;;
     
     fix)
@@ -290,20 +310,47 @@ case "${1:-help}" in
         [ -f "keys/PK.crt" ] && echo "Generated" || echo "Not generated"
         ;;
     
+    list)
+        echo "☠ Available tasks:"
+        ./pf.py list
+        ;;
+
     *)
-        echo "Usage: $0 {build|usb|test|fix|status}"
-        echo ""
-        echo "  build  - Build the boot system"
-        echo "  usb    - Write to USB device"
-        echo "  test   - Test in QEMU"
-        echo "  fix    - Fix all known issues"
-        echo "  status - Show system status"
+        if [ -n "$1" ] && [ "$1" != "help" ]; then
+            echo "☠ Running task: $*"
+            ./pf.py "$@"
+        else
+            echo "Usage: $0 {command} [args...]"
+            echo ""
+            echo "Common commands:"
+            echo "  setup      - Complete project setup"
+            echo "  build      - Build the boot system"
+            echo "  usb DEV    - Write to USB device"
+            echo "  test       - Test in QEMU"
+            echo "  test-all   - Run all tests"
+            echo "  verify     - Verify system integrity"
+            echo "  status     - Show system status"
+            echo "  list       - List all available tasks"
+            echo ""
+            echo "Advanced: Pass any pf.py task directly"
+            echo "  Example: $0 secure-keygen"
+            echo "  Run '$0 list' to see all available tasks"
+        fi
         ;;
 esac
 USERBOOT
 
+cat > phoenix-boot << 'LEGACYBOOT'
+#!/usr/bin/env bash
+# Backward-compatible shim for the legacy launcher name.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "${SCRIPT_DIR}/phoenixboot" "$@"
+LEGACYBOOT
+
+chmod +x phoenixboot
 chmod +x phoenix-boot
-ln -sf phoenix-boot pb  # Short alias
+ln -sf phoenixboot pb  # Short alias
 
 # 5. FIX QEMU TEST CONFIGURATION
 echo ""
@@ -412,13 +459,14 @@ echo "☠ Summary of changes:"
 echo "  1. ESP size reduced from 3.8GB to 128MB"
 echo "  2. Removed embedded ISO from ESP" 
 echo "  3. Fixed GRUB paths to use search instead of hardcoded"
-echo "  4. Created user-friendly 'phoenix-boot' command"
+echo "  4. Created user-friendly 'phoenixboot' command with legacy compatibility"
 echo "  5. Fixed module loading order"
 echo "  6. Created proper test configuration"
 echo ""
 echo "☠ Next steps:"
-echo "  1. Build fresh: ./phoenix-boot build"
-echo "  2. Test: ./phoenix-boot test"
-echo "  3. Deploy to USB: ./phoenix-boot usb /dev/sdX"
+echo "  1. Build fresh: ./phoenixboot build"
+echo "  2. Test: ./phoenixboot test"
+echo "  3. Deploy to USB: ./phoenixboot usb /dev/sdX"
+echo "     Legacy wrapper still works: ./phoenix-boot ..."
 echo ""
 echo "The system is now ACTUALLY production ready."

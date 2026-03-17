@@ -255,3 +255,25 @@ task cleanup
   describe Clean build artifacts (DEEP_CLEAN=1 for full ESP clean)
   shell bash scripts/maintenance/cleanup.sh
 end
+
+# --- CLI/TUI Testing Tasks ---
+task test-cli
+  describe Test phoenixboot CLI wrapper
+  shell bash scripts/testing/test-phoenixboot-cli.sh
+end
+
+task test-tui
+  describe Test phoenixboot TUI launcher
+  shell bash scripts/testing/test-phoenixboot-tui.sh
+end
+
+task test-pf
+  describe Test pf.py tasks definitions
+  shell bash scripts/testing/test-pf-tasks.sh
+end
+
+task test-cli-tui-all
+  describe Run comprehensive CLI and TUI test suite
+  shell bash scripts/testing/test-all-cli-tui.sh
+end
+

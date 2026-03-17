@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# PhoenixBoot - User-friendly launcher
+# Run this from ANYWHERE - it handles paths correctly
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Find the PhoenixBoot directory
+if [ -f "${SCRIPT_DIR}/pf.py" ] && [ -d "${SCRIPT_DIR}/scripts" ]; then
+    PHOENIX_ROOT="${SCRIPT_DIR}"
+elif [ -f "pf.py" ] && [ -d "scripts" ]; then
+    PHOENIX_ROOT="$(pwd)"
+elif [ -f "Pfyfile.pf" ] && [ -d "scripts" ]; then
+    PHOENIX_ROOT="$(pwd)"
+elif [ -n "${PHOENIX_ROOT:-}" ] && [ -f "${PHOENIX_ROOT}/pf.py" ]; then
+    # Use environment variable if set
+    :
+else
+    echo "❌ Cannot find PhoenixBoot installation!"
+    echo "Please run from PhoenixBoot directory or set PHOENIX_ROOT"
+    exit 1
+fi
+
+cd "$PHOENIX_ROOT"
+echo "🔥 PhoenixBoot System"
+echo "Working from: $PHOENIX_ROOT"
+echo ""
+
+case "${1:-help}" in
+    build)
+        echo "🔨 Building boot system..."
+        ./pf.py build-build build-package-esp
+        ;;
+    
+    setup)
+        echo "🔧 Setting up PhoenixBoot..."
+        ./pf.py setup
+        ;;
+    
+    usb)
+        if [ -z "$2" ]; then
+            echo "Usage: $0 usb /dev/sdX"
+            echo "Available devices:"
+            lsblk -d -o NAME,SIZE,MODEL 2>/dev/null | grep -E "^sd|^nvme" || echo "(lsblk not available)"
+            exit 1
+        fi
+        echo "📝 Writing to USB: $2"
+        echo "⚠️  This will ERASE $2! Press Ctrl+C to cancel, Enter to continue"
+        read -r
+        USB_DEVICE="$2" USB_DEVICE_CONFIRM=I_UNDERSTAND ./pf.py workflow-usb-write-dd
+        ;;
+    
+    test)
+        echo "🧪 Testing in QEMU..."
+        ./pf.py test-qemu
+        ;;
+    
+    test-all)
+        echo "🧪 Running all tests..."
+        ./pf.py test-qemu test-qemu-secure-positive test-qemu-uuefi
+        ;;
+    
+    verify)
+        echo "✅ Verifying system..."
+        ./pf.py verify
+        ;;
+    
+    status)
+        echo "📊 System Status:"
+        echo -n "  ESP Image: "
+        if [ -f "build/esp/esp.img" ]; then
+            du -h build/esp/esp.img 2>/dev/null | cut -f1 || echo "Present"
+        else
+            echo "Not built"
+        fi
+        echo -n "  Boot EFI: "
+        [ -f "out/staging/BootX64.efi" ] && echo "Ready" || echo "Not built"
+        echo -n "  Keys: "
+        [ -f "keys/PK.crt" ] && echo "Generated" || echo "Not generated"
+        ;;
+    
+    list)
+        echo "📋 Available tasks:"
+        ./pf.py list
+        ;;
+    
+    *)
+        if [ -n "$1" ] && [ "$1" != "help" ]; then
+            # Pass through to pf.py for any other task
+            echo "🔥 Running task: $*"
+            ./pf.py "$@"
+        else
+            echo "Usage: $0 {command} [args...]"
+            echo ""
+            echo "Common commands:"
+            echo "  setup      - Complete project setup"
+            echo "  build      - Build the boot system"
+            echo "  usb DEV    - Write to USB device"
+            echo "  test       - Test in QEMU"
+            echo "  test-all   - Run all tests"
+            echo "  verify     - Verify system integrity"
+            echo "  status     - Show system status"
+            echo "  list       - List all available tasks"
+            echo ""
+            echo "Advanced: Pass any pf.py task directly"
+            echo "  Example: $0 secure-keygen"
+            echo "  Run '$0 list' to see all available tasks"
+        fi
+        ;;
+esac

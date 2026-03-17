@@ -27,6 +27,7 @@ NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+STATE_DIR="${PHOENIXBOOT_STATE_DIR:-/var/lib/phoenixboot/secure-boot}"
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║    PhoenixBoot - Double Kexec Framework (DEMONSTRATION)           ║${NC}"
@@ -221,7 +222,8 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 fi
 
 # Create a script that will run after first kexec
-TEMP_SCRIPT=$(mktemp /tmp/phoenixboot_secureboot_enable_phase2.XXXXXX.sh)
+mkdir -p "$STATE_DIR"
+TEMP_SCRIPT="${STATE_DIR}/phase2-enable-secureboot.sh"
 
 cat > "$TEMP_SCRIPT" << 'EOF'
 #!/bin/bash
@@ -239,6 +241,53 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
+HARDENED_KERNEL="__HARDENED_KERNEL__"
+VERIFY_COMMAND="__VERIFY_COMMAND__"
+
+check_secureboot_enabled() {
+    local sb_file
+    for sb_file in /sys/firmware/efi/efivars/SecureBoot-*; do
+        if [ -f "$sb_file" ]; then
+            local sb_status
+            sb_status=$(od -An -t u1 -j 4 -N 1 "$sb_file" 2>/dev/null | tr -d ' ')
+            [ "$sb_status" = "1" ] && return 0
+        fi
+    done
+    return 1
+}
+
+prepare_phase3_kexec() {
+    local vmlinuz="/boot/vmlinuz-${HARDENED_KERNEL}"
+    local initrd="/boot/initrd.img-${HARDENED_KERNEL}"
+    local cmdline
+
+    if ! command -v kexec &>/dev/null; then
+        echo -e "${RED}✗ kexec is not available in this environment${NC}"
+        return 1
+    fi
+
+    if [ ! -f "$vmlinuz" ] || [ ! -f "$initrd" ]; then
+        echo -e "${RED}✗ Hardened kernel artifacts not found${NC}"
+        echo "  Kernel: $vmlinuz"
+        echo "  Initrd: $initrd"
+        return 1
+    fi
+
+    cmdline=$(cat /proc/cmdline 2>/dev/null || true)
+    if [ -z "$cmdline" ]; then
+        cmdline="quiet"
+    fi
+
+    echo -e "${YELLOW}Loading hardened kernel for phase 3...${NC}"
+    if ! kexec -l "$vmlinuz" --initrd="$initrd" --command-line="$cmdline" --reuse-cmdline; then
+        echo -e "${RED}✗ Failed to load hardened kernel for return kexec${NC}"
+        return 1
+    fi
+
+    echo -e "${GREEN}✓ Hardened kernel loaded for phase 3${NC}"
+    echo -e "${BLUE}When ready, execute:${NC} sudo kexec -e"
+    return 0
+}
 
 echo -e "${BLUE}═══════════════════════════════════════════════════════════════════${NC}"
 echo -e "${BLUE}    PhoenixBoot - Secure Boot Framework Phase 2                    ${NC}"
@@ -297,18 +346,23 @@ echo -e "${YELLOW}Phase 2 complete - manual Secure Boot enablement required${NC}
 echo
 echo "After enabling Secure Boot (via BIOS setup or other means),"
 echo "the system will kexec back to the hardened kernel."
-
-# TODO: Kexec back to hardened kernel
-# For now, just inform the user
 echo
-echo -e "${BLUE}To complete the process:${NC}"
-echo "  1. Enable Secure Boot through BIOS/UEFI setup"
-echo "  2. Reboot into the hardened kernel"
-echo "  3. Verify: ./pf.py secureboot-check"
+
+if check_secureboot_enabled; then
+    echo -e "${GREEN}✓ Secure Boot appears to be enabled${NC}"
+    prepare_phase3_kexec || true
+else
+    echo -e "${YELLOW}⚠ Secure Boot still appears disabled${NC}"
+    echo "Enable Secure Boot through BIOS/UEFI setup, then run this script again."
+fi
+
+echo
+echo -e "${BLUE}Verification command:${NC} ${VERIFY_COMMAND}"
 
 EOF
 
 chmod +x "$TEMP_SCRIPT"
+sed -i "s|__HARDENED_KERNEL__|${CURRENT_KERNEL}|g; s|__VERIFY_COMMAND__|${SCRIPT_DIR}/check-secureboot-status.sh|g" "$TEMP_SCRIPT"
 
 echo -e "\n${YELLOW}[6] Performing first kexec to alternate kernel...${NC}"
 echo
@@ -348,26 +402,17 @@ echo -e "${YELLOW}⚠ About to execute kexec...${NC}"
 echo "  The system will switch to the alternate kernel immediately"
 echo "  Run the phase 2 script after kexec: ${TEMP_SCRIPT}"
 echo
-
-# Note: In a real implementation, we would set up the phase 2 script
-# to run automatically (e.g., via systemd service or init script)
-# For now, this is manual
-
-echo -e "${BLUE}Implementation Note:${NC}"
-echo "This is a framework implementation of the double kexec method."
+echo -e "${BLUE}Phase 2 helper details:${NC}"
+echo "  - Persisted path survives kexec: ${TEMP_SCRIPT}"
+echo "  - Includes hardened-kernel return preparation"
+echo "  - Will load phase 3 kernel once Secure Boot is detected"
 echo
-echo "Complete implementation would require:"
-echo "  1. Automated phase 2 script execution after kexec"
-echo "  2. Hardware-specific Secure Boot enablement code"
-echo "  3. Automatic kexec back to hardened kernel"
-echo "  4. Comprehensive error handling and rollback"
-echo
-echo "For production use, consider:"
+echo "For production use, still consider:"
 echo "  - Using BIOS/UEFI setup to enable Secure Boot (safest)"
 echo "  - Consulting hardware documentation for OS-level enablement"
 echo "  - Testing thoroughly in a VM environment first"
 echo
 echo -e "${YELLOW}To execute the kexec (for testing):${NC}"
-echo "  kexec -e"
+echo "  sudo kexec -e"
 echo
 echo "Aborted - framework demonstration complete"

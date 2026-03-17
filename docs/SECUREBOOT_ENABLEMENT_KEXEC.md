@@ -24,6 +24,8 @@ PhoenixBoot provides an advanced **framework** for enabling Secure Boot from the
 - ✅ Kernel configuration profiles (permissive, hardened, balanced)
 - ✅ Status detection and analysis tools
 - ✅ Prerequisites checking and validation
+- ✅ Persistent phase-2 helper script generation (`/var/lib/phoenixboot/secure-boot/phase2-enable-secureboot.sh`)
+- ✅ Hardened-kernel return (`kexec -l`) preparation after Secure Boot is enabled
 - ✅ Educational demonstration of the technique
 
 **What this does NOT provide:**
@@ -288,10 +290,33 @@ The script will:
 2. Show available kernels
 3. Load alternate kernel via kexec
 4. Execute kexec (switch to permissive kernel)
-5. Enable Secure Boot (in Phase 2)
-6. Kexec back to hardened kernel
+5. Run the generated phase-2 helper script:
+   - `/var/lib/phoenixboot/secure-boot/phase2-enable-secureboot.sh`
+6. Enable Secure Boot (in Phase 2, hardware-specific step)
+7. Prepare hardened-kernel return via `kexec -l` once Secure Boot is detected
+8. Execute `sudo kexec -e` to return to the hardened kernel
 
-**Note**: The current implementation provides a framework. Full automation requires hardware-specific knowledge for Secure Boot enablement.
+**Note**: Hardware-specific Secure Boot enablement is still framework-only. The return path to the hardened kernel is now prepared automatically by the phase-2 helper after Secure Boot is enabled.
+
+### Phase-2 Helper Script
+
+The enablement flow writes a persistent helper script:
+
+```bash
+/var/lib/phoenixboot/secure-boot/phase2-enable-secureboot.sh
+```
+
+Use it in the alternate kernel after the first `kexec -e`:
+
+```bash
+sudo /var/lib/phoenixboot/secure-boot/phase2-enable-secureboot.sh
+```
+
+Behavior:
+- Detects whether Secure Boot is enabled.
+- If enabled, loads the original hardened kernel for phase 3 using `kexec -l`.
+- Prompts you to run `sudo kexec -e` when ready to switch back.
+- Prints a verification command to confirm Secure Boot state.
 
 ### Step 4: Verify Secure Boot is Enabled
 

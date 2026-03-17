@@ -17,26 +17,25 @@ VISION: Open-source hardware database that breaks vendor lock-in!
 from flask import Flask, request, jsonify, render_template_string, send_file
 import json
 import os
+import secrets
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
 import sqlite3
 import hashlib
+import re
 
 app = Flask(__name__)
 
-# SECURITY: Use environment variable for secret key in production
-# Generate a secure key with: python -c 'import secrets; print(secrets.token_hex(32))'
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'phoenix_guard_hardware_db')
+# SECURITY: Use an explicit environment variable when provided.
+# Fall back to a per-process random key instead of a fixed secret.
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
 
-# Warn if using insecure development secret
-if app.config['SECRET_KEY'] == 'phoenix_guard_hardware_db':
+if 'SECRET_KEY' not in os.environ:
     print("=" * 80, file=sys.stderr)
-    print("⚠️  SECURITY WARNING: Using insecure development SECRET_KEY!", file=sys.stderr)
-    print("   This is acceptable for development/testing ONLY.", file=sys.stderr)
-    print("   For production, set the SECRET_KEY environment variable.", file=sys.stderr)
-    print("   Generate with: python -c 'import secrets; print(secrets.token_hex(32))'", file=sys.stderr)
+    print("⚠️  SECURITY WARNING: Using an ephemeral development SECRET_KEY!", file=sys.stderr)
+    print("   Set the SECRET_KEY environment variable for persistent sessions.", file=sys.stderr)
     print("=" * 80, file=sys.stderr)
 
 # Database setup
@@ -525,8 +524,18 @@ def search_hardware():
 @app.route('/api/download/<hardware_id>')
 def download_config(hardware_id):
     """Download universal BIOS config for hardware"""
+    if not re.match(r'^[a-zA-Z0-9_-]+$', hardware_id):
+        return "Invalid hardware ID format", 400
+
     profile_file = UPLOADS_PATH / f"{hardware_id}.json"
-    
+
+    try:
+        profile_file = profile_file.resolve()
+        if not str(profile_file).startswith(str(UPLOADS_PATH.resolve())):
+            return "Invalid file path", 400
+    except (OSError, RuntimeError):
+        return "Invalid file path", 400
+
     if not profile_file.exists():
         return "Profile not found", 404
     

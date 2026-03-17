@@ -18,6 +18,16 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+validate_device_path() {
+    local device="$1"
+    if [[ ! "$device" =~ ^/dev/(sd[a-z]{1,4}|nvme[0-9]+n[0-9]+|vd[a-z]{1,2}|mmcblk[0-9]+)$ ]]; then
+        echo "❌ Invalid device path format: $device"
+        echo "   Expected format: /dev/sdX, /dev/nvmeXnY, /dev/vdX, or /dev/mmcblkX"
+        return 1
+    fi
+    return 0
+}
+
 # Check if nwipe is installed
 if ! command -v nwipe &> /dev/null; then
     echo "⚠️  nwipe not found - attempting to install..."
@@ -93,6 +103,10 @@ case "$choice" in
             echo "❌ Device not found: $device"
             exit 1
         fi
+
+        if ! validate_device_path "$device"; then
+            exit 1
+        fi
         
         echo "⚠️  FINAL CONFIRMATION"
         echo "   Device: $device"
@@ -112,6 +126,10 @@ case "$choice" in
         read -p "Enter device to wipe (e.g., /dev/sda): " device
         if [ ! -b "$device" ]; then
             echo "❌ Device not found: $device"
+            exit 1
+        fi
+
+        if ! validate_device_path "$device"; then
             exit 1
         fi
         
@@ -134,6 +152,10 @@ case "$choice" in
         read -p "Enter device to wipe (e.g., /dev/sda): " device
         if [ ! -b "$device" ]; then
             echo "❌ Device not found: $device"
+            exit 1
+        fi
+
+        if ! validate_device_path "$device"; then
             exit 1
         fi
         

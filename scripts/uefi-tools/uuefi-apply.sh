@@ -7,7 +7,7 @@ info "☠ UUEFI apply (set BootNext for selected app)"
 
 # Dry-run mode: UUEFI_DRYRUN=1
 DRY=${UUEFI_DRYRUN:-}
-run() { if [ -n "$DRY" ]; then echo "DRYRUN: $*"; else eval "$*"; fi }
+run() { if [ -n "$DRY" ]; then echo "DRYRUN: $*"; else "$@"; fi }
 need_sudo() {
   if [ -n "$DRY" ]; then echo sudo -n "$@" || true; else sudo -n "$@"; fi
 }
@@ -105,4 +105,3 @@ else
   echo "Example: EFI_DISK=/dev/nvme0n1 EFI_PART=1 APP=$APP just uuefi-apply"
   exit 1
 fi
-

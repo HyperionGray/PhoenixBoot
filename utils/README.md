@@ -74,6 +74,9 @@ Scan and catalog available SecureBoot certificates:
 
 # Save inventory to custom location
 ./cert_inventory.py --cert-dir ../secureboot_certs --output inventory.json
+
+# Optional: write logs to a file
+./cert_inventory.py --cert-dir ../secureboot_certs --log-file /tmp/cert_inventory.log
 ```
 
 **Sample Output:**
@@ -266,6 +269,9 @@ PhoenixGuard/
 ```bash
 # Optional: Set certificate directory
 export PHOENIXGUARD_CERT_DIR=/path/to/certificates
+
+# Optional: Enable cert inventory file logging
+export PHOENIXGUARD_CERT_LOG_FILE=/path/to/cert_inventory.log
 
 # Optional: Set signing configuration
 export PHOENIXGUARD_HASH_ALGO=sha256

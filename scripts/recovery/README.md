@@ -26,6 +26,9 @@ Scripts for system recovery and remediation.
 ## Usage
 
 ```bash
+# Preview progressive recovery commands without executing
+python3 scripts/recovery/phoenix_progressive.py --dry-run
+
 # Return to normal boot
 sudo ./scripts/recovery/reboot-to-metal.sh
 
@@ -37,3 +40,8 @@ sudo ./scripts/recovery/nuclear-wipe.sh
 ```
 
 **WARNING**: The nuclear-wipe script performs complete system sanitization. Only use in extreme malware situations!
+
+## Notes
+
+- `phoenix_progressive.py` now supports `--dry-run` to print each command before execution.
+- Recovery command execution uses argv-based subprocess calls (no shell expansion by default) for improved safety.

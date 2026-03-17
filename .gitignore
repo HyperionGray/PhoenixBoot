@@ -84,3 +84,10 @@ hardware_uploads/
 test_output/
 tmp/
 .tmp/
+
+# Runtime/session output artifacts
+autonuke_session.log
+cert_inventory_*.json
+examples_and_samples/demo/**/autonuke_session.log
+examples_and_samples/demo/**/escalation.log
+examples_and_samples/demo/**/debug.log

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔒 Security
+- Refactored `scripts/recovery/phoenix_progressive.py` to use argv-based subprocess execution by default (no shell invocation for built-in commands).
+- Refactored `utils/cert_inventory.py` OpenSSL calls to argv-based subprocess execution.
+
+### ✨ Added
+- Added `--dry-run` mode to `scripts/recovery/phoenix_progressive.py` to preview progressive recovery commands safely.
+- Added optional `--log-file` support to `utils/cert_inventory.py`.
+
+### 🧹 Cleanup
+- Removed stale demo log artifacts from legacy sample directories.
+
 ### 📚 Documentation
 - Refined contributor workflow guidance and changelog maintenance notes.
 

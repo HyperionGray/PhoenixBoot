@@ -42,6 +42,10 @@ examples_and_samples/demo/**/*.tar.gz
 nohup.out
 nohup.out*
 nohup*.out
+.tmp/
+storage.lock
+userns.lock
+issues.txt
 
 # Editor backup files
 *~

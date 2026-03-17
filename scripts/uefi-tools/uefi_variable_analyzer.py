@@ -11,6 +11,7 @@ import os
 import json
 import struct
 from pathlib import Path
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Union
 
 class UEFIVariableAnalyzer:
@@ -241,22 +242,36 @@ class UEFIVariableAnalyzer:
                     print(f"   • {rec['variable']}: {rec['recommendation']}")
                     print(f"     Optimal: {rec['optimal_value']}")
     
-    def save_analysis_results(self, output_file: str = "g615lp_variable_analysis.json"):
+    def save_analysis_results(self, output_file: Optional[str] = None):
         """Save detailed analysis results"""
+        output_path = Path(output_file) if output_file else Path("bios_extractions") / "g615lp_variable_analysis.json"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
         results = {
             "hardware_id": "ROG Strix G16 G615LP",
-            "analysis_timestamp": "2025-01-23T02:49:00Z",
+            "analysis_timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "variable_analysis": self.analysis_results,
             "recommendations": "See generate_config_recommendations output"
         }
         
-        with open(output_file, 'w') as f:
+        with open(output_path, 'w') as f:
             json.dump(results, f, indent=2)
         
-        print(f"\n☠ Detailed analysis saved to: {output_file}")
-        return output_file
+        print(f"\n☠ Detailed analysis saved to: {output_path}")
+        return str(output_path)
 
 def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Analyze ASUS UEFI variables and produce a JSON report."
+    )
+    parser.add_argument(
+        "--output",
+        help="Output JSON path (default: bios_extractions/g615lp_variable_analysis.json)"
+    )
+    args = parser.parse_args()
+
     print("☠ PHOENIXGUARD ADVANCED UEFI VARIABLE ANALYZER")
     print("=" * 60)
     print("Reading and decoding ASUS variable VALUES...")
@@ -271,7 +286,7 @@ def main():
     analyzer.generate_config_recommendations()
     
     # Save results
-    analyzer.save_analysis_results()
+    analyzer.save_analysis_results(args.output)
     
     print(f"\n☠ ANALYSIS COMPLETE!")
     print("This data is GOLD for building universal BIOS support!")

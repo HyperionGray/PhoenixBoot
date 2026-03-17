@@ -28,4 +28,11 @@ sudo ./scripts/uefi-tools/uuefi-apply.sh
 
 # Analyze UEFI variables
 sudo python3 ./scripts/uefi-tools/uefi_variable_analyzer.py
+
+# Write report to a custom path
+sudo python3 ./scripts/uefi-tools/uefi_variable_analyzer.py --output /tmp/uefi-analysis.json
 ```
+
+By default, analysis output is written to:
+
+- `bios_extractions/g615lp_variable_analysis.json`

@@ -25,6 +25,108 @@ echo "🔥 PhoenixBoot System"
 echo "Working from: $PHOENIX_ROOT"
 echo ""
 
+show_usage() {
+    echo "Usage: $0 {command} [args...]"
+    echo ""
+    echo "Common commands:"
+    echo "  setup         - Complete project setup"
+    echo "  build         - Build the boot system"
+    echo "  usb DEV       - Write to USB device"
+    echo "  test          - Test in QEMU"
+    echo "  test-all      - Run core QEMU tests"
+    echo "  test-cli      - Run CLI launcher tests"
+    echo "  test-tui      - Run TUI launcher tests"
+    echo "  test-cli-tui  - Run CLI/TUI test suite"
+    echo "  tui           - Launch interactive TUI"
+    echo "  tui-check     - Validate TUI dependencies"
+    echo "  doctor        - Health check for local setup"
+    echo "  verify        - Verify system integrity"
+    echo "  status        - Show system status"
+    echo "  list          - List all available tasks"
+    echo ""
+    echo "Advanced: Pass any pf.py task directly"
+    echo "  Example: $0 secure-keygen"
+    echo "  Run '$0 list' to see all available tasks"
+}
+
+run_doctor() {
+    local mode="${1:-}"
+    local failed=0
+    local warnings=0
+
+    local required_files=(
+        "pf.py"
+        "Pfyfile.pf"
+        "core.pf"
+        "secure.pf"
+        "workflows.pf"
+        "phoenixboot-tui.sh"
+        "containers/tui/app/phoenixboot_tui.py"
+    )
+    local required_bins=("bash" "python3")
+    local recommended_bins=("qemu-system-x86_64" "efibootmgr" "mokutil")
+
+    echo "PhoenixBoot doctor report"
+    echo "-------------------------"
+
+    echo "Checking required files:"
+    for file in "${required_files[@]}"; do
+        if [ -e "$file" ]; then
+            echo "  [ok] $file"
+        else
+            echo "  [missing] $file"
+            failed=$((failed + 1))
+        fi
+    done
+
+    echo ""
+    echo "Checking required commands:"
+    for bin in "${required_bins[@]}"; do
+        if command -v "$bin" >/dev/null 2>&1; then
+            echo "  [ok] $bin"
+        else
+            echo "  [missing] $bin"
+            failed=$((failed + 1))
+        fi
+    done
+
+    echo ""
+    echo "Checking recommended commands:"
+    for bin in "${recommended_bins[@]}"; do
+        if command -v "$bin" >/dev/null 2>&1; then
+            echo "  [ok] $bin"
+        else
+            echo "  [warn] $bin not found"
+            warnings=$((warnings + 1))
+        fi
+    done
+
+    echo ""
+    echo "Checking optional Python modules:"
+    if python3 -c "import textual" >/dev/null 2>&1; then
+        echo "  [ok] textual"
+    else
+        echo "  [warn] textual not installed (needed for TUI)"
+        warnings=$((warnings + 1))
+    fi
+
+    if [ "$mode" = "--strict" ] && [ "$warnings" -gt 0 ]; then
+        failed=$((failed + warnings))
+    fi
+
+    echo ""
+    if [ "$failed" -eq 0 ]; then
+        echo "Doctor check passed."
+        if [ "$warnings" -gt 0 ]; then
+            echo "Warnings: $warnings (run '$0 doctor --strict' to fail on warnings)"
+        fi
+        return 0
+    fi
+
+    echo "Doctor check failed (issues: $failed, warnings: $warnings)."
+    return 1
+}
+
 case "${1:-help}" in
     build)
         echo "🔨 Building boot system..."
@@ -58,6 +160,34 @@ case "${1:-help}" in
         echo "🧪 Running all tests..."
         ./pf.py test-qemu test-qemu-secure-positive test-qemu-uuefi
         ;;
+
+    test-cli)
+        echo "🧪 Running CLI launcher tests..."
+        ./pf.py test-cli
+        ;;
+
+    test-tui)
+        echo "🧪 Running TUI launcher tests..."
+        ./pf.py test-tui
+        ;;
+
+    test-cli-tui)
+        echo "🧪 Running CLI/TUI test suite..."
+        ./pf.py test-cli-tui-all
+        ;;
+
+    tui)
+        echo "📟 Launching TUI..."
+        "${PHOENIX_ROOT}/phoenixboot-tui.sh"
+        ;;
+
+    tui-check)
+        "${PHOENIX_ROOT}/phoenixboot-tui.sh" --check
+        ;;
+
+    doctor)
+        run_doctor "${2:-}"
+        ;;
     
     verify)
         echo "✅ Verifying system..."
@@ -67,15 +197,29 @@ case "${1:-help}" in
     status)
         echo "📊 System Status:"
         echo -n "  ESP Image: "
-        if [ -f "build/esp/esp.img" ]; then
-            du -h build/esp/esp.img 2>/dev/null | cut -f1 || echo "Present"
+        if [ -f "out/esp/esp.img" ]; then
+            du -h out/esp/esp.img 2>/dev/null | cut -f1 || echo "Present (out/esp/esp.img)"
+        elif [ -f "build/esp/esp.img" ]; then
+            du -h build/esp/esp.img 2>/dev/null | cut -f1 || echo "Present (build/esp/esp.img)"
         else
             echo "Not built"
         fi
         echo -n "  Boot EFI: "
-        [ -f "out/staging/BootX64.efi" ] && echo "Ready" || echo "Not built"
+        if [ -f "staging/boot/NuclearBootEdk2.efi" ]; then
+            echo "Ready (staging/boot/NuclearBootEdk2.efi)"
+        elif [ -f "out/staging/BootX64.efi" ]; then
+            echo "Ready (out/staging/BootX64.efi)"
+        else
+            echo "Not built"
+        fi
         echo -n "  Keys: "
-        [ -f "keys/PK.crt" ] && echo "Generated" || echo "Not generated"
+        if [ -f "out/keys/PK/PK.crt" ]; then
+            echo "Generated (out/keys/PK/PK.crt)"
+        elif [ -f "keys/PK.crt" ]; then
+            echo "Generated (keys/PK.crt)"
+        else
+            echo "Not generated"
+        fi
         ;;
     
     list)
@@ -89,21 +233,7 @@ case "${1:-help}" in
             echo "🔥 Running task: $*"
             ./pf.py "$@"
         else
-            echo "Usage: $0 {command} [args...]"
-            echo ""
-            echo "Common commands:"
-            echo "  setup      - Complete project setup"
-            echo "  build      - Build the boot system"
-            echo "  usb DEV    - Write to USB device"
-            echo "  test       - Test in QEMU"
-            echo "  test-all   - Run all tests"
-            echo "  verify     - Verify system integrity"
-            echo "  status     - Show system status"
-            echo "  list       - List all available tasks"
-            echo ""
-            echo "Advanced: Pass any pf.py task directly"
-            echo "  Example: $0 secure-keygen"
-            echo "  Run '$0 list' to see all available tasks"
+            show_usage
         fi
         ;;
 esac

@@ -15,6 +15,12 @@ cd "$PROJECT_ROOT"
 PASSED=0
 FAILED=0
 SKIPPED=0
+CHECK_OUTPUT_FILE="$(mktemp)"
+
+cleanup() {
+    rm -f "$CHECK_OUTPUT_FILE"
+}
+trap cleanup EXIT
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -95,10 +101,28 @@ fi
 
 # Test 8: Verify TUI root detection logic
 echo "[TEST 8] Checking root directory detection in TUI..."
-if grep -q "find_phoenixboot_root\|PHOENIXBOOT_ROOT" containers/tui/app/phoenixboot_tui.py; then
-    pass "TUI has root detection logic"
+if grep -q "find_phoenix_root\|PHOENIX_ROOT" phoenixboot-tui.sh; then
+    pass "TUI launcher has root detection logic"
 else
-    fail "TUI missing root detection"
+    fail "TUI launcher missing root detection"
+fi
+
+# Test 9: Verify TUI launcher can run check mode outside repo root
+echo "[TEST 9] Checking launcher check mode from outside project root..."
+if (cd /tmp && PHOENIX_ROOT="$PROJECT_ROOT" "$PROJECT_ROOT/phoenixboot-tui.sh" --check > "$CHECK_OUTPUT_FILE" 2>&1); then
+    pass "TUI check mode works outside project root"
+elif grep -qi "textual.*missing\|install" "$CHECK_OUTPUT_FILE"; then
+    skip "TUI check mode requires textual dependency in test env"
+else
+    fail "TUI check mode failed outside project root"
+fi
+
+# Test 10: Verify TUI launcher supports --no-install option
+echo "[TEST 10] Checking --no-install option..."
+if grep -q -- "--no-install" phoenixboot-tui.sh; then
+    pass "TUI launcher supports --no-install option"
+else
+    fail "TUI launcher missing --no-install option"
 fi
 
 # Summary

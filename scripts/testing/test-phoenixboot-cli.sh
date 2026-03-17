@@ -15,6 +15,14 @@ cd "$PROJECT_ROOT"
 PASSED=0
 FAILED=0
 SKIPPED=0
+LIST_OUTPUT_FILE="$(mktemp)"
+INVALID_OUTPUT_FILE="$(mktemp)"
+TUI_CHECK_OUTPUT_FILE="$(mktemp)"
+
+cleanup() {
+    rm -f "$LIST_OUTPUT_FILE" "$INVALID_OUTPUT_FILE" "$TUI_CHECK_OUTPUT_FILE"
+}
+trap cleanup EXIT
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -79,9 +87,9 @@ fi
 
 # Test 6: Test phoenixboot list command
 echo "[TEST 6] Testing phoenixboot list..."
-if ./phoenixboot list > /tmp/phoenixboot_list_output.txt 2>&1; then
+if ./phoenixboot list > "$LIST_OUTPUT_FILE" 2>&1; then
     pass "phoenixboot list works"
-elif grep -qi "fabric\|module.*not.*found" /tmp/phoenixboot_list_output.txt; then
+elif grep -qi "fabric\|module.*not.*found" "$LIST_OUTPUT_FILE"; then
     skip "phoenixboot list requires fabric module (not in test env)"
 else
     fail "phoenixboot list failed"
@@ -114,10 +122,10 @@ fi
 
 # Test 10: Test phoenixboot with invalid command
 echo "[TEST 10] Testing error handling..."
-output=$(timeout 5 ./phoenixboot invalid_command_xyz 2>&1 || true)
+timeout 5 ./phoenixboot invalid_command_xyz > "$INVALID_OUTPUT_FILE" 2>&1 || true
 # phoenixboot passes unknown commands to pf.py, which may fail if fabric not installed
 # This is expected behavior - it shows the command was processed
-if echo "$output" | grep -qi "task\|fabric\|running"; then
+if grep -qi "task\|fabric\|running" "$INVALID_OUTPUT_FILE"; then
     pass "Processes unknown commands (passes to pf.py)"
 else
     skip "Error handling behavior unclear"
@@ -137,6 +145,24 @@ if ./phoenix-boot help > /dev/null 2>&1; then
     pass "phoenix-boot compatibility shim works"
 else
     fail "phoenix-boot compatibility shim failed"
+fi
+
+# Test 13: Test phoenixboot doctor command
+echo "[TEST 13] Testing phoenixboot doctor..."
+if ./phoenixboot doctor > /dev/null 2>&1; then
+    pass "phoenixboot doctor works"
+else
+    fail "phoenixboot doctor failed"
+fi
+
+# Test 14: Test TUI dependency check path
+echo "[TEST 14] Testing phoenixboot tui-check..."
+if ./phoenixboot tui-check > "$TUI_CHECK_OUTPUT_FILE" 2>&1; then
+    pass "phoenixboot tui-check works"
+elif grep -qi "textual.*missing\|install" "$TUI_CHECK_OUTPUT_FILE"; then
+    skip "phoenixboot tui-check requires textual dependency in test env"
+else
+    fail "phoenixboot tui-check failed"
 fi
 
 # Summary

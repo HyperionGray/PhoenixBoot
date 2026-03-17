@@ -26,16 +26,35 @@ pip install textual rich pyyaml
 
 ### Running the TUI
 
-There are three ways to run the TUI:
+There are four ways to run the TUI:
 
-#### 1. Direct Python Execution
+#### 1. PhoenixBoot Launcher (Recommended)
+
+```bash
+# Works from the PhoenixBoot repository root
+./phoenixboot-tui.sh
+
+# Check dependencies and root detection without launching the UI
+./phoenixboot-tui.sh --check
+
+# Same checks through the main launcher
+./phoenixboot tui-check
+```
+
+The launcher now supports running from outside the repository as long as
+`PHOENIX_ROOT` is set to the project path:
+
+```bash
+PHOENIX_ROOT=/path/to/PhoenixBoot /path/to/PhoenixBoot/phoenixboot-tui.sh --check
+```
+#### 2. Direct Python Execution
 
 ```bash
 cd /path/to/PhoenixBoot
 python3 containers/tui/app/phoenixboot_tui.py
 ```
 
-#### 2. Docker Container
+#### 3. Docker Container
 
 ```bash
 # Using docker-compose
@@ -45,7 +64,7 @@ docker-compose --profile tui up
 docker run -it --rm -v $(pwd):/phoenixboot phoenixboot-tui
 ```
 
-#### 3. Podman Quadlet
+#### 4. Podman Quadlet
 
 ```bash
 # Install quadlet
@@ -323,6 +342,11 @@ pip install textual rich pyyaml
 ```bash
 cd /path/to/PhoenixBoot
 python3 containers/tui/app/phoenixboot_tui.py
+```
+
+If you need to run the launcher from elsewhere, set `PHOENIX_ROOT`:
+```bash
+PHOENIX_ROOT=/path/to/PhoenixBoot /path/to/PhoenixBoot/phoenixboot-tui.sh --check
 ```
 
 ### Display Issues

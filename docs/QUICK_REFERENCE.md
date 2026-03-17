@@ -91,6 +91,17 @@ sudo bash scripts/recovery/nuclear-wipe.sh
 ./phoenixboot-tui.sh
 ```
 
+**Launcher health checks:**
+```bash
+./phoenixboot doctor
+./phoenixboot tui-check
+```
+
+**Launcher-focused test suite:**
+```bash
+./phoenixboot test-cli-tui
+```
+
 **Generate SecureBoot keys:**
 ```bash
 ./pf.py secure-keygen

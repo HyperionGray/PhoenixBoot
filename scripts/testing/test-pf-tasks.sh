@@ -15,6 +15,12 @@ cd "$PROJECT_ROOT"
 PASSED=0
 FAILED=0
 SKIPPED=0
+PF_TASKS_OUTPUT_FILE="$(mktemp)"
+
+cleanup() {
+    rm -f "$PF_TASKS_OUTPUT_FILE"
+}
+trap cleanup EXIT
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -96,15 +102,15 @@ fi
 # Test 8: Verify pf.py can list tasks (dry run)
 echo "[TEST 8] Testing pf.py list command..."
 # Note: This will fail if fabric module is not installed, which is expected
-if ./pf.py list > /tmp/pf_tasks.txt 2>&1; then
-    if grep -q "task\|build\|test" /tmp/pf_tasks.txt; then
+if ./pf.py list > "$PF_TASKS_OUTPUT_FILE" 2>&1; then
+    if grep -q "task\|build\|test" "$PF_TASKS_OUTPUT_FILE"; then
         pass "pf.py list command works"
     else
         skip "pf.py list succeeded but output format unclear"
     fi
 else
     # Check if it's due to missing dependencies
-    if grep -qi "fabric\|module.*not.*found" /tmp/pf_tasks.txt; then
+    if grep -qi "fabric\|module.*not.*found" "$PF_TASKS_OUTPUT_FILE"; then
         skip "pf.py requires fabric module (not installed in test env)"
     else
         fail "pf.py list failed"

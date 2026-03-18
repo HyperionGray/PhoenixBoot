@@ -1,0 +1,37 @@
+# hardware.pf - Hardware firmware recovery tasks
+# Direct SPI flash access for bootkit-proof firmware recovery
+# WARNING: write/restore operations are DESTRUCTIVE and require root
+
+# --- Firmware Baseline Management ---
+task firmware-baseline-create
+  describe Create a bootkit-detection baseline from a clean firmware dump (set FIRMWARE_PATH)
+  shell bash -c '[ -n "${FIRMWARE_PATH:-}" ] || { echo "Usage: FIRMWARE_PATH=<file> [MODEL=<model>] [BIOS_VER=<ver>] ./pf.py firmware-baseline-create"; exit 1; }'
+  shell bash -c 'mkdir -p out/baselines && ${PYTHON:-python3} utils/firmware_baseline_analyzer.py "${FIRMWARE_PATH}" --output out/baselines/firmware_baseline.json ${MODEL:+--hardware-model "${MODEL}"} ${BIOS_VER:+--bios-version "${BIOS_VER}"} ${VERBOSE:+-v}'
+  shell bash -c 'echo "Baseline saved: out/baselines/firmware_baseline.json"'
+end
+
+# --- Hardware Tool Checks ---
+task firmware-recovery-check
+  describe Check hardware tool availability for firmware recovery (no root required)
+  shell ${PYTHON:-python3} utils/hardware_firmware_recovery.py --check
+end
+
+# --- Flash Dump ---
+task firmware-recovery-dump
+  describe [ROOT] Dump current SPI flash to a timestamped binary file
+  shell bash -c 'mkdir -p out/firmware-dumps && sudo ${PYTHON:-python3} utils/hardware_firmware_recovery.py --dump ${DUMP_OUTPUT:+--dump-output "${DUMP_OUTPUT}"} --output out/firmware-dumps/dump_results_$(date +%Y%m%dT%H%M%S).json'
+end
+
+# --- Verification (read-only) ---
+task firmware-recovery-verify
+  describe [ROOT] Verify a firmware image against hardware and baseline (read-only, set FIRMWARE_PATH)
+  shell bash -c '[ -n "${FIRMWARE_PATH:-}" ] || { echo "Usage: FIRMWARE_PATH=<image> ./pf.py firmware-recovery-verify"; exit 1; }'
+  shell bash -c 'mkdir -p out && sudo ${PYTHON:-python3} utils/hardware_firmware_recovery.py "${FIRMWARE_PATH}" --verify-only --output out/firmware-verify-results.json'
+end
+
+# --- Recovery (DESTRUCTIVE) ---
+task firmware-recovery-restore
+  describe [ROOT, DESTRUCTIVE] Restore SPI flash from a clean firmware image (set FIRMWARE_PATH)
+  shell bash -c '[ -n "${FIRMWARE_PATH:-}" ] || { echo "Usage: FIRMWARE_PATH=<clean_image> ./pf.py firmware-recovery-restore"; exit 1; }'
+  shell bash -c 'mkdir -p out && sudo ${PYTHON:-python3} utils/hardware_firmware_recovery.py "${FIRMWARE_PATH}" --output out/hardware-recovery-results.json'
+end

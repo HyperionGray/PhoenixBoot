@@ -792,8 +792,8 @@ The other modes and other stuff - they need a good amount of testing before they
 - [x] ESP packaging
 - [x] Module signing integration
 - [x] UUEFI source code
+- [x] Hardware firmware recovery automation (`utils/hardware_firmware_recovery.py`, `hardware.pf`)
 - [ ] Build UUEFI binary (requires EDK2)
-- [ ] Hardware firmware recovery automation
 - [ ] Cloud attestation API
 - [ ] P4X OS integration
 - [ ] Universal hardware compatibility

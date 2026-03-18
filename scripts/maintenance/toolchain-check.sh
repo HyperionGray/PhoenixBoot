@@ -8,7 +8,7 @@ echo "Checking required toolchain..." > out/setup/report.txt
 echo "=============================" >> out/setup/report.txt
 
 MISSING=0
-for tool in gcc qemu-system-x86_64 mtools mkfs.fat parted python3 mokutil openssl; do
+for tool in gcc qemu-system-x86_64 mtools mkfs.fat parted python3 mokutil openssl pf; do
     if command -v $tool >/dev/null 2>&1; then
         echo "☠ $tool: $(command -v $tool)" >> out/setup/report.txt
     else

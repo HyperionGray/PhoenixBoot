@@ -36,7 +36,7 @@ export ISO_PATH=""
 cat > scripts/esp-package-minimal.sh << 'ESPMIN'
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 source scripts/lib/common.sh
 
 info "☠ Creating MINIMAL bootable ESP image (no ISOs)..."

@@ -104,8 +104,8 @@ if ./pf.py list > /tmp/pf_tasks.txt 2>&1; then
     fi
 else
     # Check if it's due to missing dependencies
-    if grep -qi "fabric\|module.*not.*found" /tmp/pf_tasks.txt; then
-        skip "pf.py requires fabric module (not installed in test env)"
+    if grep -qi "fabric\|module.*not.*found\|pf runner not found\|pf-runner" /tmp/pf_tasks.txt; then
+        skip "pf.py requires pf runner binary (not installed in test env)"
     else
         fail "pf.py list failed"
     fi

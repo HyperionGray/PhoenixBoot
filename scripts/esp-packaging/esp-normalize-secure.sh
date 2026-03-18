@@ -5,7 +5,7 @@ set -euo pipefail
 # Adds robust progress logging and timeouts to avoid appearing stuck.
 # Logs to: out/logs/esp-normalize-secure.log
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 source scripts/lib/common.sh
 
 IMG=${IMG:-out/esp/esp.img}

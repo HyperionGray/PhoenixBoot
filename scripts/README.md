@@ -1,10 +1,12 @@
 # scripts directory
 
-This folder contains host-side helper scripts organized by category. They do not run inside UEFI; they prepare your system or ESP from Linux.
+This folder contains host-side helper script entrypoints organized by category. They do not run inside UEFI; they prepare your system or ESP from Linux.
+
+The repository is now organized around component directories under `components/`. The directories under `scripts/` are compatibility symlinks so existing commands such as `bash scripts/testing/qemu-test.sh` keep working while the real script sources live with their owning component.
 
 ## Directory Structure
 
-The scripts are organized into the following categories:
+The compatibility entrypoints are organized into the following categories:
 
 ### 📦 [build/](build/)
 Scripts for building PhoenixBoot artifacts and images.
@@ -55,5 +57,11 @@ sudo ./scripts/secure-boot/generate-sb-keys.sh
 bash ./scripts/testing/qemu-test.sh
 ```
 
-See individual category README files for detailed information about each script.
+Actual script sources now live in:
 
+- `components/core/scripts/`
+- `components/secure/scripts/`
+- `components/workflows/scripts/`
+- `components/maint/scripts/`
+
+See individual category README files for detailed information about each script.

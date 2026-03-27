@@ -7,7 +7,8 @@ PhoenixBoot uses `.pf` task files for automation and workflow management. The ta
 
 ### Core Files
 - **Pfyfile.pf** - Main entry point that includes all other task files
-- **core.pf** - Core functionality (46 tasks)
+- **core.pf**, **secure.pf**, **workflows.pf**, **maint.pf** - Root compatibility wrappers
+- **components/core/core.pf** - Core functionality (46 tasks)
   - Build tasks (build-setup, build-build, build-package-esp, etc.)
   - Testing tasks (test-qemu, test-qemu-secure-*, etc.)
   - Secure Boot key management
@@ -15,15 +16,15 @@ PhoenixBoot uses `.pf` task files for automation and workflow management. The ta
   - Firmware checksum management
   - UUEFI operations
   - Validation tasks
-- **secure.pf** - Secure Boot specific tasks (13 tasks)
+- **components/secure/secure.pf** - Secure Boot specific tasks (13 tasks)
   - MOK (Machine Owner Key) management
   - Key enrollment and verification
   - Secure Boot enablement
-- **maint.pf** - Maintenance tasks (7 tasks)
+- **components/maint/maint.pf** - Maintenance tasks (7 tasks)
   - Code formatting and linting
   - Documentation generation
   - Git hooks
-- **workflows.pf** - Complex workflows (11 tasks)
+- **components/workflows/workflows.pf** - Complex workflows (11 tasks)
   - Artifact creation
   - CD/ISO preparation
   - USB writing
@@ -220,14 +221,11 @@ Many tasks accept environment variables for configuration:
 - `PG_FORCE_BUILD` - Force rebuild (1=yes)
 
 ### Script Locations
-- Build scripts: `scripts/build/`
-- Testing scripts: `scripts/testing/`
-- Secure Boot scripts: `scripts/secure-boot/`
-- MOK management: `scripts/mok-management/`
-- UEFI tools: `scripts/uefi-tools/`
-- ESP packaging: `scripts/esp-packaging/`
-- Validation: `scripts/validation/`
-- Maintenance: `scripts/maintenance/`
+- Compatibility entrypoints remain under `scripts/`
+- Core script sources: `components/core/scripts/`
+- Secure script sources: `components/secure/scripts/`
+- Workflow script sources: `components/workflows/scripts/`
+- Maintenance script sources: `components/maint/scripts/`
 
 ## Best Practices
 

@@ -375,10 +375,11 @@ The project uses `pf.py` from [pf-runner](https://github.com/P4X-ng/pf-runner) -
 #### Task Organization
 
 PhoenixBoot organizes tasks across multiple `.pf` files for clarity:
-- **`core.pf`** - Essential functionality (build, test, keys, MOK, module signing, UUEFI)
-- **`secure.pf`** - Advanced Secure Boot operations (enrollment, key management)
-- **`workflows.pf`** - Multi-step workflows (artifact creation, CD preparation, USB writing)
-- **`maint.pf`** - Maintenance tasks (linting, formatting, documentation)
+- **`core.pf`**, **`secure.pf`**, **`workflows.pf`**, **`maint.pf`** - Root compatibility wrappers
+- **`components/core/core.pf`** - Essential functionality (build, test, keys, MOK, module signing, UUEFI)
+- **`components/secure/secure.pf`** - Advanced Secure Boot operations (enrollment, key management)
+- **`components/workflows/workflows.pf`** - Multi-step workflows (artifact creation, CD preparation, USB writing)
+- **`components/maint/maint.pf`** - Maintenance tasks (linting, formatting, documentation)
 
 All task files are included in `Pfyfile.pf` and accessible via `./pf.py list`.
 
@@ -445,30 +446,30 @@ DEEP_CLEAN=1 ./pf.py cleanup
 
 ### Direct Script Usage
 
-Many operations can also be run directly via bash scripts in the `scripts/` directory:
+Many operations can also be run directly via bash scripts in the `scripts/` directory. These are compatibility entrypoints; the real script sources now live under `components/*/scripts/`.
 
 ```bash
 # UUEFI operations
-bash scripts/uuefi-install.sh
-bash scripts/uuefi-apply.sh
-bash scripts/uuefi-report.sh
-bash scripts/host-uuefi-once.sh
+bash scripts/uefi-tools/uuefi-install.sh
+bash scripts/uefi-tools/uuefi-apply.sh
+bash scripts/uefi-tools/uuefi-report.sh
+bash scripts/uefi-tools/host-uuefi-once.sh
 
 # UUEFI v3.0 companion tools
-bash scripts/esp-config-extract.sh     # Extract ESP configurations
-bash scripts/nuclear-wipe.sh           # Nuclear system wipe (EXTREME CAUTION)
+bash scripts/esp-packaging/esp-config-extract.sh     # Extract ESP configurations
+bash scripts/recovery/nuclear-wipe.sh                # Nuclear system wipe (EXTREME CAUTION)
 
 # Security environment check
-bash scripts/secure-env-check.sh
+bash scripts/validation/secure-env-check.sh
 
 # Boot management
-bash scripts/os-boot-clean.sh
-bash scripts/enroll-mok.sh <cert.crt> <cert.der> [dry_run]
-bash scripts/mok-list-keys.sh
+bash scripts/maintenance/os-boot-clean.sh
+bash scripts/mok-management/enroll-mok.sh <cert.crt> <cert.der> [dry_run]
+bash scripts/mok-management/mok-list-keys.sh
 
 # Testing
-bash scripts/qemu-test.sh
-bash scripts/qemu-test-uuefi.sh
+bash scripts/testing/qemu-test.sh
+bash scripts/testing/qemu-test-uuefi.sh
 ```
 
 ## 🏗️ Project Structure
@@ -478,10 +479,12 @@ PhoenixBoot/
 ├── 🎯 Root Directory
 │   ├── pf.py                              # Task runner (symlink to pf_universal)
 │   ├── Pfyfile.pf                          # Main task file (includes all .pf files)
-│   ├── core.pf                             # Essential tasks
-│   ├── secure.pf                           # Advanced SecureBoot tasks
-│   ├── workflows.pf                        # Multi-step workflows
-│   ├── maint.pf                            # Maintenance tasks
+│   ├── core.pf                             # Compatibility wrapper → components/core/core.pf
+│   ├── secure.pf                           # Compatibility wrapper → components/secure/secure.pf
+│   ├── workflows.pf                        # Compatibility wrapper → components/workflows/workflows.pf
+│   ├── maint.pf                            # Compatibility wrapper → components/maint/maint.pf
+│   ├── includes/                           # Shared include namespace and shell helpers
+│   ├── components/                         # Component-owned PF files, scripts, and scaffolding
 │   ├── docker-compose.yml                  # Container orchestration
 │   ├── phoenixboot-tui.sh                  # TUI launcher script
 │   ├── create-secureboot-bootable-media.sh # Standalone: Create bootable media from ISO
@@ -512,12 +515,12 @@ PhoenixBoot/
 │   ├── boot/                               # Compiled EFI binaries (checked in as prebuilt)
 │   └── tools/                              # Build scripts for EDK2 compilation
 │
-├── 🔧 scripts/                             # Organized operational scripts
-│   ├── build/                              # Build scripts
+├── 🔧 scripts/                             # Compatibility script entrypoints
+│   ├── build/                              # → components/core/scripts/build/
 │   │   ├── build-production.sh             # Build production artifacts
 │   │   ├── build-nuclear-cd.sh             # Build Nuclear CD
 │   │   └── iso-prep.sh                     # ISO preparation
-│   ├── testing/                            # Test scripts
+│   ├── testing/                            # → components/core/scripts/testing/
 │   │   ├── qemu-test*.sh                   # Various QEMU test scenarios
 │   │   └── run-e2e-tests.sh                # End-to-end test runner
 │   ├── mok-management/                     # MOK & Module Signing

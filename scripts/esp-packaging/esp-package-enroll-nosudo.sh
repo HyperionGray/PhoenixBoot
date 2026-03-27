@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 source scripts/lib/common.sh
 
 info "☠ Packaging enrollment ESP (no sudo, mtools)"

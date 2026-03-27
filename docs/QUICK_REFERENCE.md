@@ -103,7 +103,7 @@ sudo bash scripts/recovery/nuclear-wipe.sh
 
 **Sign kernel modules:**
 ```bash
-PATH=/path/to/module.ko ./pf.py os-kmod-sign
+MODULE_PATH=/path/to/module.ko ./pf.py os-kmod-sign
 ```
 
 **QEMU tests:**

@@ -104,7 +104,9 @@ if ./pf.py list > /tmp/pf_tasks.txt 2>&1; then
     fi
 else
     # Check if it's due to missing dependencies
-    if grep -qi "fabric\|module.*not.*found" /tmp/pf_tasks.txt; then
+    if grep -qi "pf runner not found" /tmp/pf_tasks.txt; then
+        skip "pf runner is not installed in test env"
+    elif grep -qi "fabric\|module.*not.*found" /tmp/pf_tasks.txt; then
         skip "pf.py requires fabric module (not installed in test env)"
     else
         fail "pf.py list failed"
@@ -158,6 +160,14 @@ if grep -q "shell " core.pf; then
     pass "Tasks use shell commands"
 else
     fail "No shell commands in tasks"
+fi
+
+# Test 13: Verify os-kmod-sign uses MODULE_PATH
+echo "[TEST 13] Checking os-kmod-sign configuration..."
+if grep -q "Usage: MODULE_PATH=<file|dir>" core.pf && grep -q "\${MODULE_PATH}" core.pf; then
+    pass "os-kmod-sign uses MODULE_PATH"
+else
+    fail "os-kmod-sign still uses broken PATH-based configuration"
 fi
 
 # Summary

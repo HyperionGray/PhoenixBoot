@@ -603,7 +603,7 @@ provide_recommendations() {
   
   recommendations+=("🔐 Generate or update SecureBoot keys: ./pf.py secure-keygen")
   recommendations+=("🔑 Set up PhoenixGuard MOK: ./pf.py mok-flow")
-  recommendations+=("✍️  Sign kernel modules: PATH=/lib/modules/\$(uname -r) FORCE=1 ./pf.py os-kmod-sign")
+  recommendations+=("✍️  Sign kernel modules: MODULE_PATH=/lib/modules/\$(uname -r) FORCE=1 ./pf.py os-kmod-sign")
   recommendations+=("🔍 Run full validation: ./pf.py verify")
   recommendations+=("💿 Create SecureBoot USB: ISO_PATH=/path/to.iso ./pf.py secureboot-create")
   

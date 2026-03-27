@@ -59,10 +59,10 @@ mokutil --list-enrolled
 ./sign-kernel-modules.sh /path/to/module.ko
 
 # Sign using pf task
-PATH=/lib/modules/$(uname -r)/kernel/drivers/net/wireless/intel/iwlwifi/iwlwifi.ko ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r)/kernel/drivers/net/wireless/intel/iwlwifi/iwlwifi.ko ./pf.py os-kmod-sign
 
 # Force re-sign already signed module
-PATH=/path/to/module.ko FORCE=1 ./pf.py os-kmod-sign
+MODULE_PATH=/path/to/module.ko FORCE=1 ./pf.py os-kmod-sign
 ```
 
 ## 📖 Detailed Scripts Reference
@@ -208,7 +208,7 @@ Fix module loading order dependencies.
 # Reboot and complete enrollment in MOK Manager
 
 # 2. Sign DKMS modules after installation
-PATH=/lib/modules/$(uname -r)/updates/dkms ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r)/updates/dkms ./pf.py os-kmod-sign
 
 # 3. Load module
 sudo modprobe nvidia
@@ -231,7 +231,7 @@ sudo modprobe rtl8xxxu
 
 ```bash
 # After VirtualBox installation
-PATH=/lib/modules/$(uname -r)/misc FORCE=1 ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r)/misc FORCE=1 ./pf.py os-kmod-sign
 sudo modprobe vboxdrv
 ```
 
@@ -270,7 +270,7 @@ MOK_CERT="/path/to/out/keys/mok/PGMOK.crt"
 **Solutions**:
 1. Verify MOK is enrolled: `mokutil --list-enrolled | grep PhoenixGuard`
 2. Check module signature: `modinfo module.ko | grep signer`
-3. Re-sign with force: `PATH=/path/to/module.ko FORCE=1 ./pf.py os-kmod-sign`
+3. Re-sign with force: `MODULE_PATH=/path/to/module.ko FORCE=1 ./pf.py os-kmod-sign`
 4. Check dmesg for details: `dmesg | grep -i 'module verification'`
 
 ### Wrong Certificate Used for Signing

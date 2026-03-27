@@ -177,9 +177,9 @@ end
 
 # --- Module Signing ---
 task os-kmod-sign
-  describe Sign one module file or recursively sign directory (set PATH, FORCE=1 optional)
-  shell bash -lc '[ -n "${PATH:-}" ] || { echo "Usage: PATH=<file|dir> [FORCE=1] ./pf.py os-kmod-sign"; exit 1; }'
-  shell bash -lc '"${PYTHON:-python3}" utils/pgmodsign.py "${PATH}" $([ "${FORCE:-0}" = "1" ] && printf -- "--force" || true)'
+  describe Sign one module file or recursively sign directory (set MODULE_PATH, FORCE=1 optional)
+  shell bash -lc '[ -n "${MODULE_PATH:-}" ] || { echo "Usage: MODULE_PATH=<file|dir> [FORCE=1] ./pf.py os-kmod-sign"; exit 1; }'
+  shell ${PYTHON:-python3} utils/pgmodsign.py "${MODULE_PATH}" $([ "${FORCE:-0}" = "1" ] && printf -- "--force" || true)
 end
 
 # --- UUEFI Operations ---

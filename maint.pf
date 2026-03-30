@@ -18,6 +18,11 @@ task maint-docs
   shell bash -lc 'echo Documentation updated'
 end
 
+task maint-repo-progress
+  describe Generate repository progress and cleanup report
+  shell ${PYTHON:-python3} scripts/maintenance/repo_progress_report.py
+end
+
 task maint-clean
   describe Clean build artifacts (DEEP_CLEAN=1 for full ESP clean)
   shell bash scripts/maintenance/cleanup.sh

@@ -21,6 +21,7 @@ Scripts for project maintenance and development.
 - `audit-tree.sh` - Audit project tree
 - `purge-demo-refs.sh` - Purge demo references
 - `os-boot-clean.sh` - Clean boot entries
+- `repo_progress_report.py` - Generate progress + cleanup report from git history and tracked files
 
 ## Documentation
 
@@ -37,4 +38,7 @@ Scripts for project maintenance and development.
 
 # Check toolchain
 ./scripts/maintenance/toolchain-check.sh
+
+# Generate repository progress + cleanup report
+python3 ./scripts/maintenance/repo_progress_report.py
 ```

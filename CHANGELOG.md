@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔒 Security
+- Added `utils/safe_subprocess.py`, a shared no-shell command execution helper with:
+  - consistent argv normalization (`str`/`list` command inputs),
+  - uniform error wrapping (`CommandExecutionError`),
+  - optional command logging with shell-safe formatting.
+- Hardened `utils/cert_inventory.py` by replacing shell command strings with argv-based OpenSSL invocation.
+- Hardened `scripts/recovery/phoenix_progressive.py` by routing all command execution through the shared safe subprocess helper.
+
+### 🧹 Repository Cleanup
+- Removed tracked generated artifacts that should not live in git history:
+  - recursive Rust `target/` build outputs under legacy demo examples,
+  - repository-wide `.bish-index` and `.bish.sqlite` local cache files.
+- Updated `.gitignore` to prevent reintroduction of local cache and generated build artifacts:
+  - `.bish-index`, `.bish.sqlite` (root and nested),
+  - `target/` (root and nested).
+
 ### 📚 Documentation
 - Refined contributor workflow guidance and changelog maintenance notes.
 

@@ -23,6 +23,20 @@ import json
 import subprocess
 import time
 from pathlib import Path
+from typing import List, Union
+
+# Allow importing shared utilities from repo's utils/ directory.
+REPO_ROOT = Path(__file__).resolve().parents[2]
+UTILS_DIR = REPO_ROOT / "utils"
+if str(UTILS_DIR) not in sys.path:
+    sys.path.insert(0, str(UTILS_DIR))
+
+from safe_subprocess import (
+    CommandExecutionError,
+    format_command,
+    normalize_command,
+    run_command as run_safe_command,
+)
 
 class PhoenixProgressiveRecovery:
     def __init__(self):
@@ -38,32 +52,44 @@ class PhoenixProgressiveRecovery:
         print("☠ Intelligent escalation from safest to most extreme recovery methods")
         print()
     
-    def run_command(self, cmd, description="", check=True, capture_output=True):
-        """Run a command with error handling
-        
-        SECURITY: This function uses shell=True for command execution.
-        Current usage is safe as commands are hardcoded strings (e.g., "make scan-bootkits"),
-        but NEVER pass user input directly to this function without validation.
-        TODO: Refactor to use command lists instead of shell strings.
-        """
+    def run_command(
+        self,
+        cmd: Union[str, List[str]],
+        description: str = "",
+        check: bool = True,
+        capture_output: bool = True,
+    ):
+        """Run a command with robust error handling and no shell invocation."""
         if description:
             print(f"☠ {description}")
-        
+
         try:
+            argv = normalize_command(cmd)
+        except ValueError as e:
+            print(f"☠ Invalid command: {e}")
+            return "", str(e), 1
+
+        try:
+            result = run_safe_command(
+                argv,
+                check=check,
+                capture_output=capture_output,
+                text=True,
+                cwd=REPO_ROOT,
+                timeout=900,
+            )
             if capture_output:
-                result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=check)
                 return result.stdout, result.stderr, result.returncode
-            else:
-                result = subprocess.run(cmd, shell=True, check=check)
-                return "", "", result.returncode
-        except subprocess.CalledProcessError as e:
+            return "", "", result.returncode
+        except CommandExecutionError as e:
             if check:
-                print(f"☠ Command failed: {cmd}")
+                print(f"☠ Command failed: {format_command(argv)}")
                 print(f"   Error: {e}")
-                return "", str(e), e.returncode
+            return "", str(e), 1
+        except subprocess.CalledProcessError as e:
             return "", str(e), e.returncode
         except Exception as e:
-            print(f"☠ Unexpected error running: {cmd}")
+            print(f"☠ Unexpected error running: {format_command(argv)}")
             print(f"   Error: {e}")
             return "", str(e), 1
 

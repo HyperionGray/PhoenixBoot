@@ -7,7 +7,7 @@ set -euo pipefail
 [ -f WARP.md ] || echo "[WARP.md missing – add strategic context]" > WARP.md
 [ -f PROJECT.txt ] || echo "[PROJECT.txt missing – add high-level summary]" > PROJECT.txt
 [ -f CHANGES ] || touch CHANGES
-[ -f TODO ] || echo -e "TODO-001: Extend production boot features\nTODO-002: Probe hardware compatibility bugs\nTODO-003: Add secure boot capability" > TODO
+[ -f TODO ] || echo -e "TODO-001: Extend production boot features\nTODO-002: Expand hardware compatibility matrix and heuristics\nTODO-003: Add secure boot capability" > TODO
 [ -f IDEAS ] || touch IDEAS
 [ -f HOTSPOTS ] || touch HOTSPOTS
 

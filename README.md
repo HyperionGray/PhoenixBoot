@@ -188,7 +188,7 @@ Comprehensive kernel configuration analysis and UEFI security verification:
 
 # Secure Boot enablement (NEW!)
 ./pf.py secureboot-check
-sudo ./pf.py secureboot-enable-kexec
+sudo ./pf.py secureboot-enable-host-kexec
 
 # Kernel config profiles (NEW!)
 ./pf.py kernel-profile-list
@@ -200,11 +200,15 @@ PROFILE=hardened ./pf.py kernel-profile-compare
 # Firmware checksum management
 ./pf.py firmware-checksum-list
 FIRMWARE_PATH=/path/to/bios.bin ./pf.py firmware-checksum-verify
+
+# Probe hardware compatibility and readiness (NEW!)
+./pf.py hardware-compat-probe
 ```
 
 **Documentation**: 
 - See [Kernel Hardening Guide](docs/KERNEL_HARDENING_GUIDE.md)
 - See [Secure Boot Enablement via Kexec](docs/SECUREBOOT_ENABLEMENT_KEXEC.md) 🆕
+- See [Hardware Compatibility Probe](docs/HARDWARE_COMPATIBILITY_PROBE.md) 🆕
 
 **Status**: ✅ Fully implemented and tested
 

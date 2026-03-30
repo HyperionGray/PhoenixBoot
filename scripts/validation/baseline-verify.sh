@@ -8,7 +8,7 @@ ensure_dir out/recovery
 
 # Attempt to locate recovery script
 CANDIDATES=(
-  scripts/hardware_firmware_recovery.py
+  dev/tools/hardware_firmware_recovery.py
   nuclear-cd-build/iso/recovery/scripts/hardware_firmware_recovery.py
 )
 

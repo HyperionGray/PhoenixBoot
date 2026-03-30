@@ -54,7 +54,7 @@ fi
 
 # Run bootkit detection
 echo "☠ Scanning system for bootkit infections..."
-"${PY}" scripts/detect_bootkit.py -v -b "${BASELINE_JSON}" --output "${SCAN_OUT}"
+"${PY}" scripts/validation/detect_bootkit.py -v -b "${BASELINE_JSON}" --output "${SCAN_OUT}"
 
 echo
 echo "☠ Scan complete! Check ${SCAN_OUT} for detailed results."
@@ -76,12 +76,12 @@ PY
     "CRITICAL")
       echo
       echo "☠ CRITICAL THREAT DETECTED!"
-      echo "   Consider running: just nuke level4-kvm"
+      echo "   Consider running: ./pf.py workflow-recovery-reboot-vm"
       ;;
     "HIGH")
       echo
       echo "☠  HIGH RISK detected - recovery recommended"
-      echo "   Consider running: just nuke level4-kvm"
+      echo "   Consider running: ./pf.py workflow-recovery-reboot-vm"
       ;;
     "MEDIUM")
       echo

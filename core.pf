@@ -154,6 +154,11 @@ task firmware-checksum-add
   shell ${PYTHON:-python3} utils/firmware_checksum_db.py --add "${FIRMWARE_PATH}" --vendor "${VENDOR}" --model "${MODEL}" --version "${VERSION}" --source "${SOURCE:-manual}" --confidence ${CONFIDENCE:-50}
 end
 
+task hardware-compat-probe
+  describe Probe host hardware/software compatibility and write JSON report
+  shell bash -c 'mkdir -p out/reports && ${PYTHON:-python3} utils/hardware_compatibility_probe.py --output out/reports/hardware_compatibility_report.json'
+end
+
 task secure-make-auth
   describe Create ESL and AUTH for PK/KEK/db
   shell bash scripts/secure-boot/create-auth-files.sh

@@ -15,6 +15,7 @@ Scripts for validating system security and detecting threats.
 - `scan-bootkits.sh` - Scan for bootkit infections
 - `detect_bootkit.py` - Python-based bootkit detection
 - `analyze_firmware_baseline.py` - Analyze firmware baseline
+- `../../utils/hardware_compatibility_probe.py` - Host compatibility probe for PhoenixBoot prerequisites
 
 ## Baseline Verification
 
@@ -31,4 +32,7 @@ bash ./scripts/validation/secure-env-check.sh
 
 # Scan for bootkits
 ./scripts/validation/scan-bootkits.sh
+
+# Probe host compatibility (writes JSON report under out/reports/)
+./pf.py hardware-compat-probe
 ```

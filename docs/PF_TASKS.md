@@ -7,7 +7,7 @@ PhoenixBoot uses `.pf` task files for automation and workflow management. The ta
 
 ### Core Files
 - **Pfyfile.pf** - Main entry point that includes all other task files
-- **core.pf** - Core functionality (46 tasks)
+- **core.pf** - Core functionality (47 tasks)
   - Build tasks (build-setup, build-build, build-package-esp, etc.)
   - Testing tasks (test-qemu, test-qemu-secure-*, etc.)
   - Secure Boot key management
@@ -29,7 +29,7 @@ PhoenixBoot uses `.pf` task files for automation and workflow management. The ta
   - USB writing
   - Recovery operations
 
-### Total: 77 Tasks across 5 files
+### Total: 78 Tasks across 5 files
 
 ## Task Categories
 
@@ -58,7 +58,7 @@ secure-keygen            - Generate Secure Boot keypairs (RSA-4096)
 secure-make-auth         - Create ESL and AUTH for PK/KEK/db
 secure-env               - Comprehensive security environment check
 secureboot-check         - Check Secure Boot status
-secureboot-enable-kexec  - Enable Secure Boot via double kexec
+secureboot-enable-host-kexec - Enable Secure Boot via double kexec (host)
 secure-enroll-secureboot - Auto-enroll custom SB keys in OVMF
 ```
 
@@ -97,6 +97,7 @@ kernel-profile-compare   - Compare current kernel with profile
 firmware-checksum-list   - List all firmware checksums in database
 firmware-checksum-verify - Verify firmware file against database
 firmware-checksum-add    - Add firmware to checksum database
+hardware-compat-probe    - Probe host hardware/software compatibility and write JSON report
 ```
 
 ### UUEFI Operations
@@ -154,7 +155,7 @@ secure-keys-prune        - Backup + remove legacy key locations
 secure-mok-inventory     - JSON inventory of keys and enrollment
 secure-der-extract       - Convert DER/PKCS#12 bundle into PEM (set DER_PATH, OUT_DIR, NAME)
 secure-package-esp-enroll - Package enrollment ESP
-secure-qemu-run-secure-ui - Launch QEMU GUI to enable Secure Boot
+secure-qemu-enable-ui    - Launch QEMU GUI to enable Secure Boot
 ```
 
 ## Usage
@@ -192,11 +193,11 @@ These tasks call other tasks to create workflows:
 - **workflow-test-uuefi** → build-package-esp, test-qemu-uuefi
 
 ### Standalone Tasks
-60 tasks are standalone and don't call other tasks. These are direct operations that can be used independently or composed into workflows.
+61 tasks are standalone and don't call other tasks. These are direct operations that can be used independently or composed into workflows.
 
 ## Validation Status
 
-All 77 tasks have been validated:
+All 78 tasks have been validated:
 - ✅ Syntax validated against pf.lark grammar
 - ✅ No duplicate task definitions
 - ✅ All script references verified

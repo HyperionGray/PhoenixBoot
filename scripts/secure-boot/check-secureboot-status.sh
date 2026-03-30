@@ -234,19 +234,17 @@ provide_recommendations() {
         echo "  Use the double kexec method to temporarily use a permissive kernel:"
         echo
         echo "  Steps:"
-        echo "    1. ./pf.py secureboot-prepare-kexec"
-        echo "       (Prepares alternate kernel with relaxed protections)"
-        echo
-        echo "    2. sudo ./pf.py secureboot-enable-kexec"
+        echo "    1. sudo ./pf.py secureboot-enable-host-kexec"
         echo "       (Kexec to alternate kernel, enable SecureBoot, kexec back)"
         echo
         echo "  This avoids multiple reboots and maintains system security."
         echo
     else
-        echo -e "${GREEN}Option 1: Direct Enablement (AVAILABLE)${NC}"
-        echo "  Your kernel allows BIOS access. You can enable Secure Boot directly:"
+        echo -e "${GREEN}Option 1: Host Kexec Method (AVAILABLE)${NC}"
+        echo "  Your kernel appears to allow BIOS access."
+        echo "  Use the host kexec workflow to enable Secure Boot:"
         echo
-        echo "    sudo ./pf.py secureboot-enable-direct"
+        echo "    sudo ./pf.py secureboot-enable-host-kexec"
         echo
     fi
     

@@ -148,9 +148,9 @@ class AutoNuke:
         self.log("☠ Checking prerequisites...")
         
         required_files = [
-            "Makefile",
-            "scripts/detect_bootkit.py",
-            "scripts/hardware_firmware_recovery.py"
+            "scripts/validation/scan-bootkits.sh",
+            "scripts/validation/detect_bootkit.py",
+            "dev/tools/hardware_firmware_recovery.py",
         ]
         
         missing_files = []
@@ -163,7 +163,7 @@ class AutoNuke:
             return False
             
         # Check for basic tools
-        tools = ["make", "python3", "sudo"]
+        tools = ["python3", "sudo"]
         for tool in tools:
             code, _, _ = self.run_command(f"which {tool}")
             if code != 0:
@@ -181,13 +181,13 @@ class AutoNuke:
             return False
             
         # Run bootkit scan
-        code, stdout, stderr = self.run_command("make scan-bootkits")
+        code, stdout, stderr = self.run_command("./scripts/validation/scan-bootkits.sh")
         
         if code == 0:
             self.log("☠ Bootkit scan completed successfully", "SUCCESS")
             
             # Check if any threats were detected
-            scan_results_file = self.project_root / "bootkit_scan_results.json"
+            scan_results_file = self.project_root / "out" / "logs" / "bootkit_scan_results.json"
             if scan_results_file.exists():
                 with open(scan_results_file, 'r') as f:
                     results = json.load(f)
@@ -218,41 +218,12 @@ class AutoNuke:
         if not self.confirm_action("☠ Deploy Nuclear Boot recovery ISO to ESP?", "MEDIUM"):
             return False
         
-        # Check if ISO exists, build if needed
-        iso_path = self.project_root / "PhoenixGuard-Nuclear-Recovery.iso"
-        if not iso_path.exists():
-            self.log("☠ Nuclear Boot ISO not found, building...")
-            code, stdout, stderr = self.run_command("make build-nuclear-cd")
-            if code != 0:
-                self.log(f"☠ Failed to build Nuclear Boot ISO: {stderr}", "ERROR")
-                return False
-        
-        # Deploy to ESP
-        code, stdout, stderr = self.run_command("make deploy-esp-iso")
-        if code != 0:
-            self.log(f"☠ Failed to deploy ISO to ESP: {stderr}", "ERROR")
-            return False
-            
-        self.log("☠ Nuclear Boot ISO deployed to ESP", "SUCCESS")
-        
-        # Offer immediate boot or manual reboot
-        print(f"\n{Colors.GREEN}☠ Nuclear Boot recovery environment ready!{Colors.END}")
-        print(f"{Colors.CYAN}Options:{Colors.END}")
-        print("  1. Boot into recovery environment now (guided)")
-        print("  2. Manual reboot to GRUB menu (select PhoenixGuard Recovery)")
-        print("  3. Continue to next escalation level")
-        
-        choice = input(f"{Colors.CYAN}Choose option [1/2/3]: {Colors.END}").strip()
-        
-        if choice == "1":
-            # Try guided boot
-            code, stdout, stderr = self.run_command("make boot-from-esp-iso")
-            return code == 0
-        elif choice == "2":
-            print(f"{Colors.YELLOW}☠  Please reboot and select 'PhoenixGuard Nuclear Recovery' from GRUB menu{Colors.END}")
-            return True
-        else:
-            return False  # Continue escalation
+        print()
+        print("☠ Level 2 deployment via legacy make targets is not maintained.")
+        print("☠ Recommended replacement command:")
+        print("   sudo ./pf.py workflow-recovery-reboot-vm")
+        print()
+        return False
     
     def level_3_hardware_recovery(self) -> bool:
         """Level 3: Direct hardware firmware recovery"""
@@ -277,7 +248,9 @@ SAFETY MEASURES:
             return False
         
         # Run hardware recovery
-        code, stdout, stderr = self.run_command("sudo make hardware-recovery")
+        code, stdout, stderr = self.run_command(
+            "sudo ./scripts/recovery/hardware-recovery.sh --firmware drivers/G615LPAS.325"
+        )
         
         if code == 0:
             self.log("☠ Hardware firmware recovery completed successfully", "SUCCESS")

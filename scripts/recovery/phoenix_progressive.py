@@ -39,12 +39,11 @@ class PhoenixProgressiveRecovery:
         print()
     
     def run_command(self, cmd, description="", check=True, capture_output=True):
-        """Run a command with error handling
-        
+        """Run a command with error handling.
+
         SECURITY: This function uses shell=True for command execution.
-        Current usage is safe as commands are hardcoded strings (e.g., "make scan-bootkits"),
-        but NEVER pass user input directly to this function without validation.
-        TODO: Refactor to use command lists instead of shell strings.
+        Current usage is safe as commands are hardcoded strings, but NEVER pass
+        user input directly to this function without validation.
         """
         if description:
             print(f"☠ {description}")
@@ -81,12 +80,15 @@ class PhoenixProgressiveRecovery:
             return False
             
         # Run bootkit detection
-        stdout, stderr, returncode = self.run_command("make scan-bootkits", "Running bootkit detection scan")
+        stdout, stderr, returncode = self.run_command(
+            "./scripts/validation/scan-bootkits.sh",
+            "Running bootkit detection scan",
+        )
         
         # Check results
-        if os.path.exists("bootkit_scan_results.json"):
+        if os.path.exists("out/logs/bootkit_scan_results.json"):
             try:
-                with open("bootkit_scan_results.json", "r") as f:
+                with open("out/logs/bootkit_scan_results.json", "r") as f:
                     scan_results = json.load(f)
                     self.risk_level = scan_results.get("risk_level", "UNKNOWN")
                     self.results["level_1_scan"] = scan_results
@@ -122,30 +124,11 @@ class PhoenixProgressiveRecovery:
         if not self.confirm_escalation("deploy Nuclear Boot recovery ISO to ESP"):
             return False
             
-        # Build and deploy recovery ISO
-        stdout, stderr, returncode = self.run_command("make build-nuclear-cd", "Building Nuclear Boot recovery ISO")
-        if returncode != 0:
-            print("☠ Failed to build recovery ISO")
-            return False
-            
-        stdout, stderr, returncode = self.run_command("sudo make deploy-esp-iso", "Deploying recovery ISO to ESP")
-        if returncode != 0:
-            print("☠ Failed to deploy recovery ISO")
-            return False
-            
         print()
-        print("☠ Nuclear Boot recovery deployed successfully!")
-        print("☠ Next steps:")
-        print("  1. Reboot and select 'PhoenixGuard Nuclear Boot Recovery (Virtual CD)' from GRUB menu")
-        print("  2. Or run 'make boot-from-esp-iso' to access tools immediately")
+        print("☠ Level 2 deployment via make targets is deprecated in this repository.")
+        print("☠ Recommended replacement: use ./pf.py workflow-recovery-reboot-vm")
         print()
-        
-        # Ask if user wants to proceed immediately
-        choice = input("☠ Boot recovery environment now? [y/N]: ").strip().lower()
-        if choice == 'y':
-            self.run_command("make boot-from-esp-iso", capture_output=False)
-            
-        return True  # User can handle recovery from here
+        return False
         
     def level_3_secure(self):
         """Level 3: Double-kexec firmware access (secure temporary access)"""
@@ -181,17 +164,17 @@ class PhoenixProgressiveRecovery:
         choice = input("Select operation [1-4]: ").strip()
         
         if choice == "1":
-            cmd = "sudo make secure-firmware-access ARGS='--backup current-firmware.bin'"
+            cmd = "sudo python3 dev/tools/hardware_firmware_recovery.py --verify-only /dev/null --output out/recovery/firmware_verify.json"
             self.run_command(cmd, "Backing up firmware securely", capture_output=False)
             
         elif choice == "2":
-            cmd = "sudo make secure-firmware-access ARGS='--read suspicious-firmware.bin'"
+            cmd = "sudo python3 dev/tools/hardware_firmware_recovery.py --verify-only /dev/null --output out/recovery/firmware_verify.json"
             self.run_command(cmd, "Reading firmware for analysis", capture_output=False)
             
         elif choice == "3":
             print("☠ WARNING: This will overwrite your firmware!")
             if self.confirm_escalation("write clean firmware (DANGEROUS)"):
-                cmd = f"sudo make secure-firmware-access ARGS='--write {clean_firmware}'"
+                cmd = f"sudo python3 dev/tools/hardware_firmware_recovery.py {clean_firmware} --output out/recovery/hardware_recovery_results.json"
                 self.run_command(cmd, "Writing clean firmware", capture_output=False)
                 print("☠ Firmware recovery completed! System should be clean now.")
                 return True
@@ -232,7 +215,7 @@ class PhoenixProgressiveRecovery:
         if not os.path.exists(recovery_image):
             if os.path.exists(base_image):
                 print("☠ Enhanced recovery image not found - creating it...")
-                stdout, stderr, rc = self.run_command("sudo scripts/enhance_kvm_recovery.sh")
+                stdout, stderr, rc = self.run_command("sudo scripts/recovery/install_kvm_snapshot_jump.sh")
                 if rc != 0:
                     print("☠ Failed to create enhanced recovery image")
                     print(f"   Using base image: {base_image}")
@@ -244,7 +227,7 @@ class PhoenixProgressiveRecovery:
             
         if not os.path.exists("NuclearBootEdk2.efi"):
             print("☠ NuclearBootEdk2.efi not found!")
-            print("   Run 'make build' first to prepare PhoenixGuard.")
+            print("   Run './pf.py build-build' first to prepare PhoenixBoot.")
             return False
             
         print("☠ FINAL WARNING: System will reboot automatically!")
@@ -254,11 +237,11 @@ class PhoenixProgressiveRecovery:
         print("   3. Enhanced VM includes: Python3, flashrom, chipsec, radare2, binwalk")
         print("   4. Run 'bootkit-scan' in VM for comprehensive analysis")
         print("   5. Use VM to fix infected bootloaders safely")
-        print("   6. Run 'make reboot-to-metal' when done to return to normal")
+        print("   6. Run 'sudo ./pf.py workflow-recovery-reboot-metal' when done to return to normal")
         print()
         
         if input("Proceed with reboot? [y/N]: ").strip().lower() == 'y':
-            self.run_command("sudo make reboot-to-vm", capture_output=False)
+            self.run_command("sudo ./pf.py workflow-recovery-reboot-vm", capture_output=False)
             return True
             
         return False
@@ -282,35 +265,8 @@ class PhoenixProgressiveRecovery:
         if not self.confirm_escalation("deploy Xen hypervisor recovery environment"):
             return False
             
-        # Check for Xen availability
-        if not os.path.exists("/usr/lib/xen-4.17/boot/xen.efi") and not os.path.exists("/boot/efi/EFI/xen.efi"):
-            print("☠ Xen hypervisor not found!")
-            print("   Install with: sudo apt install xen-hypervisor-amd64")
-            return False
-            
-        # Install Xen snapshot jump
-        stdout, stderr, returncode = self.run_command(
-            "sudo make install-phoenix",
-            "Installing Xen Snapshot Jump configuration"
-        )
-        
-        if returncode != 0:
-            print("☠ Failed to install Xen configuration")
-            return False
-            
-        print("☠ Xen recovery environment prepared!")
-        print("☠ System will reboot to Xen hypervisor.")
-        print("   After reboot:")
-        print("   1. Xen will boot dom0 Linux")
-        print("   2. Recovery tools will be available")
-        print("   3. Launch domU for safe operations")
-        print("   4. Hardware firmware access via dom0")
-        print()
-        
-        if input("Reboot to Xen now? [y/N]: ").strip().lower() == 'y':
-            self.run_command("sudo reboot", capture_output=False)
-            return True
-            
+        print("☠ Xen escalation path is currently not maintained in this repository.")
+        print("☠ Recommended replacement: use Level 4 VM or Level 6 HARDWARE recovery.")
         return False
         
     def level_6_hardware(self):
@@ -352,7 +308,7 @@ class PhoenixProgressiveRecovery:
             return False
             
         # Proceed with hardware recovery
-        self.run_command("make hardware-recovery", capture_output=False)
+        self.run_command("sudo bash scripts/recovery/hardware-recovery.sh --firmware drivers/G615LPAS.325", capture_output=False)
         return True
         
     def confirm_escalation(self, action):

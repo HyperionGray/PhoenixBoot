@@ -62,9 +62,10 @@ fi
 
 # Confirm the operation
 echo "Usage examples:"
-echo "  make hardware-recovery              # Interactive verification + recovery"
-echo "  sudo python3 scripts/hardware_firmware_recovery.py drivers/G615LPAS.325 --verify-only"
-echo "  sudo python3 scripts/hardware_firmware_recovery.py drivers/G615LPAS.325 -v"
+echo "  sudo $0 --firmware drivers/G615LPAS.325 --verify-only"
+echo "  sudo $0 --firmware drivers/G615LPAS.325 -v"
+echo "  sudo python3 dev/tools/hardware_firmware_recovery.py drivers/G615LPAS.325 --verify-only"
+echo "  sudo python3 dev/tools/hardware_firmware_recovery.py drivers/G615LPAS.325 -v"
 echo
 
 read -p "Continue with hardware recovery? [y/N]: " confirm
@@ -82,7 +83,7 @@ if [ -f "$FIRMWARE_IMAGE" ]; then
     [ -n "$VERBOSE" ] && ARGS="$ARGS -v"
     [ -n "$VERIFY_ONLY" ] && ARGS="$ARGS --verify-only"
     
-    sudo python3 scripts/hardware_firmware_recovery.py $ARGS --output hardware_recovery_results.json
+    sudo python3 dev/tools/hardware_firmware_recovery.py $ARGS --output hardware_recovery_results.json
 else
     echo "ERROR: Clean firmware image not found at $FIRMWARE_IMAGE"
     echo "       This must be your EXACT hardware's clean firmware dump."

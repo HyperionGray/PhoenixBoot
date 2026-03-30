@@ -50,6 +50,10 @@ nohup*.out
 *.swo
 .pf_archive/
 
+# Generated artifacts in legacy Rust demo
+examples_and_samples/demo/legacy-old/examples/nuclear-boot-rust/target/
+examples_and_samples/demo/legacy-old/examples/nuclear-boot-rust/debug.log
+
 # Hex dump artifacts
 *.xxd
 *.xxd.xxd

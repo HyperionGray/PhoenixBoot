@@ -23,6 +23,16 @@ task maint-clean
   shell bash scripts/maintenance/cleanup.sh
 end
 
+task maint-repo-hygiene-check
+  describe Scan for tracked generated/stale artifacts
+  shell bash scripts/maintenance/repo-hygiene.sh
+end
+
+task maint-repo-hygiene-fix
+  describe Remove tracked generated/stale artifacts (destructive to git index)
+  shell APPLY=1 bash scripts/maintenance/repo-hygiene.sh
+end
+
 task maint-install-git-hooks
   describe Install pre-push size guard hook
   shell mkdir -p .git/hooks && chmod 0755 .git/hooks

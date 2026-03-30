@@ -59,6 +59,10 @@ nohup*.out
 copilot-instructions.md
 WARP.md
 
+# Legacy demo generated Rust artifacts
+examples_and_samples/demo/legacy-old/examples/nuclear-boot-rust/target/
+examples_and_samples/demo/legacy-old/examples/nuclear-boot-rust/debug.log
+
 # Environment and secrets - NEVER commit these
 .env
 .env.local

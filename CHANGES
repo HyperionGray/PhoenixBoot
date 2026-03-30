@@ -3,18 +3,18 @@
 For detailed change history, see:
 
 - [CHANGELOG.md](CHANGELOG.md) - Detailed changelog with version history
-- [CHANGELOG_CONSOLIDATED.md](CHANGELOG_CONSOLIDATED.md) - Consolidated changelog
+- [Consolidated changelog](docs/implementation/CHANGELOG_CONSOLIDATED.md)
 
 For recent development updates, see:
 
 - [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) - Recent implementation work
-- [ISSUE_RESOLUTION_SUMMARY.md](ISSUE_RESOLUTION_SUMMARY.md) - Issue tracking
+- [Issue resolution summary](docs/implementation/ISSUE_RESOLUTION_SUMMARY.md)
 
 For project reviews and improvements:
 
-- [GLOBAL_REVIEW_SUMMARY.md](GLOBAL_REVIEW_SUMMARY.md) - Comprehensive project review
-- [SECURITY_REVIEW_2025-12-07.md](SECURITY_REVIEW_2025-12-07.md) - Security audit
-- [CICD_REVIEW_ROLLUP.md](CICD_REVIEW_ROLLUP.md) - CI/CD improvements
+- [Global review summary](docs/reviews/GLOBAL_REVIEW_SUMMARY.md) - Comprehensive project review
+- [Security review 2025-12-07](docs/reviews/SECURITY_REVIEW_2025-12-07.md) - Security audit
+- [CICD review rollup](CICD_REVIEW_ROLLUP.md) - CI/CD improvements
 
 ## Quick Links
 

@@ -76,6 +76,10 @@ Scan and catalog available SecureBoot certificates:
 ./cert_inventory.py --cert-dir ../secureboot_certs --output inventory.json
 ```
 
+Security note:
+- `cert_inventory.py` executes OpenSSL via explicit argv lists (no shell command parsing),
+  reducing command-injection risk while preserving existing behavior.
+
 **Sample Output:**
 ```json
 {

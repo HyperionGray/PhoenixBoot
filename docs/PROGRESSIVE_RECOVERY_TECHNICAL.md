@@ -10,25 +10,25 @@ Principles
 
 Commands
 - Interactive (safe defaults):
-  just nuke progressive
+  python3 scripts/recovery/phoenix_progressive.py
 
 - Dry run (planfile only, no changes):
-  just nuke progressive-dry-run
+  ./pf.py secure-env
 
 - Individual levels:
   - Level 1 — Detect (read-only)
-    just nuke level1-scan
+    ./pf.py secure-env
   - Level 2 — ESP build (optional host deploy)
-    just nuke level2-esp
-    PG_HOST_OK=1 ISO_PATH=/path/to.iso just nuke level2-esp
+    ./pf.py workflow-cd-prepare
+    sudo make deploy-esp-iso
   - Level 3 — Secure firmware access (double-kexec)
-    just nuke level3-secure -- --backup current.bin
-    just nuke level3-secure -- --read suspect.bin
-    just nuke level3-secure -- --write drivers/G615LPAS.325
+    sudo make secure-firmware-access ARGS='--backup current.bin'
+    sudo make secure-firmware-access ARGS='--read suspect.bin'
+    sudo make secure-firmware-access ARGS='--write drivers/G615LPAS.325'
   - Level 4 — KVM Snapshot Jump
-    just nuke level4-kvm
+    bash scripts/recovery/install_kvm_snapshot_jump.sh && bash scripts/recovery/reboot-to-vm.sh
   - Level 6 — Hardware recovery (danger)
-    just nuke level6-hw fw=drivers/G615LPAS.325 [verify_only=1] [verbose=1]
+    bash scripts/recovery/hardware-recovery.sh
 
 Safety gates
 - Level 1–2: Non-destructive; Level 2 can modify host ESP only if PG_HOST_OK=1 and you confirm.
@@ -36,12 +36,9 @@ Safety gates
 - Level 4: Reboot paths; ensure KVM configurations are prepared.
 - Level 6: Dangerous; type-to-confirm inside the tool and ensure you have a programmer backup.
 
-Planfile output
-- Written to plans/phoenix_progressive_<timestamp>.json, includes:
-  - run metadata: run_id, created_utc, environment
-  - levels attempted with ok/err details
-  - outputs: logs_dir and plan_path
-  - errors: top-level unexpected errors
+Execution logging
+- `phoenix_progressive.py` prints each level and command outcome to stdout/stderr.
+- For machine-readable scan data, use `./pf.py secure-env` and review generated JSON reports.
 
 Baseline and scanning
 - The scanner script (scripts/scan-bootkits.sh) will:
@@ -56,6 +53,6 @@ Rollback guidance
 - Level 6: Reflash prior backup firmware image.
 
 Troubleshooting
-- OVMF not found: run just build setup then just build package-esp.
+- OVMF not found: run `./pf.py build-setup` then `./pf.py build-package-esp`.
 - ESP verification fails: inspect out/logs/esp-normalize-secure.log and ensure keys exist.
 - Baseline analyzer missing: add dev/tools/analyze_firmware_baseline.py or specify BASELINE_JSON to an existing baseline.

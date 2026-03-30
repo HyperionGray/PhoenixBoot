@@ -12,9 +12,10 @@ import sys
 import json
 import logging
 import subprocess
+import shlex
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Sequence
 
 # Set up logging
 logging.basicConfig(
@@ -36,24 +37,22 @@ class PhoenixGuardCertInventory:
         # Ensure log directory exists
         os.makedirs("/var/log/phoenixguard", exist_ok=True)
         
-    def run_command(self, cmd: str, check: bool = True) -> subprocess.CompletedProcess:
-        """Run shell command with logging
-        
-        SECURITY: This function uses shell=True for command execution.
-        Current usage is safe as commands are internally generated, but
-        NEVER pass user input directly to this function without validation.
-        TODO: Refactor to use command lists instead of shell strings.
-        """
-        logger.info(f"Running command: {cmd}")
+    def run_command(self, cmd: Sequence[str], check: bool = True) -> subprocess.CompletedProcess:
+        """Run command with explicit argv list and logging."""
+        cmd_parts = [str(part) for part in cmd]
+        cmd_display = " ".join(shlex.quote(part) for part in cmd_parts)
+        logger.info(f"Running command: {cmd_display}")
         try:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=check)
+            result = subprocess.run(cmd_parts, capture_output=True, text=True, check=check)
             if result.stdout:
                 logger.debug(f"STDOUT: {result.stdout}")
             if result.stderr:
                 logger.debug(f"STDERR: {result.stderr}")
             return result
         except subprocess.CalledProcessError as e:
-            logger.error(f"Command failed with exit code {e.returncode}: {e.stderr}")
+            logger.error(
+                f"Command failed with exit code {e.returncode} ({cmd_display}): {e.stderr}"
+            )
             raise
     
     def scan_certificates(self) -> Dict[str, Any]:
@@ -110,7 +109,18 @@ class PhoenixGuardCertInventory:
             return str(pem_path)
         
         try:
-            cmd = f"openssl x509 -inform der -in '{der_file}' -outform pem -out '{pem_path}'"
+            cmd = [
+                "openssl",
+                "x509",
+                "-inform",
+                "der",
+                "-in",
+                der_file,
+                "-outform",
+                "pem",
+                "-out",
+                str(pem_path),
+            ]
             self.run_command(cmd)
             
             self.conversion_log.append({
@@ -142,27 +152,72 @@ class PhoenixGuardCertInventory:
             inform = 'der' if file_ext == '.der' else 'pem'
             
             # Get certificate text info
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -text -noout"
+            cmd = [
+                "openssl",
+                "x509",
+                "-inform",
+                inform,
+                "-in",
+                cert_file,
+                "-text",
+                "-noout",
+            ]
             result = self.run_command(cmd)
             cert_text = result.stdout
             
             # Get subject
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -subject -noout"
+            cmd = [
+                "openssl",
+                "x509",
+                "-inform",
+                inform,
+                "-in",
+                cert_file,
+                "-subject",
+                "-noout",
+            ]
             result = self.run_command(cmd)
             subject = result.stdout.strip().replace('subject=', '')
             
             # Get issuer
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -issuer -noout"
+            cmd = [
+                "openssl",
+                "x509",
+                "-inform",
+                inform,
+                "-in",
+                cert_file,
+                "-issuer",
+                "-noout",
+            ]
             result = self.run_command(cmd)
             issuer = result.stdout.strip().replace('issuer=', '')
             
             # Get fingerprint
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -fingerprint -noout"
+            cmd = [
+                "openssl",
+                "x509",
+                "-inform",
+                inform,
+                "-in",
+                cert_file,
+                "-fingerprint",
+                "-noout",
+            ]
             result = self.run_command(cmd)
             fingerprint = result.stdout.strip().replace('SHA1 Fingerprint=', '')
             
             # Get validity dates
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -dates -noout"
+            cmd = [
+                "openssl",
+                "x509",
+                "-inform",
+                inform,
+                "-in",
+                cert_file,
+                "-dates",
+                "-noout",
+            ]
             result = self.run_command(cmd)
             dates = result.stdout.strip()
             

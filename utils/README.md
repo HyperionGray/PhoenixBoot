@@ -74,7 +74,17 @@ Scan and catalog available SecureBoot certificates:
 
 # Save inventory to custom location
 ./cert_inventory.py --cert-dir ../secureboot_certs --output inventory.json
+
+# Print machine-readable JSON to stdout (still writes file output)
+./cert_inventory.py --cert-dir ../secureboot_certs --json-stdout
 ```
+
+Default behavior now uses repository-local paths:
+- Default cert directory: `./keys`
+- Default report output: `./out/reports/`
+- Default log file: `./out/logs/phoenixguard/cert_inventory.log` (stdout logging is used if file logging is unavailable)
+
+The command execution path in `cert_inventory.py` now uses argument-list subprocess invocation (`shell=False`) for safer command handling.
 
 **Sample Output:**
 ```json

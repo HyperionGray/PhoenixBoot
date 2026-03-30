@@ -125,6 +125,16 @@ bash scripts/recovery/hardware-recovery.sh
 python3 scripts/recovery/phoenix_progressive.py
 ```
 
+Automation-friendly options:
+
+```bash
+# Auto-confirm prompts (for controlled automation environments)
+python3 scripts/recovery/phoenix_progressive.py --yes
+
+# Print intended commands without executing
+python3 scripts/recovery/phoenix_progressive.py --dry-run --max-level 3
+```
+
 This intelligent system:
 1. Detects threat level
 2. Recommends appropriate escalation

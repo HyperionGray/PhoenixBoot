@@ -23,6 +23,23 @@ Scripts for system recovery and remediation.
 - `install_kvm_snapshot_jump.sh` - Install KVM snapshot jump
 - `phoenix_progressive.py` - Progressive recovery system
 
+### Progressive Recovery Automation Flags
+
+`phoenix_progressive.py` supports automation-friendly flags:
+
+```bash
+# Preview only (no commands executed)
+python3 scripts/recovery/phoenix_progressive.py --dry-run --max-level 2
+
+# Auto-approve prompts up to a specific escalation level
+python3 scripts/recovery/phoenix_progressive.py --yes --max-level 1
+```
+
+Behavior notes:
+- Commands are executed using argument lists (no shell string execution).
+- Escalation can be bounded with `--max-level` for staged/safe runs.
+- Use `RECOVERY_ISO=/path/to/PhoenixGuard-Nuclear-Recovery.iso` to pin Level 2 ISO.
+
 ## Usage
 
 ```bash

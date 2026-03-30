@@ -43,6 +43,14 @@ nohup.out
 nohup.out*
 nohup*.out
 
+# Recovery and inventory generated outputs
+bootkit_scan_results.json
+bootkit_scan_prereboot.json
+hardware_recovery_results.json
+current-firmware.bin
+suspicious-firmware.bin
+*.firmware.bin
+
 # Editor backup files
 *~
 *.bak

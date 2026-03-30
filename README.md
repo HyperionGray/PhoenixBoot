@@ -383,7 +383,6 @@ PhoenixBoot organizes tasks across multiple `.pf` files for clarity:
 All task files are included in `Pfyfile.pf` and accessible via `./pf.py list`.
 
 #### Core Functionality
-#### Core Functionality
 
 Available in `core.pf`:
 - Build tasks (setup, build, package ESP)
@@ -704,6 +703,7 @@ PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 ### Technical Documentation
 
 - **[Secure Boot Implementation](docs/SECURE_BOOT.md)** - Secure Boot guide
+- **[Secure Subprocess Execution](docs/SECURE_SUBPROCESS_EXECUTION.md)** - Python command execution hardening pattern
 - **[Boot Security Analysis](docs/BOOT_SEQUENCE_AND_ATTACK_SURFACES.md)** - Attack surface analysis
 - **[Firmware Recovery](docs/FIRMWARE_RECOVERY.md)** - Recovery procedures
 - **[Hardware Access Deep Dive](docs/HARDWARE_ACCESS_DEEP_DIVE.md)** - Hardware-level operations

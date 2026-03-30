@@ -172,6 +172,9 @@ Comprehensive kernel configuration analysis and UEFI security verification:
 # Comprehensive security check
 ./pf.py secure-env
 
+# Hardware compatibility check (NEW!)
+./pf.py hardware-compat
+
 # Kernel hardening analysis
 ./pf.py kernel-hardening-check
 ./pf.py kernel-hardening-report
@@ -414,6 +417,9 @@ Available in `core.pf`:
 
 # Security environment check (NEW!)
 ./pf.py secure-env
+
+# Hardware compatibility check
+./pf.py hardware-compat
 
 # Secure Boot key generation
 ./pf.py secure-keygen

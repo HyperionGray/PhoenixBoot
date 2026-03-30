@@ -59,6 +59,11 @@ task secure-env
   shell bash scripts/validation/secure-env-check.sh
 end
 
+task hardware-compat
+  describe Probe host hardware compatibility for PhoenixBoot workflows
+  shell bash scripts/validation/hardware-compat-check.sh
+end
+
 task kernel-hardening-check
   describe Analyze kernel configuration against DISA STIG and hardening best practices
   shell ${PYTHON:-python3} utils/kernel_hardening_analyzer.py --auto

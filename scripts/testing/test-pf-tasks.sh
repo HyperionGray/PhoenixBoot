@@ -132,6 +132,7 @@ essential_tasks=(
     "build-build"
     "test-qemu"
     "secure-keygen"
+    "hardware-compat"
     "setup"
     "verify"
 )

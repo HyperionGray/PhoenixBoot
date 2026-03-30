@@ -35,6 +35,11 @@ sudo dd if=out/esp/secureboot-bootable.img of=/dev/sdX bs=4M status=progress
 ./pf.py secure-env
 ```
 
+**Probe hardware compatibility before sensitive workflows:**
+```bash
+./pf.py hardware-compat
+```
+
 ---
 
 ## Stage 3: Clear Malicious EFI Vars 🔥

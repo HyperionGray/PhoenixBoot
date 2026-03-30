@@ -293,22 +293,49 @@ echo "  - Or enable Secure Boot through BIOS/UEFI setup"
 echo
 
 # For now, just log the attempt
-echo -e "${YELLOW}Phase 2 complete - manual Secure Boot enablement required${NC}"
+echo -e "${YELLOW}Phase 2 complete - manual Secure Boot enablement may still be required${NC}"
 echo
 echo "After enabling Secure Boot (via BIOS setup or other means),"
-echo "the system will kexec back to the hardened kernel."
+echo "you can optionally kexec back to a hardened kernel."
+echo
 
-# TODO: Kexec back to hardened kernel
-# For now, just inform the user
+# Optional return to the original kernel used for phase 1.
+HARDENED_KERNEL="__HARDENED_KERNEL__"
+HARDENED_VMLINUZ="/boot/vmlinuz-${HARDENED_KERNEL}"
+HARDENED_INITRD="/boot/initrd.img-${HARDENED_KERNEL}"
+
+echo -e "${BLUE}Optional Phase 3 return:${NC}"
+if [ -f "$HARDENED_VMLINUZ" ] && [ -f "$HARDENED_INITRD" ]; then
+    echo "  Hardened kernel candidate: ${HARDENED_KERNEL}"
+    read -r -p "  Attempt kexec back to hardened kernel now? [y/N] " RETURN_CHOICE
+    if [[ "$RETURN_CHOICE" =~ ^[Yy]$ ]]; then
+        CMDLINE="$(cat /proc/cmdline)"
+        if kexec -l "$HARDENED_VMLINUZ" --initrd="$HARDENED_INITRD" --command-line="$CMDLINE" --reuse-cmdline; then
+            echo -e "${GREEN}✓ Hardened kernel loaded successfully${NC}"
+            echo "  Executing kexec now..."
+            sleep 2
+            kexec -e
+        else
+            echo -e "${RED}✗ Failed to load hardened kernel for kexec${NC}"
+            echo "  Reboot manually after enabling Secure Boot."
+        fi
+    fi
+else
+    echo "  Hardened kernel image not found:"
+    echo "    ${HARDENED_VMLINUZ}"
+    echo "    ${HARDENED_INITRD}"
+fi
+
 echo
 echo -e "${BLUE}To complete the process:${NC}"
-echo "  1. Enable Secure Boot through BIOS/UEFI setup"
-echo "  2. Reboot into the hardened kernel"
+echo "  1. Ensure Secure Boot is enabled in BIOS/UEFI setup"
+echo "  2. Reboot into the hardened kernel (${HARDENED_KERNEL})"
 echo "  3. Verify: ./pf.py secureboot-check"
 
 EOF
 
 chmod +x "$TEMP_SCRIPT"
+sed -i "s|__HARDENED_KERNEL__|${CURRENT_KERNEL}|g" "$TEMP_SCRIPT"
 
 echo -e "\n${YELLOW}[6] Performing first kexec to alternate kernel...${NC}"
 echo

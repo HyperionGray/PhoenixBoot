@@ -789,6 +789,7 @@ ExecuteNuclearWipe (
   )
 {
   UINTN Index;
+  EFI_STATUS Status;
   
   Print(L"☠ INITIATING NUCLEAR WIPE SEQUENCE ☠\n");
   Print(L"☠  WARNING: SYSTEM SANITIZATION IN PROGRESS ☠\n");
@@ -859,8 +860,38 @@ ExecuteNuclearWipe (
   
   if (WipeConfig->WipeCaches) {
     Print(L"☠ Phase 2: CPU cache flush...\n");
-    // TODO: Implement actual cache flush
-    gBS->Stall(1000000); // 1 second
+    
+    //
+    // Actively evict cache lines by touching a multi-megabyte buffer.
+    // This is firmware-safe and architecture-agnostic.
+    //
+    {
+      UINTN CacheFlushSize;
+      UINT8 *CacheFlushBuffer;
+      UINTN CachePass;
+      
+      CacheFlushSize = 8 * 1024 * 1024; // 8 MiB - larger than typical LLC slices
+      CacheFlushBuffer = AllocatePool(CacheFlushSize);
+      if (CacheFlushBuffer == NULL) {
+        Print(L"WARNING: Cache flush buffer allocation failed; using delay fallback\n");
+        gBS->Stall(1000000);
+      } else {
+        for (CachePass = 0; CachePass < 3; CachePass++) {
+          //
+          // Write distinct patterns each pass to maximize write-back pressure.
+          //
+          SetMem(CacheFlushBuffer, CacheFlushSize, (UINT8)(0x33 * (CachePass + 1)));
+          gBS->Stall(100000);
+        }
+        
+        //
+        // Final sanitize pass and release the buffer.
+        //
+        ZeroMem(CacheFlushBuffer, CacheFlushSize);
+        FreePool(CacheFlushBuffer);
+      }
+    }
+    
     Print(L"☠ Cache flush complete\n");
   }
   

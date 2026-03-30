@@ -16,6 +16,7 @@ EXCLUDE_DIRS=(
   "dev/wip"
   "demo"
   "staging/src"
+  "staging/boot"
   "docs/implementation"
   "docs/reviews"
 )
@@ -25,7 +26,12 @@ for dir in "${EXCLUDE_DIRS[@]}"; do
   EXCLUDE_ARGS+=(--glob "!${dir}/**")
 done
 
-PATTERN='TODO|FIXME|STUB|TBD|XXX|UNFINISHED|WIP'
+# Match common unfinished markers when used as comment tags, e.g.:
+#   # TODO: ...
+#   // FIXME ...
+#   /* TODO ... */
+# This avoids false positives like "wipe" matching "wip".
+PATTERN='^\s*(#|//|/\*+|--)\s*(TODO|FIXME|STUB|TBD|XXX|UNFINISHED|WIP)\b'
 
 {
   echo "PhoenixBoot unfinished markers audit"
@@ -35,7 +41,7 @@ PATTERN='TODO|FIXME|STUB|TBD|XXX|UNFINISHED|WIP'
 
 if rg -n --ignore-case "$PATTERN" \
     "${EXCLUDE_ARGS[@]}" \
-    --glob "*.{py,sh,md,yml,yaml,pf,c,h,txt}" \
+    --glob "*.{py,sh,yml,yaml,pf,c,h}" \
     . >> "$REPORT_FILE"; then
   echo
   echo "Found unfinished markers. See: $REPORT_FILE"

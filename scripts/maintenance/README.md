@@ -19,6 +19,7 @@ Scripts for project maintenance and development.
 - `move-prod-staging.sh` - Move to production staging
 - `move-wip.sh` - Move work in progress
 - `audit-tree.sh` - Audit project tree
+- `audit-unfinished.sh` - Audit production paths for TODO/FIXME/STUB markers
 - `purge-demo-refs.sh` - Purge demo references
 - `os-boot-clean.sh` - Clean boot entries
 

@@ -19,7 +19,7 @@ PhoenixBoot uses `.pf` task files for automation and workflow management. The ta
   - MOK (Machine Owner Key) management
   - Key enrollment and verification
   - Secure Boot enablement
-- **maint.pf** - Maintenance tasks (7 tasks)
+- **maint.pf** - Maintenance tasks (8 tasks)
   - Code formatting and linting
   - Documentation generation
   - Git hooks
@@ -29,7 +29,7 @@ PhoenixBoot uses `.pf` task files for automation and workflow management. The ta
   - USB writing
   - Recovery operations
 
-### Total: 77 Tasks across 5 files
+### Total: 78 Tasks across 5 files
 
 ## Task Categories
 
@@ -122,6 +122,7 @@ maint-lint               - Run static analysis
 maint-format             - Format source code
 maint-docs               - Update documentation
 maint-clean              - Clean build artifacts
+maint-audit-unfinished   - Audit non-demo paths for unfinished markers
 maint-install-git-hooks  - Install pre-push size guard hook
 maint-pre-push-check     - Run size guard check locally
 ```

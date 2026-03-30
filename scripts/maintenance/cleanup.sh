@@ -12,6 +12,8 @@ echo "🧹 Cleaning build artifacts..."
 
 # Always clean these
 rm -rf out/staging/* out/qemu/* out/lint/* 2>/dev/null || true
+rm -f ./*.ko ./*.ko.unsigned 2>/dev/null || true
+rm -f ./db.sql ./defaultNetworkBackend 2>/dev/null || true
 
 # Deep clean ESP if requested
 if [ "${DEEP_CLEAN:-0}" = "1" ]; then

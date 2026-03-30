@@ -1,3 +1,3 @@
-TODO-001: Extend production boot features [IN PROGRESS]
+TODO-001: Extend production boot features [DONE - added ./pf.py hardware-compat]
 TODO-002: Probe hardware compatibility bugs [DONE - added ./pf.py hardware-compat]
 TODO-003: Add secure boot capability [IN PROGRESS]

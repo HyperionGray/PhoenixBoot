@@ -43,6 +43,16 @@ nohup.out
 nohup.out*
 nohup*.out
 
+# Generated local indexing/cache artifacts
+.bish-index
+.bish.sqlite
+**/.bish-index
+**/.bish.sqlite
+
+# Rust build outputs
+target/
+**/target/
+
 # Editor backup files
 *~
 *.bak

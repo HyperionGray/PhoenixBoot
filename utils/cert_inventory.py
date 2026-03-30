@@ -7,46 +7,55 @@ Scans and prepares PhoenixGuard SecureBoot certificates for kernel module signin
 Converts certificates to PEM format and provides certificate metadata.
 """
 
-import os
 import sys
 import json
 import logging
 import subprocess
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Sequence, Union
 
-# Set up logging
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_CERT_DIR = REPO_ROOT / "keys"
+DEFAULT_OUT_DIR = REPO_ROOT / "out" / "reports"
+DEFAULT_LOG_DIR = REPO_ROOT / "out" / "logs" / "phoenixguard"
+DEFAULT_LOG_FILE = DEFAULT_LOG_DIR / "cert_inventory.log"
+
+DEFAULT_LOG_DIR.mkdir(parents=True, exist_ok=True)
+_log_handlers: List[logging.Handler] = [logging.StreamHandler(sys.stderr)]
+try:
+    _log_handlers.append(logging.FileHandler(DEFAULT_LOG_FILE))
+except OSError:
+    # If file logging is unavailable, keep stdout logging active.
+    pass
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('/var/log/phoenixguard/cert_inventory.log'),
-        logging.StreamHandler(sys.stdout)
-    ]
+    handlers=_log_handlers
 )
 logger = logging.getLogger(__name__)
 
 class PhoenixGuardCertInventory:
     def __init__(self, cert_dir: str = None):
-        self.cert_dir = cert_dir or "/home/punk/Projects/edk2-bootkit-defense/PhoenixGuard/secureboot_certs"
-        self.cert_data = {}
+        self.cert_dir = cert_dir or str(DEFAULT_CERT_DIR)
         self.conversion_log = []
-        
-        # Ensure log directory exists
-        os.makedirs("/var/log/phoenixguard", exist_ok=True)
-        
-    def run_command(self, cmd: str, check: bool = True) -> subprocess.CompletedProcess:
-        """Run shell command with logging
-        
-        SECURITY: This function uses shell=True for command execution.
-        Current usage is safe as commands are internally generated, but
-        NEVER pass user input directly to this function without validation.
-        TODO: Refactor to use command lists instead of shell strings.
-        """
-        logger.info(f"Running command: {cmd}")
+
+    def run_command(
+        self,
+        cmd: Sequence[Union[str, Path]],
+        check: bool = True
+    ) -> subprocess.CompletedProcess:
+        """Run command with argument list and logging."""
+        safe_cmd = [str(part) for part in cmd]
+        logger.info("Running command: %s", " ".join(safe_cmd))
         try:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=check)
+            result = subprocess.run(
+                safe_cmd,
+                capture_output=True,
+                text=True,
+                check=check
+            )
             if result.stdout:
                 logger.debug(f"STDOUT: {result.stdout}")
             if result.stderr:
@@ -110,7 +119,13 @@ class PhoenixGuardCertInventory:
             return str(pem_path)
         
         try:
-            cmd = f"openssl x509 -inform der -in '{der_file}' -outform pem -out '{pem_path}'"
+            cmd = [
+                "openssl", "x509",
+                "-inform", "der",
+                "-in", str(der_path),
+                "-outform", "pem",
+                "-out", str(pem_path),
+            ]
             self.run_command(cmd)
             
             self.conversion_log.append({
@@ -142,27 +157,52 @@ class PhoenixGuardCertInventory:
             inform = 'der' if file_ext == '.der' else 'pem'
             
             # Get certificate text info
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -text -noout"
+            cmd = [
+                "openssl", "x509",
+                "-inform", inform,
+                "-in", cert_file,
+                "-text", "-noout",
+            ]
             result = self.run_command(cmd)
             cert_text = result.stdout
             
             # Get subject
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -subject -noout"
+            cmd = [
+                "openssl", "x509",
+                "-inform", inform,
+                "-in", cert_file,
+                "-subject", "-noout",
+            ]
             result = self.run_command(cmd)
             subject = result.stdout.strip().replace('subject=', '')
             
             # Get issuer
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -issuer -noout"
+            cmd = [
+                "openssl", "x509",
+                "-inform", inform,
+                "-in", cert_file,
+                "-issuer", "-noout",
+            ]
             result = self.run_command(cmd)
             issuer = result.stdout.strip().replace('issuer=', '')
             
             # Get fingerprint
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -fingerprint -noout"
+            cmd = [
+                "openssl", "x509",
+                "-inform", inform,
+                "-in", cert_file,
+                "-fingerprint", "-noout",
+            ]
             result = self.run_command(cmd)
             fingerprint = result.stdout.strip().replace('SHA1 Fingerprint=', '')
             
             # Get validity dates
-            cmd = f"openssl x509 -inform {inform} -in '{cert_file}' -dates -noout"
+            cmd = [
+                "openssl", "x509",
+                "-inform", inform,
+                "-in", cert_file,
+                "-dates", "-noout",
+            ]
             result = self.run_command(cmd)
             dates = result.stdout.strip()
             
@@ -191,6 +231,21 @@ class PhoenixGuardCertInventory:
         
         # Scan files
         cert_files = self.scan_certificates()
+        if not cert_files:
+            return {
+                'scan_info': {
+                    'timestamp': datetime.now().isoformat(),
+                    'cert_directory': self.cert_dir,
+                    'total_files_scanned': 0,
+                },
+                'file_catalog': {},
+                'certificate_details': [],
+                'signing_candidates': [],
+                'conversion_log': [],
+                'recommendations': [
+                    f"Certificate directory not found or inaccessible: {self.cert_dir}"
+                ],
+            }
         
         # Convert DER files to PEM
         converted_files = []
@@ -270,8 +325,9 @@ class PhoenixGuardCertInventory:
         """Save inventory to JSON file"""
         if not output_file:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            output_file = f"/home/punk/Projects/edk2-bootkit-defense/PhoenixGuard/cert_inventory_{timestamp}.json"
-        
+            DEFAULT_OUT_DIR.mkdir(parents=True, exist_ok=True)
+            output_file = str(DEFAULT_OUT_DIR / f"cert_inventory_{timestamp}.json")
+
         with open(output_file, 'w') as f:
             json.dump(inventory, f, indent=2, sort_keys=True)
         
@@ -285,6 +341,11 @@ def main():
     parser = argparse.ArgumentParser(description='PhoenixGuard Certificate Inventory Tool')
     parser.add_argument('--cert-dir', help='Certificate directory path')
     parser.add_argument('--output', '-o', help='Output JSON file path')
+    parser.add_argument(
+        '--json-stdout',
+        action='store_true',
+        help='Print the full inventory JSON to stdout (does not disable file output)'
+    )
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose logging')
     
     args = parser.parse_args()
@@ -296,7 +357,11 @@ def main():
         inventory_tool = PhoenixGuardCertInventory(args.cert_dir)
         inventory = inventory_tool.inventory_all_certificates()
         output_file = inventory_tool.save_inventory(inventory, args.output)
-        
+
+        if args.json_stdout:
+            print(json.dumps(inventory, indent=2, sort_keys=True))
+            return 0
+
         print(f"☠ Certificate inventory completed successfully")
         print(f"☠ Results saved to: {output_file}")
         print(f"☠ Found {len(inventory['signing_candidates'])} signing candidates")

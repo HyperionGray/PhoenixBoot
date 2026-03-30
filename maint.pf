@@ -18,6 +18,11 @@ task maint-docs
   shell bash -lc 'echo Documentation updated'
 end
 
+task maint-workflow-hygiene
+  describe Validate workflow directory hygiene
+  shell ${PYTHON:-python3} scripts/maintenance/validate-workflow-hygiene.py
+end
+
 task maint-clean
   describe Clean build artifacts (DEEP_CLEAN=1 for full ESP clean)
   shell bash scripts/maintenance/cleanup.sh

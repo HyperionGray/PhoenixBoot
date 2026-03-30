@@ -731,6 +731,30 @@ PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 - **[SecureBoot Bootable Media](docs/SECUREBOOT_BOOTABLE_MEDIA.md)** - Create bootable media guide
 - **[Container README](containers/README.md)** - Container directory overview
 - **[Quick Reference](docs/QUICK_REFERENCE.md)** - Command cheat sheet
+- **[Workflow Hygiene](docs/WORKFLOW_HYGIENE.md)** - Keep CI workflow files clean and consistent
+
+## Workflow Hygiene (New)
+
+PhoenixBoot now includes an automated workflow hygiene validator to keep
+`.github/workflows/` organized and production-ready.
+
+What it checks:
+- Hidden files in `.github/workflows/` (for example cache/index leftovers)
+- Non-workflow file extensions in the workflows directory
+- Duplicate workflow basenames (`foo.yml` + `foo.yaml`)
+- Backup/template placeholder workflow files
+- Missing `name:` or `on:` keys in workflow files
+
+Run locally:
+```bash
+python3 scripts/maintenance/validate-workflow-hygiene.py
+# or
+./pf.py maint-workflow-hygiene
+```
+
+CI enforcement:
+- `.github/workflows/workflow-hygiene.yml` runs the validator on PRs/pushes
+  that touch workflow files.
 
 ## 🤝 Contributing
 

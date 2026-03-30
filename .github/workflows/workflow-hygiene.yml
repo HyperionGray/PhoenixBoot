@@ -1,0 +1,30 @@
+name: Workflow Hygiene
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - "scripts/maintenance/validate-workflow-hygiene.py"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - ".github/workflows/**"
+      - "scripts/maintenance/validate-workflow-hygiene.py"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Validate workflow directory hygiene
+        run: python3 scripts/maintenance/validate-workflow-hygiene.py

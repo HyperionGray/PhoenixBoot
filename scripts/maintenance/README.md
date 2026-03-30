@@ -6,6 +6,7 @@ Scripts for project maintenance and development.
 
 - `format.sh` - Format code
 - `lint.sh` - Lint code
+- `validate-workflow-hygiene.py` - Validate `.github/workflows` for duplicate/stale/placeholder workflow files
 
 ## Environment Setup
 
@@ -37,4 +38,7 @@ Scripts for project maintenance and development.
 
 # Check toolchain
 ./scripts/maintenance/toolchain-check.sh
+
+# Validate workflow hygiene
+python3 ./scripts/maintenance/validate-workflow-hygiene.py
 ```

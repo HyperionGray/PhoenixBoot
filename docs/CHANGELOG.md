@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ✨ Added
+- New maintenance hygiene script: `scripts/maintenance/repo-hygiene.sh`
+  - Removes stale local artifacts (`core`, `core.<pid>`, `out/**/*.log`, temp files)
+  - Optional aggressive mode for generated demo rustdoc trees (`HYGIENE_AGGRESSIVE=1`)
+  - Reports tracked files larger than 10MB for manual review
+- New pf task: `maint-repo-hygiene` in `components/maint/maint.pf`
+
+### 🔒 Security
+- Replaced shell-string subprocess execution with argv-based commands (`shell=False`) in:
+  - `components/workflows/scripts/recovery/phoenix_progressive.py`
+  - `utils/cert_inventory.py`
+
+### 🚀 Improved
+- `phoenix_progressive.py`
+  - Runs commands from project root for consistent behavior
+  - Accepts modern scan output path (`out/logs/bootkit_scan_results.json`) with fallback
+  - Improves path detection for staged EFI binaries and recovery image locations
+- `utils/cert_inventory.py`
+  - Uses project-local default cert dirs (`secureboot_certs/` then `keys/`)
+  - Uses rootless-friendly logging/output locations (`out/logs/phoenixguard`, `out/reports`)
+  - Returns structured output if cert directory is missing instead of crashing
+
 ### 📚 Documentation
 - Refined contributor workflow guidance and changelog maintenance notes.
 

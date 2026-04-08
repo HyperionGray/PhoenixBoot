@@ -424,7 +424,7 @@ Available in `core.pf`:
 ./pf.py secure-mok-new
 ./pf.py os-mok-enroll
 ./pf.py os-mok-list-keys
-MODULE_PATH=/path/to/module ./pf.py os-kmod-sign
+MODULE_PATH=/path/to/module.ko ./pf.py os-kmod-sign
 
 # UUEFI operations
 ./pf.py uuefi-install

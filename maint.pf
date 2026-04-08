@@ -23,6 +23,11 @@ task maint-clean
   shell bash scripts/maintenance/cleanup.sh
 end
 
+task maint-repo-tidy
+  describe Scan/remove stray generated files (set APPLY=1 to delete)
+  shell bash scripts/maintenance/repo-tidy.sh
+end
+
 task maint-install-git-hooks
   describe Install pre-push size guard hook
   shell mkdir -p .git/hooks && chmod 0755 .git/hooks

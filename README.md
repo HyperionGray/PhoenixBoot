@@ -3,6 +3,23 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
 
+## Maintenance
+
+Use maintenance tasks to keep the repo clean and predictable:
+
+```bash
+# Existing artifact cleanup
+./pf.py maint-clean
+
+# Scan for stray generated files (dry-run)
+./pf.py maint-repo-tidy
+
+# Remove detected stray generated files
+APPLY=1 ./pf.py maint-repo-tidy
+```
+
+`maint-repo-tidy` targets transient files/directories such as `__pycache__`, Python bytecode, and common local cache artifacts while skipping `.git`.
+
 **PhoenixBoot** (also known as PhoenixGuard) is a production-ready firmware defense system designed to protect against bootkits, rootkits, and supply chain attacks. It provides hardware-level firmware recovery, secure boot enforcement, and a complete UEFI boot chain with cryptographic verification.
 
 ## 🚀 New to PhoenixBoot?

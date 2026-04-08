@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ✨ Added
+- New maintenance task: `maint-repo-tidy` (`scripts/maintenance/repo-tidy.sh`)
+  - Dry-run by default, with `APPLY=1` to remove detected files
+  - Scans for common transient artifacts (`__pycache__`, `.pytest_cache`, `.pyc`, `.pyo`, temp files) while skipping `.git`
+
 ### 📚 Documentation
 - Refined contributor workflow guidance and changelog maintenance notes.
 

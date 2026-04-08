@@ -21,6 +21,7 @@ Scripts for project maintenance and development.
 - `audit-tree.sh` - Audit project tree
 - `purge-demo-refs.sh` - Purge demo references
 - `os-boot-clean.sh` - Clean boot entries
+- `repo-tidy.sh` - Scan/remove stray generated files (`APPLY=1` to delete)
 
 ## Documentation
 
@@ -37,4 +38,10 @@ Scripts for project maintenance and development.
 
 # Check toolchain
 ./scripts/maintenance/toolchain-check.sh
+
+# Dry-run repo tidy scan
+./scripts/maintenance/repo-tidy.sh
+
+# Apply repo tidy cleanup
+APPLY=1 ./scripts/maintenance/repo-tidy.sh
 ```

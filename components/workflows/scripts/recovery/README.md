@@ -23,6 +23,14 @@ Scripts for system recovery and remediation.
 - `install_kvm_snapshot_jump.sh` - Install KVM snapshot jump
 - `phoenix_progressive.py` - Progressive recovery system
 
+### `phoenix_progressive.py` safety model
+
+- Commands now execute with Python `subprocess` argument lists and `shell=False`.
+- This removes shell-string expansion risk while preserving existing recovery flow behavior.
+- Any future command additions should follow list-argument style:
+  - Good: `["make", "scan-bootkits"]`
+  - Avoid: `"make scan-bootkits"` unless you intentionally need compatibility parsing.
+
 ## Usage
 
 ```bash

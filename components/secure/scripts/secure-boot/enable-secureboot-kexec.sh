@@ -292,19 +292,69 @@ echo "  - Use manufacturer-specific tools"
 echo "  - Or enable Secure Boot through BIOS/UEFI setup"
 echo
 
-# For now, just log the attempt
-echo -e "${YELLOW}Phase 2 complete - manual Secure Boot enablement required${NC}"
+# Phase 2 handoff: load a return kernel and optionally kexec immediately.
+echo -e "${YELLOW}Phase 2 complete - preparing return path to hardened kernel${NC}"
 echo
-echo "After enabling Secure Boot (via BIOS setup or other means),"
-echo "the system will kexec back to the hardened kernel."
 
-# TODO: Kexec back to hardened kernel
-# For now, just inform the user
-echo
-echo -e "${BLUE}To complete the process:${NC}"
-echo "  1. Enable Secure Boot through BIOS/UEFI setup"
-echo "  2. Reboot into the hardened kernel"
-echo "  3. Verify: ./pf.py secureboot-check"
+CURRENT_KERNEL="$(uname -r)"
+mapfile -t RETURN_KERNELS < <(ls /boot/vmlinuz-* 2>/dev/null | sed 's|/boot/vmlinuz-||' | grep -v "^${CURRENT_KERNEL}$" | sort -V -r)
+
+if [ "${#RETURN_KERNELS[@]}" -eq 0 ]; then
+    echo -e "${RED}✗ No return kernel found (different from current: ${CURRENT_KERNEL})${NC}"
+    echo -e "${BLUE}Manual completion:${NC}"
+    echo "  1. Enable Secure Boot through BIOS/UEFI setup"
+    echo "  2. Reboot into a hardened kernel"
+    echo "  3. Verify: ./pf.py secureboot-check"
+    exit 0
+fi
+
+RETURN_KERNEL="${RETURN_KERNELS[0]}"
+RETURN_VMLINUZ="/boot/vmlinuz-${RETURN_KERNEL}"
+RETURN_INITRD="/boot/initrd.img-${RETURN_KERNEL}"
+RETURN_CMDLINE="$(cat /proc/cmdline)"
+
+echo "Return kernel candidate: ${RETURN_KERNEL}"
+
+if [ ! -f "${RETURN_VMLINUZ}" ] || [ ! -f "${RETURN_INITRD}" ]; then
+    echo -e "${RED}✗ Return kernel artifacts missing${NC}"
+    echo "  Expected kernel: ${RETURN_VMLINUZ}"
+    echo "  Expected initrd: ${RETURN_INITRD}"
+    echo -e "${BLUE}Manual completion:${NC}"
+    echo "  1. Enable Secure Boot through BIOS/UEFI setup"
+    echo "  2. Reboot into a hardened kernel"
+    echo "  3. Verify: ./pf.py secureboot-check"
+    exit 0
+fi
+
+if ! command -v kexec >/dev/null 2>&1; then
+    echo -e "${RED}✗ kexec not found in phase 2 environment${NC}"
+    echo -e "${BLUE}Manual completion:${NC}"
+    echo "  1. Enable Secure Boot through BIOS/UEFI setup"
+    echo "  2. Reboot into a hardened kernel"
+    echo "  3. Verify: ./pf.py secureboot-check"
+    exit 0
+fi
+
+echo "Loading return kernel with kexec..."
+if kexec -l "${RETURN_VMLINUZ}" --initrd="${RETURN_INITRD}" --command-line="${RETURN_CMDLINE}" --reuse-cmdline; then
+    echo -e "${GREEN}✓ Return kernel loaded${NC}"
+    echo
+    read -p "Execute return kexec now? [y/N] " -n 1 -r
+    echo
+    if [[ ${REPLY:-N} =~ ^[Yy]$ ]]; then
+        echo -e "${YELLOW}Executing kexec to return to hardened kernel...${NC}"
+        kexec -e
+    else
+        echo -e "${BLUE}Return kernel is loaded but not executed.${NC}"
+        echo "Run 'kexec -e' when ready to transition."
+    fi
+else
+    echo -e "${RED}✗ Failed to load return kernel with kexec${NC}"
+    echo -e "${BLUE}Manual completion:${NC}"
+    echo "  1. Enable Secure Boot through BIOS/UEFI setup"
+    echo "  2. Reboot into a hardened kernel"
+    echo "  3. Verify: ./pf.py secureboot-check"
+fi
 
 EOF
 

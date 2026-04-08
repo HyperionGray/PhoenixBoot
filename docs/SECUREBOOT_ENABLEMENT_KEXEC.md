@@ -508,10 +508,10 @@ With Secure Boot enabled, modules must be signed:
 ./pf.py os-mok-enroll
 
 # Sign a module
-PATH=/lib/modules/$(uname -r)/kernel/drivers/net/wireless/intel/iwlwifi/iwlwifi.ko ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r)/kernel/drivers/net/wireless/intel/iwlwifi/iwlwifi.ko ./pf.py os-kmod-sign
 
 # Sign all modules
-PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 ```
 
 ## Limitations and Considerations

@@ -115,7 +115,7 @@ python3 pgmodsign.py /path/to/module.ko
 python3 pgmodsign.py /lib/modules/$(uname -r) --force
 
 # Or use pf.py task:
-PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 ```
 
 ## Integration with PhoenixBoot

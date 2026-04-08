@@ -33,6 +33,8 @@ BIOS_Samples/
 
 # Build dir (generated artifacts)
 build/
+!components/*/build/
+!components/*/build/.gitkeep
 
 # Large demo archives
 examples_and_samples/demo/**/*.tar.gz

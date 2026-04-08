@@ -1,0 +1,3 @@
+# Component entrypoint for maintenance tasks
+
+include "components/maint/maint.pf"

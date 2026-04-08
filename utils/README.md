@@ -76,6 +76,11 @@ Scan and catalog available SecureBoot certificates:
 ./cert_inventory.py --cert-dir ../secureboot_certs --output inventory.json
 ```
 
+Security note:
+- `cert_inventory.py` now runs OpenSSL calls using argument-list subprocess execution
+  (`utils/subprocess_utils.py`) instead of `shell=True`. This reduces command-injection
+  risk and makes command logging deterministic.
+
 **Sample Output:**
 ```json
 {

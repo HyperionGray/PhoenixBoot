@@ -125,6 +125,12 @@ bash scripts/recovery/hardware-recovery.sh
 python3 scripts/recovery/phoenix_progressive.py
 ```
 
+### Runtime Safety Improvement
+
+`scripts/recovery/phoenix_progressive.py` now executes subprocesses with
+argument-list commands (no `shell=True`). This reduces command-injection risk
+and makes sudo usage explicit per recovery step.
+
 This intelligent system:
 1. Detects threat level
 2. Recommends appropriate escalation

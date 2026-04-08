@@ -21,8 +21,14 @@ import os
 import sys
 import json
 import subprocess
-import time
 from pathlib import Path
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from utils.subprocess_utils import format_command, run_command as run_safe_command
 
 class PhoenixProgressiveRecovery:
     def __init__(self):
@@ -38,32 +44,42 @@ class PhoenixProgressiveRecovery:
         print("☠ Intelligent escalation from safest to most extreme recovery methods")
         print()
     
-    def run_command(self, cmd, description="", check=True, capture_output=True):
+    def run_command(self, cmd, description="", check=True, capture_output=True, use_sudo=False):
         """Run a command with error handling
-        
-        SECURITY: This function uses shell=True for command execution.
-        Current usage is safe as commands are hardcoded strings (e.g., "make scan-bootkits"),
-        but NEVER pass user input directly to this function without validation.
-        TODO: Refactor to use command lists instead of shell strings.
         """
         if description:
             print(f"☠ {description}")
-        
+        command_str = repr(cmd)
         try:
+            command_str = format_command(cmd, use_sudo=use_sudo)
             if capture_output:
-                result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=check)
+                result = run_safe_command(
+                    cmd,
+                    check=check,
+                    capture_output=True,
+                    text=True,
+                    cwd=REPO_ROOT,
+                    use_sudo=use_sudo,
+                )
                 return result.stdout, result.stderr, result.returncode
             else:
-                result = subprocess.run(cmd, shell=True, check=check)
+                result = run_safe_command(
+                    cmd,
+                    check=check,
+                    capture_output=False,
+                    text=True,
+                    cwd=REPO_ROOT,
+                    use_sudo=use_sudo,
+                )
                 return "", "", result.returncode
         except subprocess.CalledProcessError as e:
             if check:
-                print(f"☠ Command failed: {cmd}")
+                print(f"☠ Command failed: {command_str}")
                 print(f"   Error: {e}")
                 return "", str(e), e.returncode
             return "", str(e), e.returncode
         except Exception as e:
-            print(f"☠ Unexpected error running: {cmd}")
+            print(f"☠ Unexpected error running: {command_str}")
             print(f"   Error: {e}")
             return "", str(e), 1
 
@@ -81,7 +97,10 @@ class PhoenixProgressiveRecovery:
             return False
             
         # Run bootkit detection
-        stdout, stderr, returncode = self.run_command("make scan-bootkits", "Running bootkit detection scan")
+        stdout, stderr, returncode = self.run_command(
+            ["make", "scan-bootkits"],
+            "Running bootkit detection scan",
+        )
         
         # Check results
         if os.path.exists("bootkit_scan_results.json"):
@@ -123,12 +142,19 @@ class PhoenixProgressiveRecovery:
             return False
             
         # Build and deploy recovery ISO
-        stdout, stderr, returncode = self.run_command("make build-nuclear-cd", "Building Nuclear Boot recovery ISO")
+        stdout, stderr, returncode = self.run_command(
+            ["make", "build-nuclear-cd"],
+            "Building Nuclear Boot recovery ISO",
+        )
         if returncode != 0:
             print("☠ Failed to build recovery ISO")
             return False
             
-        stdout, stderr, returncode = self.run_command("sudo make deploy-esp-iso", "Deploying recovery ISO to ESP")
+        stdout, stderr, returncode = self.run_command(
+            ["make", "deploy-esp-iso"],
+            "Deploying recovery ISO to ESP",
+            use_sudo=True,
+        )
         if returncode != 0:
             print("☠ Failed to deploy recovery ISO")
             return False
@@ -143,7 +169,7 @@ class PhoenixProgressiveRecovery:
         # Ask if user wants to proceed immediately
         choice = input("☠ Boot recovery environment now? [y/N]: ").strip().lower()
         if choice == 'y':
-            self.run_command("make boot-from-esp-iso", capture_output=False)
+            self.run_command(["make", "boot-from-esp-iso"], capture_output=False)
             
         return True  # User can handle recovery from here
         
@@ -181,18 +207,30 @@ class PhoenixProgressiveRecovery:
         choice = input("Select operation [1-4]: ").strip()
         
         if choice == "1":
-            cmd = "sudo make secure-firmware-access ARGS='--backup current-firmware.bin'"
-            self.run_command(cmd, "Backing up firmware securely", capture_output=False)
+            self.run_command(
+                ["make", "secure-firmware-access", "ARGS=--backup current-firmware.bin"],
+                "Backing up firmware securely",
+                capture_output=False,
+                use_sudo=True,
+            )
             
         elif choice == "2":
-            cmd = "sudo make secure-firmware-access ARGS='--read suspicious-firmware.bin'"
-            self.run_command(cmd, "Reading firmware for analysis", capture_output=False)
+            self.run_command(
+                ["make", "secure-firmware-access", "ARGS=--read suspicious-firmware.bin"],
+                "Reading firmware for analysis",
+                capture_output=False,
+                use_sudo=True,
+            )
             
         elif choice == "3":
             print("☠ WARNING: This will overwrite your firmware!")
             if self.confirm_escalation("write clean firmware (DANGEROUS)"):
-                cmd = f"sudo make secure-firmware-access ARGS='--write {clean_firmware}'"
-                self.run_command(cmd, "Writing clean firmware", capture_output=False)
+                self.run_command(
+                    ["make", "secure-firmware-access", f"ARGS=--write {clean_firmware}"],
+                    "Writing clean firmware",
+                    capture_output=False,
+                    use_sudo=True,
+                )
                 print("☠ Firmware recovery completed! System should be clean now.")
                 return True
                 
@@ -232,7 +270,10 @@ class PhoenixProgressiveRecovery:
         if not os.path.exists(recovery_image):
             if os.path.exists(base_image):
                 print("☠ Enhanced recovery image not found - creating it...")
-                stdout, stderr, rc = self.run_command("sudo scripts/enhance_kvm_recovery.sh")
+                stdout, stderr, rc = self.run_command(
+                    ["scripts/enhance_kvm_recovery.sh"],
+                    use_sudo=True,
+                )
                 if rc != 0:
                     print("☠ Failed to create enhanced recovery image")
                     print(f"   Using base image: {base_image}")
@@ -258,7 +299,7 @@ class PhoenixProgressiveRecovery:
         print()
         
         if input("Proceed with reboot? [y/N]: ").strip().lower() == 'y':
-            self.run_command("sudo make reboot-to-vm", capture_output=False)
+            self.run_command(["make", "reboot-to-vm"], capture_output=False, use_sudo=True)
             return True
             
         return False
@@ -290,8 +331,9 @@ class PhoenixProgressiveRecovery:
             
         # Install Xen snapshot jump
         stdout, stderr, returncode = self.run_command(
-            "sudo make install-phoenix",
-            "Installing Xen Snapshot Jump configuration"
+            ["make", "install-phoenix"],
+            "Installing Xen Snapshot Jump configuration",
+            use_sudo=True,
         )
         
         if returncode != 0:
@@ -308,7 +350,7 @@ class PhoenixProgressiveRecovery:
         print()
         
         if input("Reboot to Xen now? [y/N]: ").strip().lower() == 'y':
-            self.run_command("sudo reboot", capture_output=False)
+            self.run_command(["reboot"], capture_output=False, use_sudo=True)
             return True
             
         return False
@@ -352,7 +394,7 @@ class PhoenixProgressiveRecovery:
             return False
             
         # Proceed with hardware recovery
-        self.run_command("make hardware-recovery", capture_output=False)
+        self.run_command(["make", "hardware-recovery"], capture_output=False)
         return True
         
     def confirm_escalation(self, action):

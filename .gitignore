@@ -84,3 +84,7 @@ hardware_uploads/
 test_output/
 tmp/
 .tmp/
+
+# Legacy/generated sample artifacts and repo indexes
+**/target/
+**/.bish-index

@@ -1,7 +1,0 @@
-./universal_bios/universal_bios_plus.py
-./scrapers/distributed_hardware_scraper.py
-./tools/analyze_firmware_baseline.py
-./tools/hardware_firmware_recovery.py
-./tools/secure-firmware-access.sh
-./tools/fix-flashrom-access.sh
-./tools/flashrom-alternatives.sh

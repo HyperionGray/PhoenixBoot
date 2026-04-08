@@ -441,6 +441,8 @@ ISO_PATH=/path/to.iso USB_DEVICE=/dev/sdX ./pf.py secureboot-create-usb
 # Cleanup
 ./pf.py cleanup
 DEEP_CLEAN=1 ./pf.py cleanup
+./pf.py maint-repo-tidy
+APPLY=1 ./pf.py maint-repo-tidy
 ```
 
 ### Direct Script Usage

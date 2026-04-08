@@ -20,6 +20,7 @@ Scripts for project maintenance and development.
 - `move-wip.sh` - Move work in progress
 - `audit-tree.sh` - Audit project tree
 - `purge-demo-refs.sh` - Purge demo references
+- `repo-tidy.sh` - Remove stale/generated clutter (supports dry-run)
 - `os-boot-clean.sh` - Clean boot entries
 
 ## Documentation
@@ -37,4 +38,10 @@ Scripts for project maintenance and development.
 
 # Check toolchain
 ./scripts/maintenance/toolchain-check.sh
+
+# Preview repository cleanup actions
+DRY_RUN=1 ./scripts/maintenance/repo-tidy.sh
+
+# Apply repository cleanup actions
+APPLY=1 ./scripts/maintenance/repo-tidy.sh
 ```

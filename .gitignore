@@ -80,6 +80,9 @@ secrets/
 hardware_profiles.db
 hardware_uploads/
 
+# Repo index artifacts
+**/.bish-index
+
 # Temporary test files
 test_output/
 tmp/

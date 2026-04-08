@@ -102,3 +102,38 @@ task workflow-recovery-reboot-vm
   describe Reboot to VM/recovery environment
   shell bash scripts/recovery/reboot-to-vm.sh
 end
+
+task nuke-progressive
+  describe Run progressive recovery escalation workflow
+  shell ${PYTHON:-python3} scripts/recovery/phoenix_progressive.py
+end
+
+task nuke-progressive-dry-run
+  describe Generate progressive recovery planfile without host changes
+  shell ${PYTHON:-python3} scripts/recovery/phoenix_progressive.py --dry-run --yes
+end
+
+task nuke-level1-scan
+  describe Progressive recovery level 1 (bootkit detection)
+  shell ${PYTHON:-python3} scripts/recovery/phoenix_progressive.py --level 1
+end
+
+task nuke-level2-esp
+  describe Progressive recovery level 2 (deploy recovery ISO to ESP)
+  shell ${PYTHON:-python3} scripts/recovery/phoenix_progressive.py --level 2
+end
+
+task nuke-level3-secure
+  describe Progressive recovery level 3 (secure firmware access)
+  shell ${PYTHON:-python3} scripts/recovery/phoenix_progressive.py --level 3
+end
+
+task nuke-level4-kvm
+  describe Progressive recovery level 4 (reboot to KVM recovery)
+  shell ${PYTHON:-python3} scripts/recovery/phoenix_progressive.py --level 4
+end
+
+task nuke-level6-hw
+  describe Progressive recovery level 6 (direct hardware recovery)
+  shell ${PYTHON:-python3} scripts/recovery/phoenix_progressive.py --level 6
+end

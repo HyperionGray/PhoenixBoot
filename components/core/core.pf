@@ -1,0 +1,278 @@
+# core.pf - Core PhoenixBoot functionality
+# Essential tasks for everyday use
+
+# --- Build Tasks ---
+task build-setup
+  describe Bootstrap toolchain & environment
+  shell bash scripts/maintenance/toolchain-check.sh
+end
+
+task build-build
+  describe Build production artifacts from staging/
+  shell bash scripts/build/build-production.sh
+end
+
+task build-package-esp
+  describe Package bootable ESP image
+  shell bash scripts/esp-packaging/esp-package.sh
+end
+
+task build-package-esp-neg-attest
+  describe Create negative attestation ESP (corrupted hash)
+  shell bash scripts/esp-packaging/package-esp-neg-attest.sh
+end
+
+# --- Testing Tasks ---
+task test-qemu
+  describe Main QEMU boot test
+  shell bash scripts/testing/qemu-test.sh
+end
+
+task test-qemu-secure-positive
+  describe Secure Boot positive test
+  shell bash scripts/testing/qemu-test-secure-positive.sh
+end
+
+task test-qemu-uuefi
+  describe UUEFI application test
+  shell bash scripts/testing/qemu-test-uuefi.sh
+end
+
+task test-qemu-secure-strict
+  describe Secure Boot strict mode test
+  shell bash scripts/testing/qemu-test-secure-strict.sh
+end
+
+task test-qemu-secure-negative-attest
+  describe NuclearBoot corruption detection test
+  shell bash scripts/testing/qemu-test-secure-negative-attest.sh
+end
+
+# --- Secure Boot Key Management ---
+task secure-keygen
+  describe Generate Secure Boot keypairs (RSA-4096) and X.509 certs
+  shell bash scripts/secure-boot/generate-sb-keys.sh
+end
+
+task secure-env
+  describe Comprehensive security environment check - verify boot integrity, EFI vars, kernel security, and detect bootkits
+  shell bash scripts/validation/secure-env-check.sh
+end
+
+task kernel-hardening-check
+  describe Analyze kernel configuration against DISA STIG and hardening best practices
+  shell ${PYTHON:-python3} utils/kernel_hardening_analyzer.py --auto
+end
+
+task kernel-hardening-report
+  describe Generate detailed kernel hardening report (text and JSON)
+  shell bash -c 'mkdir -p out/reports && ${PYTHON:-python3} utils/kernel_hardening_analyzer.py --auto --format text --output out/reports/kernel_hardening_report.txt'
+  shell ${PYTHON:-python3} utils/kernel_hardening_analyzer.py --auto --format json --output out/reports/kernel_hardening_report.json
+  shell bash -c 'echo "Reports saved to:"; echo "  Text: out/reports/kernel_hardening_report.txt"; echo "  JSON: out/reports/kernel_hardening_report.json"'
+end
+
+task kernel-hardening-baseline
+  describe Generate hardened kernel config baseline based on DISA STIG
+  shell bash -c 'mkdir -p out/baselines && ${PYTHON:-python3} utils/kernel_hardening_analyzer.py --generate-baseline --output out/baselines/hardened_kernel.config'
+end
+
+task kernel-config-diff
+  describe Compare current kernel config against hardened baseline
+  shell ${PYTHON:-python3} utils/kernel_config_remediation.py --current /boot/config-$(uname -r) --diff
+end
+
+task kernel-config-remediate
+  describe Generate kernel config remediation script
+  shell bash -c 'mkdir -p out/remediation && ${PYTHON:-python3} utils/kernel_config_remediation.py --current /boot/config-$(uname -r) --remediate --output out/remediation/kernel_remediation.sh'
+  shell bash -c 'echo "Remediation script generated: out/remediation/kernel_remediation.sh"'
+end
+
+task kernel-kexec-check
+  describe Check if kexec is available for kernel remediation
+  shell ${PYTHON:-python3} utils/kernel_config_remediation.py --check-kexec
+end
+
+task kernel-kexec-guide
+  describe Show kexec double-jump remediation workflow guide
+  shell ${PYTHON:-python3} utils/kernel_config_remediation.py --kexec-guide
+end
+
+task kernel-profile-list
+  describe List available kernel configuration profiles (permissive/hardened/balanced)
+  shell ${PYTHON:-python3} utils/kernel_config_profiles.py --list
+end
+
+task kernel-profile-permissive
+  describe Generate permissive kernel config for BIOS flashing
+  shell bash -c 'mkdir -p out/kernel-profiles && ${PYTHON:-python3} utils/kernel_config_profiles.py --profile permissive --output out/kernel-profiles/permissive.config'
+  shell bash -c 'echo "Profile generated: out/kernel-profiles/permissive.config"'
+end
+
+task kernel-profile-hardened
+  describe Generate hardened kernel config (maximum security)
+  shell bash -c 'mkdir -p out/kernel-profiles && ${PYTHON:-python3} utils/kernel_config_profiles.py --profile hardened --output out/kernel-profiles/hardened.config'
+  shell bash -c 'echo "Profile generated: out/kernel-profiles/hardened.config"'
+end
+
+task kernel-profile-balanced
+  describe Generate balanced kernel config (security + flexibility)
+  shell bash -c 'mkdir -p out/kernel-profiles && ${PYTHON:-python3} utils/kernel_config_profiles.py --profile balanced --output out/kernel-profiles/balanced.config'
+  shell bash -c 'echo "Profile generated: out/kernel-profiles/balanced.config"'
+end
+
+task kernel-profile-compare
+  describe Compare current kernel config with profile (set PROFILE=permissive/hardened/balanced)
+  shell bash -c '[ -n "${PROFILE:-}" ] || { echo "Usage: PROFILE=<profile> ./pf.py kernel-profile-compare"; exit 1; }'
+  shell ${PYTHON:-python3} utils/kernel_config_profiles.py --profile "${PROFILE}" --compare /boot/config-$(uname -r)
+end
+
+task secureboot-check
+  describe Check Secure Boot status on host machine
+  shell bash scripts/secure-boot/check-secureboot-status.sh
+end
+
+task secureboot-enable-host-kexec
+  describe [HOST] Enable Secure Boot on physical machine via double kexec method (requires root)
+  shell bash scripts/secure-boot/enable-secureboot-kexec.sh
+end
+
+task firmware-checksum-list
+  describe List all firmware checksums in database
+  shell ${PYTHON:-python3} utils/firmware_checksum_db.py --list
+end
+
+task firmware-checksum-verify
+  describe Verify firmware file against database (set FIRMWARE_PATH=<path>)
+  shell bash -c '[ -n "${FIRMWARE_PATH:-}" ] || { echo "Usage: FIRMWARE_PATH=<file> ./pf.py firmware-checksum-verify"; exit 1; }'
+  shell ${PYTHON:-python3} utils/firmware_checksum_db.py --verify "${FIRMWARE_PATH}"
+end
+
+task firmware-checksum-add
+  describe Add firmware to checksum database (set FIRMWARE_PATH, VENDOR, MODEL, VERSION)
+  shell bash -c '[ -n "${FIRMWARE_PATH:-}" ] || { echo "Usage: FIRMWARE_PATH=<file> VENDOR=<vendor> MODEL=<model> VERSION=<version> ./pf.py firmware-checksum-add"; exit 1; }'
+  shell bash -c '[ -n "${VENDOR:-}" ] && [ -n "${MODEL:-}" ] && [ -n "${VERSION:-}" ] || { echo "Error: VENDOR, MODEL, and VERSION are required"; exit 1; }'
+  shell ${PYTHON:-python3} utils/firmware_checksum_db.py --add "${FIRMWARE_PATH}" --vendor "${VENDOR}" --model "${MODEL}" --version "${VERSION}" --source "${SOURCE:-manual}" --confidence ${CONFIDENCE:-50}
+end
+
+task secure-make-auth
+  describe Create ESL and AUTH for PK/KEK/db
+  shell bash scripts/secure-boot/create-auth-files.sh
+end
+
+# --- MOK (Machine Owner Key) Management ---
+task os-mok-enroll
+  describe Enroll host MOK for module signing
+  shell bash scripts/mok-management/enroll-mok.sh "${MOK_CERT_PEM:-out/keys/mok/PGMOK.crt}" "${MOK_CERT_DER:-out/keys/mok/PGMOK.der}" "${MOK_DRY_RUN:-0}"
+end
+
+task os-mok-list-keys
+  describe List available MOK certs/keys and enrollment status
+  shell bash scripts/mok-management/mok-list-keys.sh
+end
+
+task secure-mok-new
+  describe Generate new PhoenixGuard MOK keypair (use NAME and CN env)
+  shell bash scripts/mok-management/mok-new.sh "${NAME:-PGMOK}" "${CN:-PhoenixGuard Module Key}"
+end
+
+# --- Module Signing ---
+task os-kmod-sign
+  describe Sign one module file or recursively sign directory (set PATH, FORCE=1 optional)
+  shell bash -lc '[ -n "${PATH:-}" ] || { echo "Usage: PATH=<file|dir> [FORCE=1] ./pf.py os-kmod-sign"; exit 1; }'
+  shell bash -lc '"${PYTHON:-python3}" utils/pgmodsign.py "${PATH}" $([ "${FORCE:-0}" = "1" ] && printf -- "--force" || true)'
+end
+
+# --- UUEFI Operations ---
+task uuefi-install
+  describe Install UUEFI.efi to system ESP
+  shell bash scripts/uefi-tools/uuefi-install.sh
+end
+
+task uuefi-apply
+  describe UUEFI apply (set BootNext; optionally create entry)
+  shell bash scripts/uefi-tools/uuefi-apply.sh
+end
+
+task uuefi-report
+  describe UUEFI report (read-only)
+  shell bash scripts/uefi-tools/uuefi-report.sh
+end
+
+# --- Boot Management ---
+task os-boot-clean
+  describe Clean stale UEFI boot entries (set OS_BOOT_RM, OS_BOOT_ORDER, OS_BOOT_NEXT)
+  shell bash scripts/maintenance/os-boot-clean.sh
+end
+
+# --- Validation ---
+task validate-all
+  describe Run all validations
+  shell bash scripts/validation/validate-keys.sh
+  shell bash scripts/validation/validate-esp.sh
+end
+
+task verify-esp-robust
+  describe Robust ESP verification
+  shell bash scripts/validation/verify-esp-robust.sh
+end
+
+# --- SecureBoot Bootable Media ---
+task secureboot-create
+  describe Create turnkey SecureBoot bootable media from ISO (set ISO_PATH=/path/to.iso)
+  shell bash create-secureboot-bootable-media.sh --iso "${ISO_PATH}"
+end
+
+task secureboot-create-usb
+  describe Create SecureBoot USB and write directly (set ISO_PATH and USB_DEVICE)
+  shell bash create-secureboot-bootable-media.sh --iso "${ISO_PATH}" --usb-device "${USB_DEVICE}"
+end
+
+# --- Convenience Workflows ---
+task esp
+  describe Convenience: build + package ESP
+  shell ./pf.py build-build build-package-esp
+end
+
+task setup
+  describe Complete project setup: build + package + verify
+  shell ./pf.py build-setup build-build build-package-esp
+  shell ./pf.py verify-esp-robust
+end
+
+task verify
+  describe Run validation (validate-all + verify-esp-robust)
+  shell ./pf.py validate-all
+  shell ./pf.py verify-esp-robust
+end
+
+task mok-flow
+  describe Full MOK workflow: generate keys, enroll MOK
+  shell ./pf.py secure-mok-new
+  shell ./pf.py os-mok-enroll
+end
+
+task cleanup
+  describe Clean build artifacts (DEEP_CLEAN=1 for full ESP clean)
+  shell bash scripts/maintenance/cleanup.sh
+end
+
+# --- CLI/TUI Testing Tasks ---
+task test-cli
+  describe Test phoenixboot CLI wrapper
+  shell bash scripts/testing/test-phoenixboot-cli.sh
+end
+
+task test-tui
+  describe Test phoenixboot TUI launcher
+  shell bash scripts/testing/test-phoenixboot-tui.sh
+end
+
+task test-pf
+  describe Test pf.py tasks definitions
+  shell bash scripts/testing/test-pf-tasks.sh
+end
+
+task test-cli-tui-all
+  describe Run comprehensive CLI and TUI test suite
+  shell bash scripts/testing/test-all-cli-tui.sh
+end

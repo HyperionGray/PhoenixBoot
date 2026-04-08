@@ -1,0 +1,3 @@
+# Component entrypoint for secure tasks
+
+include "components/secure/secure.pf"

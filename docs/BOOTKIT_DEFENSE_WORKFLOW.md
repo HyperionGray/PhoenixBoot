@@ -126,10 +126,10 @@ Many useful kernel modules (like `apfs.ko` for Mac filesystems) come unsigned. S
 ./sign-kernel-modules.sh
 
 # Or sign specific module
-PATH=/path/to/module.ko ./pf.py os-kmod-sign
+MODULE_PATH=/path/to/module.ko ./pf.py os-kmod-sign
 
 # Or sign entire directory
-PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 ```
 
 **What this does:**

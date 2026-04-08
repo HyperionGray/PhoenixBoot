@@ -1,0 +1,3 @@
+# Component entrypoint for workflow tasks
+
+include "components/workflows/workflows.pf"

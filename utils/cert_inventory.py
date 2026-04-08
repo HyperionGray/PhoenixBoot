@@ -18,13 +18,26 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 
 # Set up logging
+def _build_log_handlers() -> List[logging.Handler]:
+    """Build log handlers with a writable-file fallback."""
+    handlers: List[logging.Handler] = [logging.StreamHandler(sys.stdout)]
+    log_dir = Path("/var/log/phoenixguard")
+    log_file = log_dir / "cert_inventory.log"
+
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+        handlers.insert(0, logging.FileHandler(str(log_file)))
+    except OSError:
+        # Cloud/dev environments may not allow writes under /var/log.
+        handlers.insert(0, logging.FileHandler("/tmp/cert_inventory.log"))
+
+    return handlers
+
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('/var/log/phoenixguard/cert_inventory.log'),
-        logging.StreamHandler(sys.stdout)
-    ]
+    handlers=_build_log_handlers()
 )
 logger = logging.getLogger(__name__)
 
@@ -33,9 +46,6 @@ class PhoenixGuardCertInventory:
         self.cert_dir = cert_dir or "/home/punk/Projects/edk2-bootkit-defense/PhoenixGuard/secureboot_certs"
         self.cert_data = {}
         self.conversion_log = []
-        
-        # Ensure log directory exists
-        os.makedirs("/var/log/phoenixguard", exist_ok=True)
         
     def run_command(self, cmd: List[str], check: bool = True) -> subprocess.CompletedProcess:
         """Run command with shell=False for safer subprocess execution."""

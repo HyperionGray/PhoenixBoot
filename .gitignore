@@ -38,6 +38,8 @@ build/
 
 # Large demo archives
 examples_and_samples/demo/**/*.tar.gz
+examples_and_samples/demo/**/target/
+examples_and_samples/demo/**/debug.log
 
 # Session/process leftovers
 # Prevent accidental inclusion of nohup outputs anywhere in the tree

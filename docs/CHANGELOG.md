@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 📚 Documentation
 - Refined contributor workflow guidance and changelog maintenance notes.
+- Added maintenance docs for `repo-hygiene.sh` usage and purpose.
 
 ## [2.0.0] - 2025-12-22
 

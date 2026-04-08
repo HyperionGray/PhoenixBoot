@@ -21,6 +21,7 @@ Scripts for project maintenance and development.
 - `audit-tree.sh` - Audit project tree
 - `purge-demo-refs.sh` - Purge demo references
 - `os-boot-clean.sh` - Clean boot entries
+- `repo-hygiene.sh` - Remove stale local artifacts and report oversized tracked files
 
 ## Documentation
 
@@ -37,4 +38,7 @@ Scripts for project maintenance and development.
 
 # Check toolchain
 ./scripts/maintenance/toolchain-check.sh
+
+# Clean stale local artifacts safely
+./scripts/maintenance/repo-hygiene.sh
 ```

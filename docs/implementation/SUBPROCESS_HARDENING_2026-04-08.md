@@ -56,6 +56,6 @@ Added ignore protections in `.gitignore`:
   - `utils/subprocess_utils.py`
   - `scripts/recovery/phoenix_progressive.py`
   - `utils/cert_inventory.py`
-- Verified CLI entry points:
-  - `python3 scripts/recovery/phoenix_progressive.py --help` (script starts; exits after prompt path)
+- Verified script usability checks:
+  - `python3 -c "import scripts.recovery.phoenix_progressive as p"` (import succeeds)
   - `python3 utils/cert_inventory.py --help`

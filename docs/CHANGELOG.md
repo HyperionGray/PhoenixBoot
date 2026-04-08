@@ -7,8 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔒 Security
+- Hardened subprocess execution in active Python tooling by replacing shell command strings with argument-list invocation (`shell=False`) in:
+  - `components/workflows/scripts/recovery/phoenix_progressive.py`
+  - `utils/cert_inventory.py`
+
 ### 📚 Documentation
 - Refined contributor workflow guidance and changelog maintenance notes.
+- Added command-execution hardening implementation note:
+  - `docs/implementation/COMMAND_EXECUTION_HARDENING_2026-04-08.md`
 
 ## [2.0.0] - 2025-12-22
 

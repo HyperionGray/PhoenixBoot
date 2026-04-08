@@ -21,6 +21,7 @@ import os
 import sys
 import json
 import subprocess
+import shlex
 import time
 from pathlib import Path
 
@@ -39,31 +40,33 @@ class PhoenixProgressiveRecovery:
         print()
     
     def run_command(self, cmd, description="", check=True, capture_output=True):
-        """Run a command with error handling
-        
-        SECURITY: This function uses shell=True for command execution.
-        Current usage is safe as commands are hardcoded strings (e.g., "make scan-bootkits"),
-        but NEVER pass user input directly to this function without validation.
-        TODO: Refactor to use command lists instead of shell strings.
-        """
+        """Run a command with robust error handling using shell=False."""
         if description:
             print(f"☠ {description}")
-        
+
+        if isinstance(cmd, str):
+            args = shlex.split(cmd)
+        else:
+            args = [str(part) for part in cmd]
+
+        if not args:
+            return "", "Empty command", 1
+
         try:
             if capture_output:
-                result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=check)
+                result = subprocess.run(args, shell=False, capture_output=True, text=True, check=check)
                 return result.stdout, result.stderr, result.returncode
             else:
-                result = subprocess.run(cmd, shell=True, check=check)
+                result = subprocess.run(args, shell=False, check=check)
                 return "", "", result.returncode
         except subprocess.CalledProcessError as e:
             if check:
-                print(f"☠ Command failed: {cmd}")
+                print(f"☠ Command failed: {' '.join(shlex.quote(arg) for arg in args)}")
                 print(f"   Error: {e}")
                 return "", str(e), e.returncode
             return "", str(e), e.returncode
         except Exception as e:
-            print(f"☠ Unexpected error running: {cmd}")
+            print(f"☠ Unexpected error running: {' '.join(shlex.quote(arg) for arg in args)}")
             print(f"   Error: {e}")
             return "", str(e), 1
 
@@ -181,17 +184,17 @@ class PhoenixProgressiveRecovery:
         choice = input("Select operation [1-4]: ").strip()
         
         if choice == "1":
-            cmd = "sudo make secure-firmware-access ARGS='--backup current-firmware.bin'"
+            cmd = ["sudo", "make", "secure-firmware-access", "ARGS=--backup current-firmware.bin"]
             self.run_command(cmd, "Backing up firmware securely", capture_output=False)
             
         elif choice == "2":
-            cmd = "sudo make secure-firmware-access ARGS='--read suspicious-firmware.bin'"
+            cmd = ["sudo", "make", "secure-firmware-access", "ARGS=--read suspicious-firmware.bin"]
             self.run_command(cmd, "Reading firmware for analysis", capture_output=False)
             
         elif choice == "3":
             print("☠ WARNING: This will overwrite your firmware!")
             if self.confirm_escalation("write clean firmware (DANGEROUS)"):
-                cmd = f"sudo make secure-firmware-access ARGS='--write {clean_firmware}'"
+                cmd = ["sudo", "make", "secure-firmware-access", f"ARGS=--write {clean_firmware}"]
                 self.run_command(cmd, "Writing clean firmware", capture_output=False)
                 print("☠ Firmware recovery completed! System should be clean now.")
                 return True

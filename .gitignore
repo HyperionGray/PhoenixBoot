@@ -86,3 +86,8 @@ hardware_uploads/
 test_output/
 tmp/
 .tmp/
+
+# Recovery/generated run artifacts
+autonuke_session.log
+bootkit_scan_results.json
+cert_inventory_*.json

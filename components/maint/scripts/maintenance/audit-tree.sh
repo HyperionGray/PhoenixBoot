@@ -69,7 +69,7 @@ rg --hidden -n --glob '!out/**' --glob '!\.git/**' \
 {
     echo "Potentially stale/generated tracked paths"
     echo "========================================="
-    git ls-files | rg '(^|/)(target|dist|build)/|(\.log$)|(^|/)tmp/' || true
+    git ls-files | rg '(^|/)target/|(^|/)dist/|(^|/)tmp/|(^|/)demo/.*\.log$|(^|/)examples_and_samples/.*\.log$' || true
 } > "${STALE_REPORT}"
 
 TODO_COUNT=0

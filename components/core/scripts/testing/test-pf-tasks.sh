@@ -9,8 +9,17 @@ echo "==============================="
 echo
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+if PROJECT_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"; then
+    :
+else
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+fi
 cd "$PROJECT_ROOT"
+
+CORE_TASK_FILE="components/core/core.pf"
+SECURE_TASK_FILE="components/secure/secure.pf"
+WORKFLOW_TASK_FILE="components/workflows/workflows.pf"
+MAINT_TASK_FILE="components/maint/maint.pf"
 
 PASSED=0
 FAILED=0
@@ -61,36 +70,36 @@ else
     fail "Pfyfile.pf missing"
 fi
 
-# Test 4: Check core.pf exists
-echo "[TEST 4] Checking if core.pf exists..."
-if [ -f "core.pf" ]; then
-    pass "core.pf exists"
+# Test 4: Check core task files exist
+echo "[TEST 4] Checking if core task files exist..."
+if [ -f "core.pf" ] && [ -f "$CORE_TASK_FILE" ]; then
+    pass "core.pf compatibility wrapper and component file exist"
 else
-    fail "core.pf missing"
+    fail "core task files missing"
 fi
 
-# Test 5: Check secure.pf exists
-echo "[TEST 5] Checking if secure.pf exists..."
-if [ -f "secure.pf" ]; then
-    pass "secure.pf exists"
+# Test 5: Check secure task files exist
+echo "[TEST 5] Checking if secure task files exist..."
+if [ -f "secure.pf" ] && [ -f "$SECURE_TASK_FILE" ]; then
+    pass "secure.pf compatibility wrapper and component file exist"
 else
-    fail "secure.pf missing"
+    fail "secure task files missing"
 fi
 
-# Test 6: Check workflows.pf exists
-echo "[TEST 6] Checking if workflows.pf exists..."
-if [ -f "workflows.pf" ]; then
-    pass "workflows.pf exists"
+# Test 6: Check workflow task files exist
+echo "[TEST 6] Checking if workflow task files exist..."
+if [ -f "workflows.pf" ] && [ -f "$WORKFLOW_TASK_FILE" ]; then
+    pass "workflows.pf compatibility wrapper and component file exist"
 else
-    fail "workflows.pf missing"
+    fail "workflow task files missing"
 fi
 
-# Test 7: Check maint.pf exists
-echo "[TEST 7] Checking if maint.pf exists..."
-if [ -f "maint.pf" ]; then
-    pass "maint.pf exists"
+# Test 7: Check maintenance task files exist
+echo "[TEST 7] Checking if maint task files exist..."
+if [ -f "maint.pf" ] && [ -f "$MAINT_TASK_FILE" ]; then
+    pass "maint.pf compatibility wrapper and component file exist"
 else
-    fail "maint.pf missing"
+    fail "maintenance task files missing"
 fi
 
 # Test 8: Verify pf.py can list tasks (dry run)
@@ -104,10 +113,8 @@ if ./pf.py list > /tmp/pf_tasks.txt 2>&1; then
     fi
 else
     # Check if it's due to missing dependencies
-    if grep -qi "pf runner not found" /tmp/pf_tasks.txt; then
-        skip "pf runner is not installed in test env"
-    elif grep -qi "fabric\|module.*not.*found" /tmp/pf_tasks.txt; then
-        skip "pf.py requires fabric module (not installed in test env)"
+    if grep -qi "fabric\|module.*not.*found\|pf runner not found" /tmp/pf_tasks.txt; then
+        skip "pf.py runtime dependency is not installed in test env"
     else
         fail "pf.py list failed"
     fi
@@ -116,7 +123,7 @@ fi
 # Test 9: Check syntax of all .pf files
 echo "[TEST 9] Checking .pf files for basic syntax..."
 pf_syntax_ok=true
-for pf_file in *.pf; do
+for pf_file in Pfyfile.pf core.pf secure.pf workflows.pf maint.pf "$CORE_TASK_FILE" "$SECURE_TASK_FILE" "$WORKFLOW_TASK_FILE" "$MAINT_TASK_FILE" components/*/Pfyfile.pf; do
     if [ -f "$pf_file" ]; then
         # Check for basic task structure
         if grep -q "^task " "$pf_file"; then
@@ -127,8 +134,8 @@ for pf_file in *.pf; do
     fi
 done
 
-# Test 10: Verify key tasks are defined in core.pf
-echo "[TEST 10] Checking for essential tasks in core.pf..."
+# Test 10: Verify key tasks are defined in the core component
+echo "[TEST 10] Checking for essential tasks in the core component..."
 essential_tasks=(
     "build-setup"
     "build-build"
@@ -139,7 +146,7 @@ essential_tasks=(
 )
 
 for task in "${essential_tasks[@]}"; do
-    if grep -q "^task $task" core.pf; then
+    if grep -q "^task $task" "$CORE_TASK_FILE"; then
         pass "Task '$task' is defined"
     else
         fail "Task '$task' is missing"
@@ -148,7 +155,7 @@ done
 
 # Test 11: Verify task descriptions exist
 echo "[TEST 11] Checking task descriptions..."
-if grep -q "describe " core.pf; then
+if grep -q "describe " "$CORE_TASK_FILE"; then
     pass "Tasks have descriptions"
 else
     fail "No task descriptions found"
@@ -156,7 +163,7 @@ fi
 
 # Test 12: Check for shell command usage in tasks
 echo "[TEST 12] Verifying tasks use shell commands..."
-if grep -q "shell " core.pf; then
+if grep -q "shell " "$CORE_TASK_FILE"; then
     pass "Tasks use shell commands"
 else
     fail "No shell commands in tasks"

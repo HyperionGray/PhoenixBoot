@@ -1,42 +1,48 @@
-# PhoenixGuard Project Structure
+# PhoenixBoot Project Structure
 
-This document helps you navigate the repository quickly.
+PhoenixBoot is now organized by component while preserving the legacy root entrypoints used by scripts, containers, and documentation.
 
-Top-level overview
-- NuclearBootEdk2.c / .inf / .efi: Main UEFI app (source, EDK2 INF, built binary)
-- KeyEnrollEdk2.c / .inf: Minimal UEFI app to enroll custom Secure Boot keys
-- Makefile: Unified entry point for builds, demos, tests, and Secure Boot helpers
-- build-nuclear-boot-edk2.sh: Builds NuclearBoot with EDK2 toolchain
-- demo-nuclear-boot-edk2-live.sh: QEMU live demo launcher (auto-stages OVMF, ESP)
-- nuclear-boot-vars.fd: OVMF varstore file (created by demo or sb-prepare)
-- resources/: Assets for GRUB and KVM paths; config templates
-- scripts/: Installers for Clean GRUB Boot and KVM Snapshot Jump onto a real ESP
-- vm-test/: Test VM assets and helpers for networking and demo testing
-- legacy/: Archived prototypes, examples, and older scripts kept for reference
-- OmegaImage/: Prior related work and PoC content (kept separate from core app)
+## Top-level layout
 
-Getting started
-- make check-deps: Verify needed packages on Ubuntu
-- make build: Build the NuclearBoot UEFI app
-- make demo: Run the live QEMU demo
-- make help: See all common targets
-- make layout: Print the repo layout (top-level + depth 2)
+- `components/` - Component-first task and script ownership
+- `includes/` - Shared shell includes and per-component include namespaces
+- `scripts/` - Compatibility symlinks that preserve existing `scripts/...` paths
+- `staging/` - Production EFI sources, headers, binaries, and tooling
+- `containers/` - Container build, test, installer, runtime, and TUI environments
+- `tests/` - Repository-level test helpers
+- `Pfyfile.pf` - Main PF entrypoint
+- `core.pf`, `secure.pf`, `workflows.pf`, `maint.pf` - Compatibility wrappers that forward to `components/`
 
-Key directories
-- resources/grub/esp/EFI/PhoenixGuard/
-  - grub.cfg: Minimal clean GRUB config template (UUID-pinned)
-- vm-test/
-  - start-test-vm.sh: Run a prepared test VM under OVMF
-  - simulate-cloudboot.sh: Simple cloudboot simulation
-  - test-network-boot.sh: Network boot test helper
+## Component layout
 
-Secure Boot quick notes
-- For QEMU testing with custom keys: make sb-demo-custom
-- For signing our app with a local test db key: make sb-sign
-- For staging signed shim/grub into the demo ESP: make stage-clean-grub
+Each main component now follows the same high-level shape:
 
-Conventions
-- Do not commit generated binaries unless they are test fixtures (e.g., vm-test/OVMF_VARS_test.fd)
-- Keep experimental/old content under legacy/
-- Use Makefile targets instead of ad-hoc commands where possible
+```text
+components/<name>/
+├── include/
+├── src/
+├── build/
+├── bin/
+├── scripts/
+├── Makefile
+└── Pfyfile.pf
+```
 
+Current components:
+
+- `components/core/` - Core PF tasks plus build, testing, validation, and UEFI tooling scripts
+- `components/secure/` - Secure Boot and MOK management tasks and scripts
+- `components/workflows/` - ESP packaging, QEMU helper, recovery, and USB workflow scripts
+- `components/maint/` - Maintenance tasks, git hooks, release helpers, and templates
+
+## Compatibility model
+
+- Continue using `./pf.py <task>` from the repository root
+- Continue using `scripts/...` paths if you already have automation built around them
+- Shared shell helpers now live in `includes/lib/`, with `scripts/lib/` retained as a compatibility symlink
+
+## Notes
+
+- `components/core/src`, `components/core/include`, and `components/core/bin` point at the existing `staging/` production content
+- Component `build/` directories are placeholders for local/generated build output and are not used for committed artifacts
+- Use the top-level `Makefile` unless you have a component-specific reason to invoke a nested one

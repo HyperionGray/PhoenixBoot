@@ -1,21 +1,33 @@
 #!/usr/bin/env bash
-# Description: Audits the repository and categorizes code into staging, dev, wip, and demo.
+# Description: Audits repository layout and categorizes files.
 
 set -euo pipefail
 
-echo '{"staging": [], "dev": [], "wip": [], "demo": []}' > out/audit/report.json
-echo "PhoenixGuard Repository Audit Summary" > out/audit/summary.txt
-echo "===================================" >> out/audit/summary.txt
-echo "" >> out/audit/summary.txt
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if PROJECT_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"; then
+    :
+else
+    PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
+fi
+
+cd "${PROJECT_ROOT}"
+
+OUT_DIR="out/audit"
+mkdir -p "${OUT_DIR}"
+SUMMARY_FILE="${OUT_DIR}/summary.txt"
+REPORT_FILE="${OUT_DIR}/report.json"
 
 STAGING_COUNT=0
 DEV_COUNT=0
 WIP_COUNT=0
 DEMO_COUNT=0
+TOTAL_FILES=0
 
-for file in $(find . -type f ! -path "./out/*" ! -name ".*"); do
+while IFS= read -r file; do
+    [ -f "$file" ] || continue
+    TOTAL_FILES=$((TOTAL_FILES + 1))
     case "$file" in
-        *demo*|*example*|*sample*|*sandbox*|*mock*|*test-*|*bak/*)
+        *demo*|*example*|*sample*|*sandbox*|*mock*|*bak/*)
             DEMO_COUNT=$((DEMO_COUNT + 1))
             ;;
         *wip*|*proto*|*experimental*|*universal_bios*|*universal-bios*)
@@ -28,12 +40,32 @@ for file in $(find . -type f ! -path "./out/*" ! -name ".*"); do
             STAGING_COUNT=$((STAGING_COUNT + 1))
             ;;
     esac
-done
+done < <(git ls-files && git ls-files --others --exclude-standard)
 
-echo "STAGING: $STAGING_COUNT files" >> out/audit/summary.txt
-echo "DEV: $DEV_COUNT files" >> out/audit/summary.txt
-echo "WIP: $WIP_COUNT files" >> out/audit/summary.txt
-echo "DEMO: $DEMO_COUNT files" >> out/audit/summary.txt
+{
+    echo "PhoenixBoot Repository Audit Summary"
+    echo "==================================="
+    echo ""
+    echo "Total files scanned: ${TOTAL_FILES}"
+    echo "STAGING: ${STAGING_COUNT} files"
+    echo "DEV: ${DEV_COUNT} files"
+    echo "WIP: ${WIP_COUNT} files"
+    echo "DEMO: ${DEMO_COUNT} files"
+    echo ""
+    echo "Notes:"
+    echo "- This report is heuristic and path-based."
+    echo "- Use with test-component-layout.sh for structure validation."
+} > "${SUMMARY_FILE}"
 
-echo "☠ Audit complete - see out/audit/"
+cat > "${REPORT_FILE}" <<EOF
+{
+  "total_files": ${TOTAL_FILES},
+  "staging": ${STAGING_COUNT},
+  "dev": ${DEV_COUNT},
+  "wip": ${WIP_COUNT},
+  "demo": ${DEMO_COUNT}
+}
+EOF
+
+echo "Audit complete - see ${OUT_DIR}/"
 

@@ -19,12 +19,14 @@ Scripts for project maintenance and development.
 - `move-prod-staging.sh` - Move to production staging
 - `move-wip.sh` - Move work in progress
 - `audit-tree.sh` - Audit project tree
+- `maint-audit.sh` - Run layout + unfinished marker maintenance audit
 - `purge-demo-refs.sh` - Purge demo references
 - `os-boot-clean.sh` - Clean boot entries
 
 ## Documentation
 
 - `regen-instructions.sh` - Regenerate instructions
+- `maint-docs.sh` - Generate repository maintenance health report
 
 ## Usage
 

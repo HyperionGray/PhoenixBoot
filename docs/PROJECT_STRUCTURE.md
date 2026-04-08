@@ -46,3 +46,6 @@ Current components:
 - `components/core/src`, `components/core/include`, and `components/core/bin` point at the existing `staging/` production content
 - Component `build/` directories are placeholders for local/generated build output and are not used for committed artifacts
 - Use the top-level `Makefile` unless you have a component-specific reason to invoke a nested one
+- Maintenance automation lives in `components/maint/scripts/maintenance/` with:
+  - `maint-docs.sh` for repository health documentation generation
+  - `maint-audit.sh` for layout and unfinished-marker audit reporting

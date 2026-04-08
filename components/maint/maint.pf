@@ -14,8 +14,13 @@ task maint-format
 end
 
 task maint-docs
-  describe Update documentation
-  shell bash -lc 'echo Documentation updated'
+  describe Generate repository maintenance health report
+  shell bash scripts/maintenance/maint-docs.sh
+end
+
+task maint-audit
+  describe Audit repository layout and unfinished markers
+  shell bash scripts/maintenance/maint-audit.sh
 end
 
 task maint-clean

@@ -18,10 +18,18 @@ OVMF_CODE_PATH=$(cat out/setup/ovmf_code_path)
 echo "☠ Using OVMF (secure): $OVMF_CODE_PATH"
 
 QT=${PG_QEMU_TIMEOUT:-60}
+QEMU_CPU_ARGS=(-cpu max)
+QEMU_ACCEL_ARGS=()
+if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+    QEMU_CPU_ARGS=(-cpu host)
+    QEMU_ACCEL_ARGS=(-enable-kvm)
+else
+    echo "ℹ☠  /dev/kvm unavailable; running without KVM acceleration"
+fi
 timeout ${QT}s qemu-system-x86_64 \
     -machine q35 \
-    -cpu host \
-    -enable-kvm \
+    "${QEMU_CPU_ARGS[@]}" \
+    "${QEMU_ACCEL_ARGS[@]}" \
     -m 2G \
     -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE_PATH" \
     -drive if=pflash,format=raw,file=out/qemu/OVMF_VARS_custom.fd \

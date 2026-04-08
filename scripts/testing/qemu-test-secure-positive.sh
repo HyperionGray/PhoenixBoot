@@ -17,12 +17,19 @@ OVMF_CODE_PATH=$(cat out/setup/ovmf_code_path)
 
 echo "Using OVMF (secure): $OVMF_CODE_PATH"
 
+CPU_ARGS="-cpu max"
+ACCEL_ARGS=()
+if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+    CPU_ARGS="-cpu host"
+    ACCEL_ARGS=(-enable-kvm)
+fi
+
 # Launch QEMU with secure OVMF and capture serial output
 QT=${PG_QEMU_TIMEOUT:-60}
 timeout ${QT}s qemu-system-x86_64 \
     -machine q35 \
-    -cpu host \
-    -enable-kvm \
+    ${CPU_ARGS} \
+    "${ACCEL_ARGS[@]}" \
     -m 2G \
     -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE_PATH" \
     -drive if=pflash,format=raw,file=out/qemu/OVMF_VARS_custom.fd \

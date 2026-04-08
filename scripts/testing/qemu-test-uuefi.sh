@@ -40,10 +40,16 @@ fi
 # Run QEMU
 QT=${PG_QEMU_TIMEOUT:-60}
 rm -f "$LOG"
+QEMU_CPU_ARG="-cpu max"
+QEMU_ACCEL_ARGS=()
+if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+  QEMU_CPU_ARG="-cpu host"
+  QEMU_ACCEL_ARGS=("-enable-kvm")
+fi
 timeout ${QT}s qemu-system-x86_64 \
   -machine q35 \
-  -cpu host \
-  -enable-kvm \
+  ${QEMU_CPU_ARG} \
+  "${QEMU_ACCEL_ARGS[@]}" \
   -m 2G \
   -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE_PATH" \
   -drive if=pflash,format=raw,file="$VARS" \

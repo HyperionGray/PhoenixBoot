@@ -32,10 +32,17 @@ cp "$OVMF_VARS_PATH" out/qemu/OVMF_VARS_test.fd
 
 # Launch QEMU with ESP and capture serial output using discovered paths
 QT=${PG_QEMU_TIMEOUT:-60}
+QEMU_CPU="max"
+QEMU_ACCEL_ARGS=()
+if [ -r /dev/kvm ]; then
+    QEMU_CPU="host"
+    QEMU_ACCEL_ARGS=(-enable-kvm)
+fi
+
 timeout ${QT}s qemu-system-x86_64 \
     -machine q35 \
-    -cpu host \
-    -enable-kvm \
+    -cpu "$QEMU_CPU" \
+    "${QEMU_ACCEL_ARGS[@]}" \
     -m 2G \
     -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE_PATH" \
     -drive if=pflash,format=raw,file=out/qemu/OVMF_VARS_test.fd \

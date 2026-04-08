@@ -88,17 +88,17 @@ echo "🚀 Booting UUEFI in QEMU..."
 rm -f "$LOG"
 
 # Check if KVM is available
-KVM_OPTS=""
-if [ -e /dev/kvm ] && [ -w /dev/kvm ]; then
-    KVM_OPTS="-enable-kvm -cpu host"
+KVM_OPTS=()
+if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+    KVM_OPTS=(-enable-kvm -cpu host)
 else
-    KVM_OPTS="-cpu qemu64"
+    KVM_OPTS=(-cpu max)
 fi
 
 # Run with a 3-second boot delay for removable media path to work
 timeout 15s qemu-system-x86_64 \
     -M q35 \
-    $KVM_OPTS \
+    "${KVM_OPTS[@]}" \
     -m 512M \
     -global driver=cfi.pflash01,property=secure,value=off \
     -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE" \

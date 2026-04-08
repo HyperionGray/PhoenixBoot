@@ -12,8 +12,14 @@ cp "$OVMF_VARS_PATH" out/qemu/OVMF_VARS_enroll.fd
 
 echo "☠ Enrolling keys into OVMF using $OVMF_CODE_PATH (no sudo)"
 QT=${PG_QEMU_TIMEOUT:-120}
+CPU_ARGS="-cpu max"
+KVM_ARGS=""
+if [ -r /dev/kvm ]; then
+    CPU_ARGS="-cpu host"
+    KVM_ARGS="-enable-kvm"
+fi
 timeout -k 5 ${QT}s qemu-system-x86_64 \
-    -machine q35 -cpu host -enable-kvm -m 512 \
+    -machine q35 $CPU_ARGS $KVM_ARGS -m 512 \
     -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE_PATH" \
     -drive if=pflash,format=raw,file=out/qemu/OVMF_VARS_enroll.fd \
     -drive format=raw,file=out/esp/enroll-esp.img \

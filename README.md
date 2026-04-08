@@ -132,6 +132,28 @@ docker-compose --profile tui up
 - `efibootmgr`, `mokutil` for boot management
 - EDK2 for building UEFI applications from source
 
+### Environment Diagnostics (Cloud-Friendly)
+
+Run the environment doctor before build/test workflows:
+
+```bash
+./pf.py build-doctor
+```
+
+What it checks:
+- required tools used by build/package/test workflows
+- `pf` runner availability in `PATH`
+- OVMF firmware discovery and path export
+- `/dev/kvm` availability (warn-only in cloud VMs)
+
+Reports are written to:
+- `out/setup/doctor-report.txt`
+- `out/setup/doctor-report.json`
+
+If `/dev/kvm` is not available, QEMU scripts now auto-fallback to:
+- `-cpu max`
+- no `-enable-kvm`
+
 ### Installation
 
 ```bash
@@ -400,6 +422,9 @@ Available in `core.pf`:
 ```bash
 # List all available tasks
 ./pf.py list
+
+# Diagnose environment before builds/tests
+./pf.py build-doctor
 
 # Complete setup: build + package + verify
 ./pf.py setup

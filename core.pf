@@ -7,6 +7,11 @@ task build-setup
   shell bash scripts/maintenance/toolchain-check.sh
 end
 
+task build-doctor
+  describe Diagnose dev environment (cloud-aware)
+  shell ${PYTHON:-python3} utils/dev_env_doctor.py
+end
+
 task build-build
   describe Build production artifacts from staging/
   shell bash scripts/build/build-production.sh

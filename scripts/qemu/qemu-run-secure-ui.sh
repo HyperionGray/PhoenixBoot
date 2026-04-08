@@ -18,8 +18,7 @@ echo "   In the UI: Device Manager → Secure Boot Configuration → Enable Secu
 
 exec qemu-system-x86_64 \
     -machine q35 \
-    -cpu host \
-    -enable-kvm \
+    $(if [ -r /dev/kvm ]; then echo "-cpu host -enable-kvm"; else echo "-cpu max"; fi) \
     -m 2048 \
     -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE_PATH" \
     -drive if=pflash,format=raw,file=out/qemu/OVMF_VARS_secure_ui.fd \

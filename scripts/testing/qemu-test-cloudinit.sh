@@ -64,12 +64,20 @@ echo "Created cloud-init ISO"
 # Copy OVMF vars (writable)
 cp "$OVMF_VARS_PATH" out/qemu/OVMF_VARS_cloudinit.fd
 
+# Use KVM when available; otherwise use TCG with a cloud-safe CPU model
+QEMU_ACCEL_ARGS=()
+QEMU_CPU_ARGS=(-cpu max)
+if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+    QEMU_ACCEL_ARGS=(-enable-kvm)
+    QEMU_CPU_ARGS=(-cpu host)
+fi
+
 # Launch QEMU with ESP and cloud-init ISO
 QT=${PG_QEMU_TIMEOUT:-90}
 timeout ${QT}s qemu-system-x86_64 \
     -machine q35 \
-    -cpu host \
-    -enable-kvm \
+    "${QEMU_CPU_ARGS[@]}" \
+    "${QEMU_ACCEL_ARGS[@]}" \
     -m 2G \
     -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE_PATH" \
     -drive if=pflash,format=raw,file=out/qemu/OVMF_VARS_cloudinit.fd \

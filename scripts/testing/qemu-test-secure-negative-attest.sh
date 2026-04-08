@@ -11,10 +11,17 @@ NEG=out/esp/esp-neg-attest.img
 OVMF_CODE_PATH=$(cat out/setup/ovmf_code_path)
 
 QT=${PG_QEMU_TIMEOUT:-60}
+QEMU_CPU="-cpu max"
+QEMU_ACCEL=()
+if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+    QEMU_CPU="-cpu host"
+    QEMU_ACCEL=(-enable-kvm)
+fi
+
 timeout ${QT}s qemu-system-x86_64 \
     -machine q35 \
-    -cpu host \
-    -enable-kvm \
+    ${QEMU_CPU} \
+    "${QEMU_ACCEL[@]}" \
     -m 2G \
     -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE_PATH" \
     -drive if=pflash,format=raw,file=out/qemu/OVMF_VARS_custom.fd \

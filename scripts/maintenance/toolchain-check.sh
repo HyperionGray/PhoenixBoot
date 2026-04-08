@@ -17,6 +17,13 @@ for tool in gcc qemu-system-x86_64 mtools mkfs.fat parted python3 mokutil openss
     fi
 done
 
+# Capture KVM availability as informational context for cloud environments.
+if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+    echo "☠ KVM: available (/dev/kvm readable+writable)" >> out/setup/report.txt
+else
+    echo "☠ KVM: unavailable (QEMU fallback: -cpu max without -enable-kvm)" >> out/setup/report.txt
+fi
+
 # Dynamic OVMF firmware discovery
 OVMF_CODE_PATH=""
 OVMF_VARS_PATH=""

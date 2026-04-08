@@ -290,7 +290,7 @@ Comprehensive security validation and boot integrity checker:
 - **Attack Vector Analysis** - Detects dangerous boot parameters and rootkit indicators
 - **Automated Reporting** - Generates detailed text and JSON security reports
 
-**Usage**: `./pf.py secure-env` or `bash scripts/secure-env-check.sh`
+**Usage**: `./pf.py secure-env` or `bash scripts/validation/secure-env-check.sh`
 
 **Documentation**: See [docs/SECURE_ENV_COMMAND.md](docs/SECURE_ENV_COMMAND.md)
 
@@ -400,7 +400,6 @@ PhoenixBoot organizes tasks across multiple `.pf` files for clarity:
 All task files are included in `Pfyfile.pf` and accessible via `./pf.py list`.
 
 #### Core Functionality
-#### Core Functionality
 
 Available in `core.pf`:
 - Build tasks (setup, build, package ESP)
@@ -466,17 +465,17 @@ Many operations can also be run directly via bash scripts in the `scripts/` dire
 
 ```bash
 # UUEFI operations
-bash scripts/uuefi-install.sh
-bash scripts/uuefi-apply.sh
-bash scripts/uuefi-report.sh
-bash scripts/host-uuefi-once.sh
+bash scripts/uefi-tools/uuefi-install.sh
+bash scripts/uefi-tools/uuefi-apply.sh
+bash scripts/uefi-tools/uuefi-report.sh
+bash scripts/uefi-tools/host-uuefi-once.sh
 
 # UUEFI v3.0 companion tools
 bash scripts/esp-config-extract.sh     # Extract ESP configurations
 bash scripts/nuclear-wipe.sh           # Nuclear system wipe (EXTREME CAUTION)
 
 # Security environment check
-bash scripts/secure-env-check.sh
+bash scripts/validation/secure-env-check.sh
 
 # Boot management
 bash scripts/os-boot-clean.sh
@@ -571,7 +570,6 @@ PhoenixBoot/
 │   └── test_integration.py                 # Integration tests
 │
 ├── 📦 out/                                 # Build artifacts and test results
-│   ├── staging/                            # Compiled production binaries
 │   ├── staging/                            # Compiled production binaries
 │   ├── esp/                                # ESP images and packaging
 │   ├── artifacts/                          # Complete artifact packages with docs

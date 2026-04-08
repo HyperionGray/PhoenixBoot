@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["Mapping"],"struct":["ApiVersion","BootloaderConfig","FrameBuffer","Mappings"]};

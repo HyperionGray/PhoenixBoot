@@ -76,6 +76,11 @@ Scan and catalog available SecureBoot certificates:
 ./cert_inventory.py --cert-dir ../secureboot_certs --output inventory.json
 ```
 
+Security hardening notes:
+- `cert_inventory.py` executes OpenSSL using argument lists (`shell=False`) to avoid shell expansion.
+- Logging defaults to `/var/log/phoenixguard/cert_inventory.log` when writable, and automatically falls back to stdout-only logging for unprivileged runs.
+- You can override the log directory with `PHOENIXGUARD_LOG_DIR=/custom/path`.
+
 **Sample Output:**
 ```json
 {

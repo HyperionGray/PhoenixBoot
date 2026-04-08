@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔒 Security
+- Refactored `utils/cert_inventory.py` OpenSSL command execution to use argument-list subprocess calls (`shell=False`) instead of shell command strings.
+- Hardened `cert_inventory.py` logging initialization to gracefully fall back to stdout when `/var/log/phoenixguard` is unavailable.
+- Added targeted security test coverage in `tests/test_cert_inventory_security.py` to enforce non-shell subprocess behavior and safe empty-scan handling.
+
 ### 📚 Documentation
 - Refined contributor workflow guidance and changelog maintenance notes.
 

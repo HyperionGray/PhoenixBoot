@@ -93,7 +93,7 @@ This will show:
 
 ```bash
 # Enable Secure Boot using the double kexec method
-sudo ./pf.py secureboot-enable-kexec
+sudo ./pf.py secureboot-enable-host-kexec
 ```
 
 **Warning**: This is an advanced operation. Read all prompts carefully.
@@ -280,16 +280,15 @@ Review the output to ensure:
 
 ```bash
 # Run the enablement script
-sudo ./pf.py secureboot-enable-kexec
+sudo ./pf.py secureboot-enable-host-kexec
 ```
 
-The script will:
+The script now performs a concrete two-phase handoff:
 1. Check prerequisites
-2. Show available kernels
-3. Load alternate kernel via kexec
-4. Execute kexec (switch to permissive kernel)
-5. Enable Secure Boot (in Phase 2)
-6. Kexec back to hardened kernel
+2. Select/load alternate kernel via kexec
+3. Persist phase state under `/var/lib/phoenixboot/secureboot-kexec/`
+4. Boot alternate kernel (phase 2)
+5. Run the generated phase-2 runner to load return kernel and kexec back
 
 **Note**: The current implementation provides a framework. Full automation requires hardware-specific knowledge for Secure Boot enablement.
 
@@ -320,12 +319,15 @@ This is the **safest and recommended method** for most users.
 
 ### Option 2: Direct OS Enablement
 
-If your current kernel allows BIOS access:
+PhoenixBoot does not currently provide a standalone direct-enable task.
+Use one of these instead:
 
 ```bash
-# This command attempts direct enablement
-# Only works if kernel permits hardware access
-sudo ./pf.py secureboot-enable-direct
+# Guided double-kexec host workflow
+sudo ./pf.py secureboot-enable-host-kexec
+
+# Or firmware setup UI method
+./pf.py secureboot-check
 ```
 
 ## Security Considerations

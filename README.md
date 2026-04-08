@@ -188,7 +188,7 @@ Comprehensive kernel configuration analysis and UEFI security verification:
 
 # Secure Boot enablement (NEW!)
 ./pf.py secureboot-check
-sudo ./pf.py secureboot-enable-kexec
+sudo ./pf.py secureboot-enable-host-kexec
 
 # Kernel config profiles (NEW!)
 ./pf.py kernel-profile-list

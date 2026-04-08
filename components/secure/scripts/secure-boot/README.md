@@ -117,11 +117,32 @@ sudo ./scripts/secure-boot/enable-secureboot-kexec.sh
 
 **What it does**:
 1. Checks prerequisites (kexec, alternate kernels)
-2. Prepares alternate kernel with relaxed security
-3. Framework for switching kernels without reboot
-4. Provides structure for hardware-specific enablement
+2. Persists phase handoff state under `/var/lib/phoenixboot/secureboot-kexec`
+3. Creates a phase-2 runner to continue workflow after first kexec
+4. Loads a return kernel and supports optional automatic return-kexec
 
 **Recommended Approach**: Use BIOS/UEFI setup to enable SecureBoot (safest and most reliable).
+
+### Optional Environment Flags
+
+The framework supports non-interactive and automation-friendly controls:
+
+- `PHOENIXBOOT_ASSUME_YES=1` - auto-confirm prompts
+- `PHOENIXBOOT_EXECUTE_KEXEC=1` - execute first `kexec -e` after loading alternate kernel
+- `PHOENIXBOOT_AUTO_RETURN=1` - in phase 2, execute return `kexec -e` after loading return kernel
+- `PHOENIXBOOT_STATE_DIR=/path` - override state directory (default `/var/lib/phoenixboot/secureboot-kexec`)
+
+Example:
+
+```bash
+sudo PHOENIXBOOT_ASSUME_YES=1 PHOENIXBOOT_EXECUTE_KEXEC=1 ./pf.py secureboot-enable-host-kexec
+```
+
+After the first kexec boots the alternate kernel, run:
+
+```bash
+sudo /var/lib/phoenixboot/secureboot-kexec/phase2-runner.sh
+```
 
 ## 🎯 Common Workflows
 

@@ -59,7 +59,7 @@ secure-keygen            - Generate Secure Boot keypairs (RSA-4096)
 secure-make-auth         - Create ESL and AUTH for PK/KEK/db
 secure-env               - Comprehensive security environment check
 secureboot-check         - Check Secure Boot status
-secureboot-enable-kexec  - Enable Secure Boot via double kexec
+secureboot-enable-host-kexec - Enable Secure Boot via host double kexec workflow
 secure-enroll-secureboot - Auto-enroll custom SB keys in OVMF
 ```
 
@@ -155,7 +155,7 @@ secure-keys-prune        - Backup + remove legacy key locations
 secure-mok-inventory     - JSON inventory of keys and enrollment
 secure-der-extract       - Convert DER/PKCS#12 bundle into PEM (set DER_PATH, OUT_DIR, NAME)
 secure-package-esp-enroll - Package enrollment ESP
-secure-qemu-run-secure-ui - Launch QEMU GUI to enable Secure Boot
+secure-qemu-enable-ui    - Launch QEMU GUI to enable Secure Boot
 ```
 
 ## Usage

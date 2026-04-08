@@ -231,22 +231,19 @@ provide_recommendations() {
     if [ "${BIOS_FLASH_OK:-0}" = "0" ]; then
         echo -e "${YELLOW}Option 1: Double Kexec Method (RECOMMENDED)${NC}"
         echo "  Your current kernel blocks BIOS flashing."
-        echo "  Use the double kexec method to temporarily use a permissive kernel:"
+        echo "  Use the double kexec framework task:"
         echo
-        echo "  Steps:"
-        echo "    1. ./pf.py secureboot-prepare-kexec"
-        echo "       (Prepares alternate kernel with relaxed protections)"
+        echo "    sudo ./pf.py secureboot-enable-host-kexec"
         echo
-        echo "    2. sudo ./pf.py secureboot-enable-kexec"
-        echo "       (Kexec to alternate kernel, enable SecureBoot, kexec back)"
-        echo
-        echo "  This avoids multiple reboots and maintains system security."
+        echo "  This prepares phase handoff state, loads an alternate kernel,"
+        echo "  and then guides a return-kexec back to the hardened kernel."
         echo
     else
-        echo -e "${GREEN}Option 1: Direct Enablement (AVAILABLE)${NC}"
-        echo "  Your kernel allows BIOS access. You can enable Secure Boot directly:"
+        echo -e "${GREEN}Option 1: Double Kexec Method (AVAILABLE)${NC}"
+        echo "  Your current kernel appears permissive enough for firmware access,"
+        echo "  but you can still use the same framework workflow:"
         echo
-        echo "    sudo ./pf.py secureboot-enable-direct"
+        echo "    sudo ./pf.py secureboot-enable-host-kexec"
         echo
     fi
     

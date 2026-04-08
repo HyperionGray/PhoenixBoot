@@ -6,7 +6,7 @@ set -euo pipefail
 #   USB_DEVICE=/dev/sdX USB_DEVICE_CONFIRM=I_UNDERSTAND bash scripts/usb-write-dd.sh
 # Requires: out/esp/esp.img to exist.
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 source scripts/lib/common.sh
 
 IMG=${ESP_IMG:-out/esp/esp.img}

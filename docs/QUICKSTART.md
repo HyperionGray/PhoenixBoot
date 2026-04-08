@@ -43,10 +43,10 @@ PhoenixBoot uses `pf.py` as the primary task runner. All tasks are defined in `.
 
 ```bash
 # Sign a single module
-PATH=/path/to/module.ko ./pf.py os-kmod-sign
+MODULE_PATH=/path/to/module.ko ./pf.py os-kmod-sign
 
 # Sign all modules in a directory (with force)
-PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 
 # Alternative: Use the helper script
 ./sign-kernel-modules.sh module.ko
@@ -201,7 +201,7 @@ export PFY_FILE=Pfyfile.pf
 ./pf.py os-mok-enroll
 
 # 3. After reboot, sign modules
-PATH=/lib/modules/$(uname -r)/kernel/drivers/my_module.ko ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r)/kernel/drivers/my_module.ko ./pf.py os-kmod-sign
 ```
 
 ## Getting Help

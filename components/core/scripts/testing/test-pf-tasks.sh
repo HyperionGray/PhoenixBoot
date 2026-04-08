@@ -169,6 +169,14 @@ else
     fail "No shell commands in tasks"
 fi
 
+# Test 13: Verify os-kmod-sign uses MODULE_PATH
+echo "[TEST 13] Checking os-kmod-sign configuration..."
+if grep -q "Usage: MODULE_PATH=<file|dir>" core.pf && grep -q "\${MODULE_PATH}" core.pf; then
+    pass "os-kmod-sign uses MODULE_PATH"
+else
+    fail "os-kmod-sign still uses broken PATH-based configuration"
+fi
+
 # Summary
 echo
 echo "======================="

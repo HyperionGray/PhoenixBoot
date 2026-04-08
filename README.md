@@ -424,7 +424,7 @@ Available in `core.pf`:
 ./pf.py secure-mok-new
 ./pf.py os-mok-enroll
 ./pf.py os-mok-list-keys
-PATH=/path/to/module ./pf.py os-kmod-sign
+MODULE_PATH=/path/to/module ./pf.py os-kmod-sign
 
 # UUEFI operations
 ./pf.py uuefi-install
@@ -683,10 +683,10 @@ Kernel modules must be signed to load with Secure Boot enabled:
 
 ```bash
 # Sign a single module
-PATH=/lib/modules/.../module.ko ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/.../module.ko ./pf.py os-kmod-sign
 
 # Sign all modules in a directory
-PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 ```
 
 ## 📚 Documentation

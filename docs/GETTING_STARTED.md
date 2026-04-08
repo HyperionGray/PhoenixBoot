@@ -91,7 +91,7 @@ Sign kernel modules so they work with SecureBoot enabled:
 ./sign-kernel-modules.sh
 
 # Via task runner
-PATH=/path/to/module.ko ./pf.py os-kmod-sign
+MODULE_PATH=/path/to/module.ko ./pf.py os-kmod-sign
 ```
 
 **Use case**: Install drivers (like `apfs.ko` for Mac filesystems) on a SecureBoot system.
@@ -160,7 +160,7 @@ sudo dd if=out/esp/secureboot-bootable.img of=/dev/sdX bs=4M status=progress
 ./sign-kernel-modules.sh
 
 # Manual way
-PATH=/lib/modules/$(uname -r)/kernel/fs/apfs.ko ./pf.py os-kmod-sign
+MODULE_PATH=/lib/modules/$(uname -r)/kernel/fs/apfs.ko ./pf.py os-kmod-sign
 ```
 
 ### Check System Security

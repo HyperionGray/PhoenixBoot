@@ -22,7 +22,9 @@ import sys
 import json
 import subprocess
 import time
+import shlex
 from pathlib import Path
+from typing import Sequence, Union
 
 class PhoenixProgressiveRecovery:
     def __init__(self):
@@ -38,32 +40,34 @@ class PhoenixProgressiveRecovery:
         print("☠ Intelligent escalation from safest to most extreme recovery methods")
         print()
     
-    def run_command(self, cmd, description="", check=True, capture_output=True):
-        """Run a command with error handling
-        
-        SECURITY: This function uses shell=True for command execution.
-        Current usage is safe as commands are hardcoded strings (e.g., "make scan-bootkits"),
-        but NEVER pass user input directly to this function without validation.
-        TODO: Refactor to use command lists instead of shell strings.
-        """
+    def run_command(
+        self,
+        cmd: Union[str, Sequence[str]],
+        description: str = "",
+        check: bool = True,
+        capture_output: bool = True,
+    ):
+        """Run a command with error handling using safe argument lists."""
         if description:
             print(f"☠ {description}")
-        
+
+        cmd_list = shlex.split(cmd) if isinstance(cmd, str) else list(cmd)
+
         try:
             if capture_output:
-                result = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=check)
+                result = subprocess.run(cmd_list, capture_output=True, text=True, check=check)
                 return result.stdout, result.stderr, result.returncode
             else:
-                result = subprocess.run(cmd, shell=True, check=check)
+                result = subprocess.run(cmd_list, check=check)
                 return "", "", result.returncode
         except subprocess.CalledProcessError as e:
             if check:
-                print(f"☠ Command failed: {cmd}")
+                print(f"☠ Command failed: {' '.join(cmd_list)}")
                 print(f"   Error: {e}")
                 return "", str(e), e.returncode
             return "", str(e), e.returncode
         except Exception as e:
-            print(f"☠ Unexpected error running: {cmd}")
+            print(f"☠ Unexpected error running: {' '.join(cmd_list)}")
             print(f"   Error: {e}")
             return "", str(e), 1
 

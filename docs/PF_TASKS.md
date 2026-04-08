@@ -121,6 +121,8 @@ maint-regen-instructions - Generate copilot-instructions.md
 maint-lint               - Run static analysis
 maint-format             - Format source code
 maint-docs               - Update documentation
+maint-audit-tree         - Audit repository category distribution
+maint-audit-unfinished   - Audit unfinished markers (TODO/FIXME/etc.)
 maint-clean              - Clean build artifacts
 maint-install-git-hooks  - Install pre-push size guard hook
 maint-pre-push-check     - Run size guard check locally

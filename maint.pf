@@ -18,6 +18,16 @@ task maint-docs
   shell bash -lc 'echo Documentation updated'
 end
 
+task maint-audit-tree
+  describe Audit repository tree categories into out/audit
+  shell bash scripts/maintenance/audit-tree.sh
+end
+
+task maint-audit-unfinished
+  describe Audit TODO/STUB/FIXME markers into out/audit
+  shell bash scripts/maintenance/audit-unfinished.sh
+end
+
 task maint-clean
   describe Clean build artifacts (DEEP_CLEAN=1 for full ESP clean)
   shell bash scripts/maintenance/cleanup.sh

@@ -16,7 +16,7 @@ PhoenixBoot is a UEFI Secure Boot defense system (bash + Python). The primary in
 
 ### Lint and test
 
-- **Lint**: `black --check .` and `flake8 --max-line-length 120 utils/` (see `CONTRIBUTING.md`).
+- **Lint**: `black --check .` and `flake8 --max-line-length 100 utils/` (see `CONTRIBUTING.md`).
 - **Tests**: `utils/test_efi_parser.py` depends on a missing `efi_parser` module (not runnable). `utils/test_integration.py` requires compiled C libraries (`libpgmodverify.so`) and cert directories — integration-level only. Shell-based tests exist in `tests/` and `scripts/testing/`.
 - **Python utilities**: Import-testable via `python3 -c "from utils.<module> import ..."`. Kernel profiler, firmware checksum DB, and TUI all work.
 

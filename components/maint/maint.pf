@@ -18,6 +18,11 @@ task maint-docs
   shell bash -lc 'echo Documentation updated'
 end
 
+task maint-audit
+  describe Audit PF wiring and repository hygiene (AUTO_CLEAN=1 optional)
+  shell bash scripts/maintenance/repo-audit.sh
+end
+
 task maint-clean
   describe Clean build artifacts (DEEP_CLEAN=1 for full ESP clean)
   shell bash scripts/maintenance/cleanup.sh

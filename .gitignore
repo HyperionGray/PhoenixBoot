@@ -36,6 +36,9 @@ build/
 !components/*/build/
 !components/*/build/.gitkeep
 
+# Rust build artifacts
+**/target/
+
 # Large demo archives
 examples_and_samples/demo/**/*.tar.gz
 

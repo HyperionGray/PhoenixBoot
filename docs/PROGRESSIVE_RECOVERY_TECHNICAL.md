@@ -10,36 +10,36 @@ Principles
 
 Commands
 - Interactive (safe defaults):
-  just nuke progressive
+  ./pf.py nuke-progressive
 
 - Dry run (planfile only, no changes):
-  just nuke progressive-dry-run
+  ./pf.py nuke-progressive-dry-run
+  # Or directly:
+  python3 scripts/recovery/phoenix_progressive.py --dry-run --yes
 
 - Individual levels:
-  - Level 1 — Detect (read-only)
-    just nuke level1-scan
-  - Level 2 — ESP build (optional host deploy)
-    just nuke level2-esp
-    PG_HOST_OK=1 ISO_PATH=/path/to.iso just nuke level2-esp
+  - Level 1 — Detect (read-only scan)
+    ./pf.py nuke-level1-scan
+  - Level 2 — ESP deploy (requires prepared ISO)
+    ISO_PATH=/path/to/PhoenixGuard-Nuclear-Recovery.iso ./pf.py nuke-level2-esp
   - Level 3 — Secure firmware access (double-kexec)
-    just nuke level3-secure -- --backup current.bin
-    just nuke level3-secure -- --read suspect.bin
-    just nuke level3-secure -- --write drivers/G615LPAS.325
-  - Level 4 — KVM Snapshot Jump
-    just nuke level4-kvm
+    ./pf.py nuke-level3-secure
+  - Level 4 — KVM Snapshot Jump reboot path
+    ./pf.py nuke-level4-kvm
   - Level 6 — Hardware recovery (danger)
-    just nuke level6-hw fw=drivers/G615LPAS.325 [verify_only=1] [verbose=1]
+    ./pf.py nuke-level6-hw
 
 Safety gates
-- Level 1–2: Non-destructive; Level 2 can modify host ESP only if PG_HOST_OK=1 and you confirm.
+- Level 1: Non-destructive scan.
+- Level 2: Can modify host ESP and GRUB; requires explicit confirmation and a provided ISO.
 - Level 3: Requires root; temporarily disables kernel lockdown and re-locks automatically.
 - Level 4: Reboot paths; ensure KVM configurations are prepared.
 - Level 6: Dangerous; type-to-confirm inside the tool and ensure you have a programmer backup.
 
 Planfile output
 - Written to plans/phoenix_progressive_<timestamp>.json, includes:
-  - run metadata: run_id, created_utc, environment
-  - levels attempted with ok/err details
+  - run metadata: run_id, created_utc, dry_run, auto_approve, cwd
+  - levels attempted with per-step command arrays and statuses
   - outputs: logs_dir and plan_path
   - errors: top-level unexpected errors
 
@@ -56,6 +56,6 @@ Rollback guidance
 - Level 6: Reflash prior backup firmware image.
 
 Troubleshooting
-- OVMF not found: run just build setup then just build package-esp.
+- OVMF not found: run ./pf.py build-setup then ./pf.py build-package-esp.
 - ESP verification fails: inspect out/logs/esp-normalize-secure.log and ensure keys exist.
 - Baseline analyzer missing: add dev/tools/analyze_firmware_baseline.py or specify BASELINE_JSON to an existing baseline.

@@ -76,12 +76,12 @@ PY
     "CRITICAL")
       echo
       echo "☠ CRITICAL THREAT DETECTED!"
-      echo "   Consider running: just nuke level4-kvm"
+      echo "   Consider running: ./pf.py nuke-level4-kvm"
       ;;
     "HIGH")
       echo
       echo "☠  HIGH RISK detected - recovery recommended"
-      echo "   Consider running: just nuke level4-kvm"
+      echo "   Consider running: ./pf.py nuke-level4-kvm"
       ;;
     "MEDIUM")
       echo

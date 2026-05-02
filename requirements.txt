@@ -2,7 +2,7 @@
 # Core requirements for PhoenixBoot functionality
 
 # Task runner and automation
-fabric>=3.2,<4
+fabric>=3.2.3,<4
 
 # Testing and validation
 pytest>=7.0.0

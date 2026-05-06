@@ -10,6 +10,11 @@ echo "☢️  PhoenixBoot Nuclear Wipe System"
 echo "==================================="
 echo ""
 echo "⚠️  EXTREME CAUTION: This will PERMANENTLY ERASE data!"
+echo "☠ Risk Level: CRITICAL"
+echo "   Most likely: The selected disk will be wiped and the machine will need a full reinstall."
+echo "   Could happen: You may erase the wrong disk or destroy boot data needed for recovery."
+echo "   Worst case: You wipe the currently running system disk and immediately lose a bootable recovery path."
+echo "   Use this only as a last resort for decommissioning or severe compromise."
 echo ""
 
 # Check if running as root
@@ -26,6 +31,47 @@ validate_device_path() {
         return 1
     fi
     return 0
+}
+
+device_contains_running_system() {
+    local device="$1"
+    lsblk -nrpo NAME,MOUNTPOINT "$device" 2>/dev/null | awk '$2 ~ /^\/$|^\/boot$|^\/boot\/efi$/ { found=1 } END { exit found ? 0 : 1 }'
+}
+
+confirm_wipe_target() {
+    local device="$1"
+    local method="$2"
+    local extra_confirmation
+
+    echo "⚠️  FINAL CONFIRMATION"
+    echo "   Device: $device"
+    echo "   Method: $method"
+    echo "   Most likely: Data on $device will be unrecoverable."
+    echo "   Could happen: Any OS or recovery partitions on $device will be destroyed."
+
+    if device_contains_running_system "$device"; then
+        echo "   Worst case: $device appears to host the currently running system."
+        echo "              Wiping it can leave this machine immediately unbootable."
+        read -p "Type 'ERASE RUNNING SYSTEM' to accept this risk: " extra_confirmation
+        if [ "$extra_confirmation" != "ERASE RUNNING SYSTEM" ]; then
+            echo "✅ Cancelled"
+            exit 0
+        fi
+    else
+        echo "   Worst case: Boot or recovery partitions on $device may still be needed later."
+    fi
+
+    read -p "Type 'WIPE' to confirm: " confirm
+    if [ "$confirm" != "WIPE" ]; then
+        echo "✅ Cancelled"
+        exit 0
+    fi
+
+    read -p "Type the exact device path ($device) to confirm target selection: " exact_device
+    if [ "$exact_device" != "$device" ]; then
+        echo "✅ Cancelled"
+        exit 0
+    fi
 }
 
 # Check if nwipe is installed
@@ -107,16 +153,7 @@ case "$choice" in
         if ! validate_device_path "$device"; then
             exit 1
         fi
-        
-        echo "⚠️  FINAL CONFIRMATION"
-        echo "   Device: $device"
-        echo "   Method: Quick wipe (zeros)"
-        read -p "Type 'WIPE' to confirm: " confirm
-        
-        if [ "$confirm" != "WIPE" ]; then
-            echo "✅ Cancelled"
-            exit 0
-        fi
+        confirm_wipe_target "$device" "Quick wipe (zeros)"
         
         echo "🚀 Wiping $device..."
         nwipe --autonuke --method=zero --verify=off "$device"
@@ -132,17 +169,8 @@ case "$choice" in
         if ! validate_device_path "$device"; then
             exit 1
         fi
-        
-        echo "⚠️  FINAL CONFIRMATION"
-        echo "   Device: $device"
-        echo "   Method: DoD Short (3 passes)"
         echo "   Time: ~3x disk size (several hours)"
-        read -p "Type 'WIPE' to confirm: " confirm
-        
-        if [ "$confirm" != "WIPE" ]; then
-            echo "✅ Cancelled"
-            exit 0
-        fi
+        confirm_wipe_target "$device" "DoD Short (3 passes)"
         
         echo "🚀 Wiping $device with DoD Short..."
         nwipe --autonuke --method=dodshort --verify=last "$device"
@@ -158,17 +186,8 @@ case "$choice" in
         if ! validate_device_path "$device"; then
             exit 1
         fi
-        
-        echo "⚠️  FINAL CONFIRMATION"
-        echo "   Device: $device"
-        echo "   Method: PRNG Stream (cryptographically secure)"
         echo "   Time: ~1x disk size (many hours)"
-        read -p "Type 'WIPE' to confirm: " confirm
-        
-        if [ "$confirm" != "WIPE" ]; then
-            echo "✅ Cancelled"
-            exit 0
-        fi
+        confirm_wipe_target "$device" "PRNG Stream (cryptographically secure)"
         
         echo "🚀 Wiping $device with PRNG..."
         nwipe --autonuke --method=prng --verify=last "$device"

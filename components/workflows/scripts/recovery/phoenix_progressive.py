@@ -37,6 +37,16 @@ class PhoenixProgressiveRecovery:
         print("=" * 56)
         print("☠ Intelligent escalation from safest to most extreme recovery methods")
         print()
+
+    def print_risk_assessment(self, risk_level, likely, could_happen, worst_case, last_resort=False):
+        """Show concrete risk guidance before an invasive action."""
+        print(f"☠ Risk Level: {risk_level}")
+        print(f"   Most likely: {likely}")
+        print(f"   Could happen: {could_happen}")
+        print(f"   Worst case: {worst_case}")
+        if last_resort:
+            print("   Use this only as a last resort after safer options and backups are exhausted.")
+        print()
     
     def run_command(self, cmd, description="", check=True, capture_output=True):
         """Run a command with error handling
@@ -76,8 +86,14 @@ class PhoenixProgressiveRecovery:
         print("☠ Fast: Usually completes in under 2 minutes")
         print("☠ Comprehensive: Scans firmware, NVRAM, bootloaders")
         print()
+        self.print_risk_assessment(
+            "LOW",
+            "You get detection results without changing firmware, boot entries, or disk contents.",
+            "A scan may miss a deeply hidden threat or fail if dependencies are missing.",
+            "You gain a false sense of safety and delay a stronger response."
+        )
         
-        if not self.confirm_escalation("scan for bootkit infections"):
+        if not self.confirm_escalation("scan for bootkit infections", "LOW"):
             return False
             
         # Run bootkit detection
@@ -118,8 +134,14 @@ class PhoenixProgressiveRecovery:
         print("☠ Persistent: Creates recovery option in boot menu")
         print("☠  Modifies: Adds files to ESP and GRUB configuration")
         print()
+        self.print_risk_assessment(
+            "MEDIUM",
+            "A recovery boot option is added and you can reboot into PhoenixGuard later.",
+            "ESP or boot-menu changes may need manual cleanup if deployment is interrupted.",
+            "A fragile boot setup may require manual EFI or GRUB repair before normal boot returns."
+        )
         
-        if not self.confirm_escalation("deploy Nuclear Boot recovery ISO to ESP"):
+        if not self.confirm_escalation("deploy Nuclear Boot recovery ISO to ESP", "MEDIUM"):
             return False
             
         # Build and deploy recovery ISO
@@ -161,8 +183,15 @@ class PhoenixProgressiveRecovery:
         print("☠  Advanced: Requires kernel kexec capability")
         print("☠  Temporary reboot: Quick kexec operations")
         print()
+        self.print_risk_assessment(
+            "HIGH",
+            "You can back up or inspect firmware from a cleaner temporary environment.",
+            "The secure access flow may fail and require a normal reboot or later escalation.",
+            "Writing firmware from this path can leave the platform unbootable if the image is wrong or the process is interrupted.",
+            last_resort=True
+        )
         
-        if not self.confirm_escalation("use double-kexec for secure firmware access"):
+        if not self.confirm_escalation("use double-kexec for secure firmware access", "HIGH"):
             return False
             
         # Check for clean firmware image
@@ -190,7 +219,14 @@ class PhoenixProgressiveRecovery:
             
         elif choice == "3":
             print("☠ WARNING: This will overwrite your firmware!")
-            if self.confirm_escalation("write clean firmware (DANGEROUS)"):
+            self.print_risk_assessment(
+                "CRITICAL",
+                "A clean firmware image is written and may remove persistent boot malware.",
+                "Firmware protection, power loss, or image mismatch may halt recovery halfway through.",
+                "The motherboard can be bricked and require an external programmer or replacement.",
+                last_resort=True
+            )
+            if self.confirm_escalation("write clean firmware (DANGEROUS)", "CRITICAL"):
                 cmd = f"sudo make secure-firmware-access ARGS='--write {clean_firmware}'"
                 self.run_command(cmd, "Writing clean firmware", capture_output=False)
                 print("☠ Firmware recovery completed! System should be clean now.")
@@ -221,8 +257,15 @@ class PhoenixProgressiveRecovery:
         print("☠  Reboot: System will restart automatically")
         print("☠  Advanced: Requires IOMMU and passthrough configuration")
         print()
+        self.print_risk_assessment(
+            "HIGH",
+            "PhoenixGuard stages a one-time recovery boot and you continue remediation in a VM.",
+            "BootNext, passthrough, or recovery-image setup may fail and require manual UEFI cleanup.",
+            "On an already fragile system, interrupted boot changes may require manual EFI repair before the host boots normally.",
+            last_resort=True
+        )
         
-        if not self.confirm_escalation("reboot to KVM recovery environment"):
+        if not self.confirm_escalation("reboot to KVM recovery environment", "HIGH"):
             return False
             
         # Check prerequisites
@@ -278,8 +321,15 @@ class PhoenixProgressiveRecovery:
         print("☠  Complex: Requires Xen installation and configuration")
         print("☠  Reboot: System will restart to Xen hypervisor")
         print()
+        self.print_risk_assessment(
+            "HIGH",
+            "You gain a more isolated recovery environment with hypervisor-level separation.",
+            "Boot configuration may need manual repair if Xen installation or handoff is incomplete.",
+            "A misconfigured hypervisor boot path can temporarily leave the machine unable to boot normally until repaired.",
+            last_resort=True
+        )
         
-        if not self.confirm_escalation("deploy Xen hypervisor recovery environment"):
+        if not self.confirm_escalation("deploy Xen hypervisor recovery environment", "HIGH"):
             return False
             
         # Check for Xen availability
@@ -335,8 +385,15 @@ class PhoenixProgressiveRecovery:
         print("   • You understand the risks of firmware manipulation")
         print("   • All other methods have failed")
         print()
+        self.print_risk_assessment(
+            "CRITICAL",
+            "You may recover from malware that software-level tools cannot remove.",
+            "Flash access may fail, protections may block writes, or recovery may still require external hardware.",
+            "A bad flash or wrong image can permanently brick the board and turn recovery into board replacement.",
+            last_resort=True
+        )
         
-        if not self.confirm_escalation("perform direct hardware firmware recovery (EXTREME DANGER)"):
+        if not self.confirm_escalation("perform direct hardware firmware recovery (EXTREME DANGER)", "CRITICAL"):
             return False
             
         # Final safety check
@@ -355,8 +412,11 @@ class PhoenixProgressiveRecovery:
         self.run_command("make hardware-recovery", capture_output=False)
         return True
         
-    def confirm_escalation(self, action):
+    def confirm_escalation(self, action, risk_level="LOW"):
         """Ask user to confirm escalation to next level"""
+        if risk_level in {"HIGH", "CRITICAL"}:
+            response = input(f"☠ Type '{risk_level}' to proceed to {action}: ").strip().upper()
+            return response == risk_level
         response = input(f"☠ Proceed to {action}? [y/N]: ").strip().lower()
         return response == 'y'
         

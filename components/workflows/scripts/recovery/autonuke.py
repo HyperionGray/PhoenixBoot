@@ -91,8 +91,19 @@ class AutoNuke:
 {Colors.MAGENTA}    3. ☠ HARD: Direct hardware firmware recovery{Colors.END}
 {Colors.RED}    4. ☠ NUKE: External CH341A programmer recovery{Colors.END}
 
-"""
+        """
         print(banner)
+
+    def print_risk_assessment(self, risk_level: str, likely: str, could_happen: str, worst_case: str,
+                              last_resort: bool = False):
+        """Display a concrete risk summary for the next action."""
+        print(f"{Colors.YELLOW}☠ Risk Level: {risk_level}{Colors.END}")
+        print(f"   Most likely: {likely}")
+        print(f"   Could happen: {could_happen}")
+        print(f"   Worst case: {worst_case}")
+        if last_resort:
+            print("   Use this only as a last resort after safer steps and backups are exhausted.")
+        print()
         
     def confirm_action(self, message: str, danger_level: str = "LOW") -> bool:
         """Get user confirmation with appropriate warnings"""
@@ -176,6 +187,12 @@ class AutoNuke:
     def level_1_scan(self) -> bool:
         """Level 1: Bootkit detection and analysis"""
         self.log("☠ LEVEL 1: Starting bootkit detection scan...")
+        self.print_risk_assessment(
+            "LOW",
+            "You get scan results without changing firmware, boot entries, or disks.",
+            "The scan may fail or miss a deeply hidden threat.",
+            "You trust a compromised system for too long and delay stronger recovery."
+        )
         
         if not self.confirm_action("☠ Run comprehensive bootkit scan?", "LOW"):
             return False
@@ -214,6 +231,12 @@ class AutoNuke:
     def level_2_soft_recovery(self) -> bool:
         """Level 2: ESP-based Nuclear Boot ISO recovery"""
         self.log("☠ LEVEL 2: Preparing ESP Nuclear Boot ISO recovery...")
+        self.print_risk_assessment(
+            "MEDIUM",
+            "PhoenixGuard adds a recovery boot option to the ESP so you can recover later.",
+            "ESP or GRUB cleanup may be needed if deployment is interrupted.",
+            "A fragile boot configuration may need manual EFI repair before normal boot returns."
+        )
         
         if not self.confirm_action("☠ Deploy Nuclear Boot recovery ISO to ESP?", "MEDIUM"):
             return False
@@ -268,10 +291,17 @@ RISKS:
 • Requires administrator privileges
 • Will overwrite current firmware
 
-SAFETY MEASURES:
-• Full firmware backup will be created first
-• Recovery can be undone with backup
-• Uses hardware-level verification"""
+        SAFETY MEASURES:
+        • Full firmware backup will be created first
+        • Recovery can be undone with backup
+        • Uses hardware-level verification"""
+        self.print_risk_assessment(
+            "HIGH",
+            "Hardware recovery may restore clean firmware when software remediation fails.",
+            "Flash access may fail or leave recovery incomplete, forcing escalation.",
+            "A bad write or interruption can brick the board and require external programming.",
+            last_resort=True
+        )
 
         if not self.confirm_action(warning_msg, "HIGH"):
             return False
@@ -318,7 +348,14 @@ PROCEDURE:
 5. Verify flash operation
 6. Reconnect and test boot
 
-☠  THIS IS THE MOST EXTREME RECOVERY METHOD ☠"""
+ ☠  THIS IS THE MOST EXTREME RECOVERY METHOD ☠"""
+        self.print_risk_assessment(
+            "CRITICAL",
+            "An external programmer may recover systems locked down beyond software repair.",
+            "You may still fail to attach correctly, flash the wrong image, or need repeated attempts.",
+            "The board may remain bricked or physically damaged if the process goes wrong.",
+            last_resort=True
+        )
 
         if not self.confirm_action(nuclear_warning, "HIGH"):
             return False

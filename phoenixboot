@@ -13,11 +13,11 @@ find_phoenix_root() {
   return 1
 }
 
-usage() {
-  cat <<'EOF'
-Usage: ./phoenixboot <command> [options]
-
-Common commands:
+print_command_list() {
+  local common_header="$1"
+  local secure_header="$2"
+  cat <<EOF
+$common_header:
   setup
   build
   verify
@@ -27,7 +27,7 @@ Common commands:
   test-all
   usb --device /dev/sdX
 
-Secure Boot commands:
+$secure_header:
   secure keygen
   secure auth
   secure enroll
@@ -37,6 +37,16 @@ Secure Boot commands:
   secure mok-enroll [--cert-pem <path>] [--cert-der <path>] [--dry-run]
   secure mok-list
   secure kmod-sign --module <file|dir> [--force]
+EOF
+}
+
+usage() {
+  cat <<'EOF'
+Usage: ./phoenixboot <command> [options]
+
+EOF
+  print_command_list "Common commands" "Secure Boot commands"
+  cat <<'EOF'
 
 Advanced:
   Any unknown command is passed directly to ./pf.py.
@@ -52,28 +62,7 @@ has_pf_runner() {
 }
 
 print_builtin_list() {
-  cat <<'EOF'
-PhoenixBoot wrapper commands:
-  setup
-  build
-  verify
-  status
-  list
-  test
-  test-all
-  usb --device /dev/sdX
-
-Secure Boot wrapper commands:
-  secure keygen
-  secure auth
-  secure enroll
-  secure check
-  secure media --iso <path> [--usb-device /dev/sdX]
-  secure mok-new [--name NAME] [--cn COMMON_NAME]
-  secure mok-enroll [--cert-pem <path>] [--cert-der <path>] [--dry-run]
-  secure mok-list
-  secure kmod-sign --module <file|dir> [--force]
-EOF
+  print_command_list "PhoenixBoot wrapper commands" "Secure Boot wrapper commands"
 }
 
 SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"

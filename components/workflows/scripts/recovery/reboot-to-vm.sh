@@ -61,7 +61,7 @@ echo "  Using ESP: $ESP"
 
 if [[ -d "$ESP/EFI/PhoenixGuard" ]]; then
     echo "[backup] Saving existing PhoenixGuard ESP contents"
-    sudo cp -a "$ESP/EFI/PhoenixGuard" "$BACKUP_DIR/EFI-PhoenixGuard-backup"
+    sudo cp -a "$ESP/EFI/PhoenixGuard" "$BACKUP_DIR/phoenixguard-esp-before"
 fi
 
 # Stage PhoenixGuard

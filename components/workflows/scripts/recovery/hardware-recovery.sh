@@ -93,11 +93,17 @@ echo "☠ Starting BOOTKIT-PROOF hardware recovery..."
 
 # Check if firmware image exists
 if [ -f "$FIRMWARE_IMAGE" ]; then
-    CMD=(sudo python3 scripts/hardware_firmware_recovery.py "$FIRMWARE_IMAGE" --output hardware_recovery_results.json)
+    TS=$(date +%F_%H%M%S)
+    BACKUP_DIR="/var/lib/phoenixguard/backups/$TS"
+    RESULTS_FILE="$BACKUP_DIR/hardware_recovery_results.json"
+    sudo mkdir -p "$BACKUP_DIR"
+
+    CMD=(sudo python3 scripts/hardware_firmware_recovery.py "$FIRMWARE_IMAGE" --output "$RESULTS_FILE")
     [ -n "$VERBOSE" ] && CMD+=(-v)
     [ -n "$VERIFY_ONLY" ] && CMD+=(--verify-only)
 
     "${CMD[@]}"
+    echo "☠ Recovery results saved to: $RESULTS_FILE"
 else
     echo "ERROR: Clean firmware image not found at $FIRMWARE_IMAGE"
     echo "       This must be your EXACT hardware's clean firmware dump."

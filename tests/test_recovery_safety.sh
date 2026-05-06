@@ -61,6 +61,7 @@ fi
 
 echo "[TEST 6] Progressive recovery surfaces concrete risk assessments..."
 if grep -q "def print_risk_assessment" scripts/recovery/phoenix_progressive.py && \
+   grep -q "def normalize_risk_level" scripts/recovery/phoenix_progressive.py && \
    grep -q "risk_level in {\"HIGH\", \"CRITICAL\"}" scripts/recovery/phoenix_progressive.py && \
    grep -q "def print_risk_assessment" scripts/recovery/autonuke.py; then
     pass "Python recovery flows include risk assessment guidance"

@@ -47,6 +47,13 @@ class PhoenixProgressiveRecovery:
         if last_resort:
             print("   Use this only as a last resort after safer options and backups are exhausted.")
         print()
+
+    def normalize_risk_level(self, risk_level):
+        """Validate risk levels used for confirmations."""
+        allowed_levels = {"LOW", "MEDIUM", "HIGH", "CRITICAL"}
+        if risk_level not in allowed_levels:
+            raise ValueError(f"Unsupported risk level: {risk_level}")
+        return risk_level
     
     def run_command(self, cmd, description="", check=True, capture_output=True):
         """Run a command with error handling
@@ -414,6 +421,7 @@ class PhoenixProgressiveRecovery:
         
     def confirm_escalation(self, action, risk_level="LOW"):
         """Ask user to confirm escalation to next level"""
+        risk_level = self.normalize_risk_level(risk_level)
         if risk_level in {"HIGH", "CRITICAL"}:
             response = input(f"☠ Type '{risk_level}' to proceed to {action}: ").strip().upper()
             return response == risk_level

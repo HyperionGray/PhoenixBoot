@@ -44,6 +44,7 @@ class Colors:
 
 class AutoNuke:
     """Master recovery orchestrator for progressive bootkit elimination"""
+    DEFAULT_VENDOR_FIRMWARE = Path("drivers/G615LPAS.325")
     
     def __init__(self):
         self.project_root = self.find_project_root()
@@ -60,12 +61,9 @@ class AutoNuke:
         cwd = Path.cwd()
         if (cwd / "pf.py").exists() and (cwd / "Pfyfile.pf").exists():
             return cwd
-        print(
-            f"WARNING: Could not locate PhoenixBoot project root from {current}; "
-            f"falling back to {current}",
-            file=sys.stderr,
+        raise RuntimeError(
+            f"Could not locate PhoenixBoot project root from {current} or current working directory {cwd}"
         )
-        return current
         
     def log(self, message: str, level: str = "INFO"):
         """Log message to both console and file"""
@@ -213,7 +211,7 @@ class AutoNuke:
 
     def prompt_for_firmware_path(self) -> Optional[Path]:
         """Prompt for a vendor firmware image path."""
-        default_path = self.project_root / "drivers" / "G615LPAS.325"
+        default_path = self.project_root / self.DEFAULT_VENDOR_FIRMWARE
         prompt = f"{Colors.CYAN}Vendor BIOS image path [{default_path if default_path.exists() else '/path/to/vendor-bios.bin'}]: {Colors.END}"
         response = input(prompt).strip()
         if not response and default_path.exists():
@@ -432,7 +430,7 @@ What this means:
         """Level 7: External CH341A programmer recovery."""
         self.log("☠ LEVEL 7: Nuclear option - CH341A recovery guidance...")
 
-        clean_firmware = self.project_root / "drivers" / "G615LPAS.325"
+        clean_firmware = self.project_root / self.DEFAULT_VENDOR_FIRMWARE
         display_firmware = str(clean_firmware if clean_firmware.exists() else Path("/path/to/vendor-bios.bin"))
         print(f"\n{Colors.RED}{Colors.BOLD}☠ LEVEL 7: CH341A / FULL NUCLEAR{Colors.END}")
         print("If the platform is locked into SPI/DXE protections, it is time for an external programmer.")

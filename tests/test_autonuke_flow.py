@@ -4,7 +4,15 @@ import unittest
 from pathlib import Path
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+def find_repo_root() -> Path:
+    current = Path(__file__).resolve().parent
+    for candidate in [current, *current.parents]:
+        if (candidate / "pf.py").exists() and (candidate / "Pfyfile.pf").exists():
+            return candidate
+    raise RuntimeError(f"Could not locate PhoenixBoot repo root from {current}")
+
+
+REPO_ROOT = find_repo_root()
 AUTONUKE_DIR = REPO_ROOT / "components" / "workflows" / "scripts" / "recovery"
 sys.path.insert(0, str(AUTONUKE_DIR))
 

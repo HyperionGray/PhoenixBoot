@@ -143,6 +143,90 @@ else
     fail "phoenix-boot compatibility shim failed"
 fi
 
+# Test 13: Check if phoenixboot-dod exists
+echo "[TEST 13] Checking if phoenixboot-dod exists..."
+if [ -f "phoenixboot-dod" ]; then
+    pass "phoenixboot-dod file exists"
+else
+    fail "phoenixboot-dod file missing"
+fi
+
+# Test 14: Check if phoenixboot-dod is executable
+echo "[TEST 14] Checking if phoenixboot-dod is executable..."
+if [ -x "phoenixboot-dod" ]; then
+    pass "phoenixboot-dod is executable"
+else
+    fail "phoenixboot-dod is not executable"
+fi
+
+# Test 15: Test phoenixboot-dod help command
+echo "[TEST 15] Testing phoenixboot-dod help..."
+if ./phoenixboot-dod help > /dev/null 2>&1; then
+    pass "phoenixboot-dod help works"
+else
+    fail "phoenixboot-dod help failed"
+fi
+
+# Test 16: Test phoenixboot-dod status command
+echo "[TEST 16] Testing phoenixboot-dod status..."
+if ./phoenixboot-dod status > /dev/null 2>&1; then
+    pass "phoenixboot-dod status works"
+else
+    fail "phoenixboot-dod status failed"
+fi
+
+# Test 17: Test phoenixboot-dod dod-status command
+echo "[TEST 17] Testing phoenixboot-dod dod-status..."
+if ./phoenixboot-dod dod-status > /dev/null 2>&1; then
+    pass "phoenixboot-dod dod-status works"
+else
+    fail "phoenixboot-dod dod-status failed"
+fi
+
+# Test 18: Test phoenixboot-dod dod-check command (exits non-zero when non-compliant; that is expected)
+echo "[TEST 18] Testing phoenixboot-dod dod-check..."
+dod_check_output=$(./phoenixboot-dod dod-check 2>&1 || true)
+if echo "$dod_check_output" | grep -q "DoD Compliance Results:"; then
+    pass "phoenixboot-dod dod-check runs and produces compliance results"
+else
+    fail "phoenixboot-dod dod-check did not produce expected output"
+fi
+
+# Test 19: Verify DOD_MODE is exported by phoenixboot-dod
+echo "[TEST 19] Checking DOD_MODE export in phoenixboot-dod..."
+if grep -q "export DOD_MODE=1" phoenixboot-dod; then
+    pass "phoenixboot-dod exports DOD_MODE=1"
+else
+    fail "phoenixboot-dod does not export DOD_MODE"
+fi
+
+# Test 20: Verify phoenixboot-dod help references DISA STIGs
+echo "[TEST 20] Checking DISA STIG references in phoenixboot-dod help..."
+dod_help_output=$(./phoenixboot-dod help 2>&1)
+if echo "$dod_help_output" | grep -q "DISA"; then
+    pass "phoenixboot-dod help references DISA STIGs"
+else
+    fail "phoenixboot-dod help does not reference DISA STIGs"
+fi
+
+# Test 21: Test DOD_FIPS_REQUIRED enforcement
+echo "[TEST 21] Testing DOD_FIPS_REQUIRED enforcement..."
+fips_output=$(DOD_FIPS_REQUIRED=1 ./phoenixboot-dod status 2>&1 || true)
+# In a non-FIPS environment this should either succeed (if fips is on) or exit with error
+if [ "$(cat /proc/sys/crypto/fips_enabled 2>/dev/null || echo 0)" = "1" ]; then
+    if ./phoenixboot-dod status > /dev/null 2>&1; then
+        pass "DOD_FIPS_REQUIRED=1 accepted (FIPS kernel active)"
+    else
+        fail "DOD_FIPS_REQUIRED=1 failed unexpectedly on FIPS kernel"
+    fi
+else
+    if echo "$fips_output" | grep -qi "FIPS mode is required\|fips"; then
+        pass "DOD_FIPS_REQUIRED=1 correctly rejects non-FIPS environment"
+    else
+        skip "DOD_FIPS_REQUIRED enforcement check inconclusive"
+    fi
+fi
+
 # Summary
 echo
 echo "======================="

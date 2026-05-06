@@ -108,7 +108,7 @@ This is where users should be warned clearly that the recovery path is getting r
 ### Level 6: CMOS (Manual Motherboard Reset)
 **What it does:** Gives the user the old-school board-level reset instructions many people never try.
 
-**Risk:** ⚠️ High  
+**Risk:** ✅ Low  
 **Time:** A few hours  
 **When to use:** Software-driven recovery paths are exhausted
 

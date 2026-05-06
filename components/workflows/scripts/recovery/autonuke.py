@@ -57,7 +57,15 @@ class AutoNuke:
         for candidate in [current, *current.parents]:
             if (candidate / "pf.py").exists() and (candidate / "Pfyfile.pf").exists():
                 return candidate
-        return Path(__file__).resolve().parents[2]
+        cwd = Path.cwd()
+        if (cwd / "pf.py").exists() and (cwd / "Pfyfile.pf").exists():
+            return cwd
+        print(
+            f"WARNING: Could not locate PhoenixBoot project root from {current}; "
+            f"falling back to {current}",
+            file=sys.stderr,
+        )
+        return current
         
     def log(self, message: str, level: str = "INFO"):
         """Log message to both console and file"""

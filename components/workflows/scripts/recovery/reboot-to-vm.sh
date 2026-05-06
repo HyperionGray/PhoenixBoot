@@ -4,6 +4,8 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 require_command() {
     if ! command -v "$1" >/dev/null 2>&1; then
         echo "ERROR: Required command not found: $1"
@@ -98,7 +100,7 @@ fi
 
 # Install KVM snapshot jump configuration
 echo "[kvm] Installing KVM snapshot jump configuration"
-./scripts/recovery/install_kvm_snapshot_jump.sh \
+"$SCRIPT_DIR/install_kvm_snapshot_jump.sh" \
     --esp "$ESP" --vmlinuz "$VMLINUZ" --initrd "$INITRD" --root-uuid "$ROOT_UUID" \
     --qcow2 "$QCOW2" --loadvm base-snapshot \
     --gpu-bdf 0000:02:00.0 --gpu-ids 10de:2d58 || echo "☠  KVM config failed, continuing..."

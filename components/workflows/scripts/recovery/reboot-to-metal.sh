@@ -24,7 +24,7 @@ BACKUP_DIR="/var/lib/phoenixguard/backups/$TS"
 sudo mkdir -p "$BACKUP_DIR"
 sudo efibootmgr -v | sudo tee "$BACKUP_DIR/efibootmgr-before-metal.txt" >/dev/null
 
-NON_PHOENIX_ENTRIES=$(efibootmgr | awk '/^Boot[0-9A-Fa-f]{4}\*/ && $0 !~ /PhoenixGuard/')
+NON_PHOENIX_ENTRIES=$(efibootmgr | awk '/^Boot[0-9A-Fa-f]{4}/ && $0 !~ /PhoenixGuard/')
 if [[ -z "$NON_PHOENIX_ENTRIES" ]]; then
     echo "ERROR: No non-PhoenixGuard boot entries were found."
     echo "       Refusing cleanup because automatic reboot could leave the system without a normal boot target."

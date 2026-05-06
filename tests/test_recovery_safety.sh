@@ -36,7 +36,7 @@ else
 fi
 
 echo "[TEST 3] reboot-to-vm stages the correct installer path..."
-if grep -q "./scripts/recovery/install_kvm_snapshot_jump.sh" scripts/recovery/reboot-to-vm.sh && \
+if grep -q "install_kvm_snapshot_jump.sh" scripts/recovery/reboot-to-vm.sh && \
    [ -x "scripts/recovery/install_kvm_snapshot_jump.sh" ]; then
     pass "reboot-to-vm uses the recovery installer path"
 else

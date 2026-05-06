@@ -8,37 +8,37 @@ The repository is now organized around component directories under `components/`
 
 The compatibility entrypoints are organized into the following categories:
 
-### 📦 [build/](build/)
+### [build/](build/)
 Scripts for building PhoenixBoot artifacts and images.
 
-### 🧪 [testing/](testing/)
+### [testing/](testing/)
 Scripts for testing PhoenixBoot functionality using QEMU and other methods.
 
-### 🔑 [mok-management/](mok-management/)
+### [mok-management/](mok-management/)
 Scripts for managing Machine Owner Keys (MOK) and kernel module signing.
 
-### 💾 [esp-packaging/](esp-packaging/)
+### [esp-packaging/](esp-packaging/)
 Scripts for creating and managing EFI System Partition (ESP) images.
 
-### 🔐 [secure-boot/](secure-boot/)
+### [secure-boot/](secure-boot/)
 Scripts for managing SecureBoot keys and enrollment.
 
-### ✅ [validation/](validation/)
+### [validation/](validation/)
 Scripts for validating system security and detecting threats.
 
-### 🚑 [recovery/](recovery/)
+### [recovery/](recovery/)
 Scripts for system recovery and remediation.
 
-### 💿 [usb-tools/](usb-tools/)
+### [usb-tools/](usb-tools/)
 Scripts for creating and managing bootable USB media.
 
-### 🖥️ [qemu/](qemu/)
+### [qemu/](qemu/)
 Scripts for running QEMU virtual machines.
 
-### 🔧 [uefi-tools/](uefi-tools/)
+### [uefi-tools/](uefi-tools/)
 Scripts for UEFI operations and diagnostics.
 
-### 🛠️ [maintenance/](maintenance/)
+### [maintenance/](maintenance/)
 Scripts for project maintenance and development.
 
 ## Usage

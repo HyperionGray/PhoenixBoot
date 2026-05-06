@@ -253,19 +253,19 @@ cmd_dod_check() {
   fi
 
   if [ -n "$kconfig" ]; then
-    local _grep_cfg
+    local _grep_cfg_fn
     if [ "${kconfig%.gz}" != "$kconfig" ]; then
-      _grep_cfg="zgrep -q"
+      _grep_cfg_fn() { zgrep -q "$@"; }
     else
-      _grep_cfg="grep -q"
+      _grep_cfg_fn() { grep -q "$@"; }
     fi
 
-    $(_grep_cfg "CONFIG_MODULE_SIG_FORCE=y" "$kconfig" 2>/dev/null) && \
+    _grep_cfg_fn "CONFIG_MODULE_SIG_FORCE=y" "$kconfig" 2>/dev/null && \
       _check "STIG-KMS-001" "CONFIG_MODULE_SIG_FORCE=y (require signed modules)" PASS || \
       _check "STIG-KMS-001" "CONFIG_MODULE_SIG_FORCE=y (require signed modules)" WARN \
         "Unsigned kernel modules may be loaded; see DISA STIG RHEL-08-010370"
 
-    $(_grep_cfg "CONFIG_MODULE_SIG=y" "$kconfig" 2>/dev/null) && \
+    _grep_cfg_fn "CONFIG_MODULE_SIG=y" "$kconfig" 2>/dev/null && \
       _check "STIG-KMS-002" "CONFIG_MODULE_SIG=y (module signature verification)" PASS || \
       _check "STIG-KMS-002" "CONFIG_MODULE_SIG=y (module signature verification)" WARN \
         "Enable CONFIG_MODULE_SIG=y for module signature support"

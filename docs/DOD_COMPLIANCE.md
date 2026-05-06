@@ -60,8 +60,8 @@ Runs a comprehensive DISA STIG compliance pre-flight check:
 ╚══════════════════════════════════════════════════════════════════╝
 
   [ Cryptographic Compliance - FIPS 140-2/140-3 ]
-  [WARN] FIPS-001  Kernel FIPS mode active
-  [WARN] FIPS-002  OpenSSL FIPS provider available
+  [PASS] FIPS-001  Kernel FIPS mode active
+  [PASS] FIPS-002  OpenSSL FIPS provider available
 
   [ Secure Boot - DISA STIG RHEL-08-010370 ]
   [PASS] STIG-SB-001  UEFI system (Secure Boot capable)

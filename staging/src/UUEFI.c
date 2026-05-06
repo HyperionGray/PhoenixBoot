@@ -30,7 +30,6 @@
 #define MAX_DISPLAYED_DELETIONS 10
 #define MAX_BACKUP_VARIABLES 10
 #define MAX_INDEX_INPUT_SIZE 16
-#define MAX_UINTN_VALUE ((UINTN)-1)
 
 // UEFI Variable Protection System
 typedef enum {
@@ -197,6 +196,7 @@ ParseDecimalUintn(
   OUT UINTN *Value
   )
 {
+  UINTN Index;
   UINTN ParsedValue;
 
   if (Buffer == NULL || Value == NULL || Buffer[0] == 0) {
@@ -204,7 +204,7 @@ ParseDecimalUintn(
   }
 
   ParsedValue = 0;
-  for (UINTN Index = 0; Buffer[Index] != 0; Index++) {
+  for (Index = 0; Buffer[Index] != 0; Index++) {
     UINTN Digit;
 
     if (Buffer[Index] < L'0' || Buffer[Index] > L'9') {
@@ -212,7 +212,7 @@ ParseDecimalUintn(
     }
 
     Digit = (UINTN)(Buffer[Index] - L'0');
-    if (ParsedValue > ((MAX_UINTN_VALUE - Digit) / 10)) {
+    if (ParsedValue > ((MAX_UINTN - Digit) / 10)) {
       return EFI_BAD_BUFFER_SIZE;
     }
 
@@ -324,6 +324,7 @@ UpdateVariableWithBackup(
   VOID *VerifyData;
   UINTN VerifySize;
   UINT32 VerifyAttributes;
+  BOOLEAN DeleteVerified;
 
   if (VarInfo == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -358,7 +359,7 @@ UpdateVariableWithBackup(
       NULL
     );
 
-    BOOLEAN DeleteVerified = (Status == EFI_NOT_FOUND) || (Status == EFI_SUCCESS && VerifySize == 0);
+    DeleteVerified = (Status == EFI_NOT_FOUND) || (Status == EFI_SUCCESS && VerifySize == 0);
     if (!DeleteVerified) {
       RestoreVariableBackup(&Backup);
       FreeVariableBackup(&Backup);
@@ -895,6 +896,7 @@ AnalyzeCurrentBootMedia()
   BOOLEAN HasProtectiveMbr;
   BOOLEAN HasKnownFilesystem;
   BOOLEAN HasAnomaly;
+  UINTN EntryIndex;
 
   StrCpyS(gBootMediaStatus, 256, L"Boot media scan unavailable");
   if (gCurrentImageHandle == NULL) {
@@ -1004,7 +1006,7 @@ AnalyzeCurrentBootMedia()
       }
     }
 
-    for (UINTN EntryIndex = 0; EntryIndex < 4; EntryIndex++) {
+    for (EntryIndex = 0; EntryIndex < 4; EntryIndex++) {
       UINT8 *Entry = Block0 + 446 + (EntryIndex * 16);
 
       if (Entry[4] != 0) {

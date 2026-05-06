@@ -434,6 +434,11 @@ PATH=/path/to/module ./pf.py os-kmod-sign
 ./pf.py verify
 ./pf.py validate-all
 
+# DoD / DISA STIG helpers
+./pf.py dod-info
+./pf.py dod-stig-check
+OUTPUT=out/dod/secure_kernel.config ./pf.py dod-secure-config
+
 # SecureBoot bootable media creation
 ISO_PATH=/path/to.iso ./pf.py secureboot-create
 ISO_PATH=/path/to.iso USB_DEVICE=/dev/sdX ./pf.py secureboot-create-usb
@@ -485,6 +490,7 @@ PhoenixBoot/
 │   ├── docker-compose.yml                  # Container orchestration
 │   ├── phoenixboot-tui.sh                  # TUI launcher script
 │   ├── create-secureboot-bootable-media.sh # Standalone: Create bootable media from ISO
+│   ├── DoD/                                # Distro-aware DISA STIG and security helpers
 │   ├── sign-kernel-modules.sh              # User-facing: Sign kernel modules easily
 │   └── README.md, QUICKSTART.md, docs/     # Documentation
 │

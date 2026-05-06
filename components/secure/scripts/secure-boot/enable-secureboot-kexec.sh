@@ -26,7 +26,11 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+if REPO_ROOT="$(git -C "${SCRIPT_DIR}" rev-parse --show-toplevel 2>/dev/null)"; then
+    :
+else
+    REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
+fi
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║    PhoenixBoot - Double Kexec Framework (DEMONSTRATION)           ║${NC}"

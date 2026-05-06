@@ -1,109 +1,267 @@
 #!/usr/bin/env bash
-# PhoenixBoot - User-friendly launcher
-# Run this from ANYWHERE - it handles paths correctly
+set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+find_phoenix_root() {
+  local dir="$1"
+  while [ "$dir" != "/" ]; do
+    if [ -f "$dir/pf.py" ] && [ -f "$dir/Pfyfile.pf" ]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  return 1
+}
 
-# Find the PhoenixBoot directory
-if [ -f "${SCRIPT_DIR}/pf.py" ] && [ -d "${SCRIPT_DIR}/scripts" ]; then
-    PHOENIX_ROOT="${SCRIPT_DIR}"
-elif [ -f "pf.py" ] && [ -d "scripts" ]; then
-    PHOENIX_ROOT="$(pwd)"
-elif [ -f "Pfyfile.pf" ] && [ -d "scripts" ]; then
-    PHOENIX_ROOT="$(pwd)"
-elif [ -n "${PHOENIX_ROOT:-}" ] && [ -f "${PHOENIX_ROOT}/pf.py" ]; then
-    # Use environment variable if set
-    :
+usage() {
+  cat <<'EOF'
+Usage: ./phoenixboot <command> [options]
+
+Common commands:
+  setup
+  build
+  verify
+  status
+  list
+  test
+  test-all
+  usb --device /dev/sdX
+
+Secure Boot commands:
+  secure keygen
+  secure auth
+  secure enroll
+  secure check
+  secure media --iso <path> [--usb-device /dev/sdX]
+  secure mok-new [--name NAME] [--cn COMMON_NAME]
+  secure mok-enroll [--cert-pem <path>] [--cert-der <path>] [--dry-run]
+  secure mok-list
+  secure kmod-sign --module <file|dir> [--force]
+
+Advanced:
+  Any unknown command is passed directly to ./pf.py.
+EOF
+}
+
+run_pf() {
+  ./pf.py "$@"
+}
+
+SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+
+if [ -n "${PHOENIX_ROOT:-}" ] && [ -f "${PHOENIX_ROOT}/pf.py" ] && [ -f "${PHOENIX_ROOT}/Pfyfile.pf" ]; then
+  :
+elif PHOENIX_ROOT="$(find_phoenix_root "$SCRIPT_DIR")"; then
+  :
+elif PHOENIX_ROOT="$(find_phoenix_root "$(pwd)")"; then
+  :
 else
-    echo "❌ Cannot find PhoenixBoot installation!"
-    echo "Please run from PhoenixBoot directory or set PHOENIX_ROOT"
-    exit 1
+  echo "Error: unable to locate PhoenixBoot root (pf.py + Pfyfile.pf)." >&2
+  exit 1
 fi
 
 cd "$PHOENIX_ROOT"
-echo "🔥 PhoenixBoot System"
-echo "Working from: $PHOENIX_ROOT"
-echo ""
 
-case "${1:-help}" in
-    build)
-        echo "🔨 Building boot system..."
-        ./pf.py build-build build-package-esp
+cmd="${1:-help}"
+shift || true
+
+case "$cmd" in
+  help|-h|--help)
+    usage
+    ;;
+
+  setup)
+    run_pf setup
+    ;;
+
+  build)
+    run_pf build-build build-package-esp
+    ;;
+
+  verify)
+    run_pf verify
+    ;;
+
+  status)
+    echo "Working from: $PHOENIX_ROOT"
+    echo -n "ESP image: "
+    [ -f out/esp/esp.img ] && du -h out/esp/esp.img | awk '{print $1}' || echo "missing"
+    echo -n "BootX64.efi: "
+    [ -f out/staging/BootX64.efi ] && echo "ready" || echo "missing"
+    echo -n "UUEFI.efi: "
+    [ -f staging/boot/UUEFI.efi ] && echo "ready" || echo "missing"
+    echo -n "Keys: "
+    [ -f keys/PK.crt ] && echo "present" || echo "missing"
+    ;;
+
+  list)
+    run_pf list
+    ;;
+
+  test)
+    run_pf test-qemu
+    ;;
+
+  test-all)
+    run_pf test-qemu test-qemu-secure-positive test-qemu-uuefi
+    ;;
+
+  usb)
+    usb_device=""
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --device)
+          usb_device="${2:-}"
+          shift 2
+          ;;
+        *)
+          if [ -z "$usb_device" ]; then
+            usb_device="$1"
+            shift
+          else
+            echo "Unknown usb option: $1" >&2
+            exit 2
+          fi
+          ;;
+      esac
+    done
+    [ -n "$usb_device" ] || { echo "Usage: ./phoenixboot usb --device /dev/sdX" >&2; exit 2; }
+    USB_DEVICE="$usb_device" USB_DEVICE_CONFIRM=I_UNDERSTAND run_pf workflow-usb-write-dd
+    ;;
+
+  secure)
+    sub="${1:-}"
+    shift || true
+    case "$sub" in
+      keygen)
+        run_pf secure-keygen
         ;;
-    
-    setup)
-        echo "🔧 Setting up PhoenixBoot..."
-        ./pf.py setup
+      auth)
+        run_pf secure-make-auth
         ;;
-    
-    usb)
-        if [ -z "$2" ]; then
-            echo "Usage: $0 usb /dev/sdX"
-            echo "Available devices:"
-            lsblk -d -o NAME,SIZE,MODEL 2>/dev/null | grep -E "^sd|^nvme" || echo "(lsblk not available)"
-            exit 1
-        fi
-        echo "📝 Writing to USB: $2"
-        echo "⚠️  This will ERASE $2! Press Ctrl+C to cancel, Enter to continue"
-        read -r
-        USB_DEVICE="$2" USB_DEVICE_CONFIRM=I_UNDERSTAND ./pf.py workflow-usb-write-dd
+      enroll)
+        run_pf secure-enroll-secureboot
         ;;
-    
-    test)
-        echo "🧪 Testing in QEMU..."
-        ./pf.py test-qemu
+      check)
+        run_pf secureboot-check
         ;;
-    
-    test-all)
-        echo "🧪 Running all tests..."
-        ./pf.py test-qemu test-qemu-secure-positive test-qemu-uuefi
-        ;;
-    
-    verify)
-        echo "✅ Verifying system..."
-        ./pf.py verify
-        ;;
-    
-    status)
-        echo "📊 System Status:"
-        echo -n "  ESP Image: "
-        if [ -f "build/esp/esp.img" ]; then
-            du -h build/esp/esp.img 2>/dev/null | cut -f1 || echo "Present"
+      media)
+        iso_path=""
+        usb_device=""
+        while [ $# -gt 0 ]; do
+          case "$1" in
+            --iso) iso_path="${2:-}"; shift 2 ;;
+            --usb-device) usb_device="${2:-}"; shift 2 ;;
+            *)
+              echo "Unknown secure media option: $1" >&2
+              exit 2
+              ;;
+          esac
+        done
+        [ -n "$iso_path" ] || { echo "Usage: ./phoenixboot secure media --iso <path> [--usb-device /dev/sdX]" >&2; exit 2; }
+        if [ -n "$usb_device" ]; then
+          ISO_PATH="$iso_path" USB_DEVICE="$usb_device" run_pf secureboot-create-usb
         else
-            echo "Not built"
-        fi
-        echo -n "  Boot EFI: "
-        [ -f "out/staging/BootX64.efi" ] && echo "Ready" || echo "Not built"
-        echo -n "  Keys: "
-        [ -f "keys/PK.crt" ] && echo "Generated" || echo "Not generated"
-        ;;
-    
-    list)
-        echo "📋 Available tasks:"
-        ./pf.py list
-        ;;
-    
-    *)
-        if [ -n "$1" ] && [ "$1" != "help" ]; then
-            # Pass through to pf.py for any other task
-            echo "🔥 Running task: $*"
-            ./pf.py "$@"
-        else
-            echo "Usage: $0 {command} [args...]"
-            echo ""
-            echo "Common commands:"
-            echo "  setup      - Complete project setup"
-            echo "  build      - Build the boot system"
-            echo "  usb DEV    - Write to USB device"
-            echo "  test       - Test in QEMU"
-            echo "  test-all   - Run all tests"
-            echo "  verify     - Verify system integrity"
-            echo "  status     - Show system status"
-            echo "  list       - List all available tasks"
-            echo ""
-            echo "Advanced: Pass any pf.py task directly"
-            echo "  Example: $0 secure-keygen"
-            echo "  Run '$0 list' to see all available tasks"
+          ISO_PATH="$iso_path" run_pf secureboot-create
         fi
         ;;
+      mok-new)
+        name=""
+        cn=""
+        while [ $# -gt 0 ]; do
+          case "$1" in
+            --name) name="${2:-}"; shift 2 ;;
+            --cn) cn="${2:-}"; shift 2 ;;
+            *)
+              echo "Unknown secure mok-new option: $1" >&2
+              exit 2
+              ;;
+          esac
+        done
+        NAME="${name:-PGMOK}" CN="${cn:-PhoenixGuard Module Key}" run_pf secure-mok-new
+        ;;
+      mok-enroll)
+        cert_pem=""
+        cert_der=""
+        dry_run="0"
+        while [ $# -gt 0 ]; do
+          case "$1" in
+            --cert-pem) cert_pem="${2:-}"; shift 2 ;;
+            --cert-der) cert_der="${2:-}"; shift 2 ;;
+            --dry-run) dry_run="1"; shift ;;
+            *)
+              echo "Unknown secure mok-enroll option: $1" >&2
+              exit 2
+              ;;
+          esac
+        done
+        MOK_CERT_PEM="${cert_pem:-out/keys/mok/PGMOK.crt}" \
+        MOK_CERT_DER="${cert_der:-out/keys/mok/PGMOK.der}" \
+        MOK_DRY_RUN="$dry_run" \
+        run_pf os-mok-enroll
+        ;;
+      mok-list)
+        run_pf os-mok-list-keys
+        ;;
+      kmod-sign)
+        module_path=""
+        force="0"
+        while [ $# -gt 0 ]; do
+          case "$1" in
+            --module) module_path="${2:-}"; shift 2 ;;
+            --force) force="1"; shift ;;
+            *)
+              echo "Unknown secure kmod-sign option: $1" >&2
+              exit 2
+              ;;
+          esac
+        done
+        [ -n "$module_path" ] || { echo "Usage: ./phoenixboot secure kmod-sign --module <file|dir> [--force]" >&2; exit 2; }
+        MODULE_PATH="$module_path" FORCE="$force" run_pf os-kmod-sign
+        ;;
+      *)
+        echo "Unknown secure subcommand: ${sub:-<missing>}" >&2
+        usage
+        exit 2
+        ;;
+    esac
+    ;;
+
+  secure-keygen)
+    run_pf secure-keygen
+    ;;
+
+  secure-make-auth)
+    run_pf secure-make-auth
+    ;;
+
+  secure-enroll)
+    run_pf secure-enroll-secureboot
+    ;;
+
+  secureboot-create)
+    iso_path=""
+    usb_device=""
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --iso) iso_path="${2:-}"; shift 2 ;;
+        --usb-device) usb_device="${2:-}"; shift 2 ;;
+        *)
+          echo "Unknown secureboot-create option: $1" >&2
+          exit 2
+          ;;
+      esac
+    done
+    [ -n "$iso_path" ] || { echo "Usage: ./phoenixboot secureboot-create --iso <path> [--usb-device /dev/sdX]" >&2; exit 2; }
+    if [ -n "$usb_device" ]; then
+      ISO_PATH="$iso_path" USB_DEVICE="$usb_device" run_pf secureboot-create-usb
+    else
+      ISO_PATH="$iso_path" run_pf secureboot-create
+    fi
+    ;;
+
+  *)
+    run_pf "$cmd" "$@"
+    ;;
 esac

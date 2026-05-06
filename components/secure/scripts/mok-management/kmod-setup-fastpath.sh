@@ -2,7 +2,23 @@
 set -euo pipefail
 # Save caller's working directory to resolve relative paths correctly
 ORIG_PWD=$(pwd)
-cd "$(dirname "$0")/.."
+
+find_phoenix_root() {
+  local dir="$1"
+  while [ "$dir" != "/" ]; do
+    if [ -f "$dir/pf.py" ] && [ -f "$dir/Pfyfile.pf" ]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  return 1
+}
+
+SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+PHOENIX_ROOT="${PHOENIX_ROOT:-$(find_phoenix_root "$SCRIPT_DIR")}"
+cd "$PHOENIX_ROOT"
 
 # Configure utils/pfs_fastpath.ko to autoload and sign it if needed.
 # Usage: kmod-setup-fastpath.sh [module_path]
@@ -56,7 +72,7 @@ if [ -z "${KMOD_CERT:-}" ] || [ -z "${KMOD_KEY:-}" ]; then
 fi
 
 # Sign the module (needs kernel headers installed)
-PY=${VENV_BIN:-/home/punk/.venv/bin}/python
+PY=${PYTHON:-python3}
 "$PY" utils/pgmodsign.py --cert-path "${KMOD_CERT:-out/keys/mok/PGMOK.crt}" --key-path "${KMOD_KEY:-out/keys/mok/PGMOK.key}" "$MOD_PATH" || true
 
 # Install module into extra/ and depmod

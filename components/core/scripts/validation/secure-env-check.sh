@@ -19,7 +19,11 @@ BOLD='\033[1m'
 
 # Script directory and repo root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+if REPO_ROOT="$(git -C "${SCRIPT_DIR}" rev-parse --show-toplevel 2>/dev/null)"; then
+  :
+else
+  REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
+fi
 
 # Prefer central venv when available
 if [ -x "/home/punk/.venv/bin/python3" ]; then

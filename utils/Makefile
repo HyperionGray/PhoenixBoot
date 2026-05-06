@@ -129,6 +129,7 @@ clean:
 
 # Debug build
 debug: RELEASE_LDFLAGS =
+debug: CPPFLAGS += -U_FORTIFY_SOURCE
 debug: CFLAGS += -DDEBUG -O0
 debug: all
 

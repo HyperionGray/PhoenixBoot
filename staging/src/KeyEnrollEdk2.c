@@ -59,7 +59,7 @@ STATIC EFI_STATUS EnrollFromAuth(EFI_FILE_PROTOCOL *Root, CHAR16 *Name, EFI_GUID
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((StrLen(KEYS_DIR) + StrLen(Name) + 1) >= (sizeof(Path) / sizeof(Path[0]))) {
+  if ((StrLen(KEYS_DIR) + StrLen(Name) + 1) > (sizeof(Path) / sizeof(Path[0]))) {
     Print(L"[Enroll] Auth path too long for %s\n", Name);
     return EFI_INVALID_PARAMETER;
   }

@@ -241,7 +241,7 @@ static long pg_find_module_signature(FILE *module_file, struct module_signature 
     }
     
     /* Validate signature structure */
-    if (sig->sig_len == 0 || sig->sig_len > PG_MAX_SIGNATURE_SIZE || sig->sig_len > (uint32_t)(file_size / 2)) {
+    if (sig->sig_len == 0 || sig->sig_len > PG_MAX_SIGNATURE_SIZE || sig->sig_len > (file_size / 2)) {
         return -1;
     }
 

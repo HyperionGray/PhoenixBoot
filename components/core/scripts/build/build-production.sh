@@ -5,7 +5,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+if REPO_ROOT="$(git -C "${SCRIPT_DIR}" rev-parse --show-toplevel 2>/dev/null)"; then
+    :
+else
+    REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
+fi
 
 # Colors
 RED='\033[0;31m'
@@ -28,6 +32,7 @@ FORCE_BUILD="${PG_FORCE_BUILD:-0}"
 STAGING_BOOT="${REPO_ROOT}/staging/boot"
 STAGING_SRC="${REPO_ROOT}/staging/src"
 BUILD_TOOLS="${REPO_ROOT}/staging/tools"
+OUT_STAGING="${REPO_ROOT}/out/staging"
 
 # Required artifacts
 REQUIRED_ARTIFACTS=(
@@ -46,10 +51,25 @@ all_artifacts_exist() {
     return 0
 }
 
+sync_packaging_artifacts() {
+    mkdir -p "${OUT_STAGING}"
+
+    if [ -f "${STAGING_BOOT}/NuclearBootEdk2.efi" ]; then
+        cp -f "${STAGING_BOOT}/NuclearBootEdk2.efi" "${OUT_STAGING}/BootX64.efi"
+    fi
+    if [ -f "${STAGING_BOOT}/KeyEnrollEdk2.efi" ]; then
+        cp -f "${STAGING_BOOT}/KeyEnrollEdk2.efi" "${OUT_STAGING}/KeyEnrollEdk2.efi"
+    fi
+    if [ -f "${STAGING_BOOT}/UUEFI.efi" ]; then
+        cp -f "${STAGING_BOOT}/UUEFI.efi" "${OUT_STAGING}/UUEFI.efi"
+    fi
+}
+
 echo "Checking for pre-built artifacts in staging/boot/..."
 
 if all_artifacts_exist && [ "$FORCE_BUILD" != "1" ]; then
     echo -e "${GREEN}✓ All required artifacts found in staging/boot/${NC}"
+    sync_packaging_artifacts
     echo
     echo "Found artifacts:"
     for artifact in "${REQUIRED_ARTIFACTS[@]}"; do
@@ -60,6 +80,7 @@ if all_artifacts_exist && [ "$FORCE_BUILD" != "1" ]; then
     done
     echo
     echo "Artifacts are ready for use."
+    echo "Packaging artifacts synced to: ${OUT_STAGING}/"
     echo -e "${YELLOW}Note: Set PG_FORCE_BUILD=1 to rebuild from source${NC}"
     exit 0
 fi
@@ -162,9 +183,11 @@ done
 echo
 
 if [ "$success_count" -eq "${#REQUIRED_ARTIFACTS[@]}" ]; then
+    sync_packaging_artifacts
     echo -e "${GREEN}✅ All artifacts built successfully!${NC}"
     echo
     echo "Artifacts are ready in: ${STAGING_BOOT}/"
+    echo "Packaging artifacts synced to: ${OUT_STAGING}/"
     exit 0
 else
     echo -e "${YELLOW}⚠ Some artifacts are missing${NC}"

@@ -1,6 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+
+find_phoenix_root() {
+  local dir="$1"
+  while [ "$dir" != "/" ]; do
+    if [ -f "$dir/pf.py" ] && [ -f "$dir/Pfyfile.pf" ]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  return 1
+}
+
+SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+PHOENIX_ROOT="${PHOENIX_ROOT:-$(find_phoenix_root "$SCRIPT_DIR")}"
+cd "$PHOENIX_ROOT"
 
 # List enrolled MOKs and match against local certificates in common places.
 # Prints matching fingerprints and paths to avoid unnecessary reboots.

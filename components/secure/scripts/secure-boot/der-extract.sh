@@ -1,6 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$(dirname "$0")/.."
+
+find_phoenix_root() {
+  local dir="$1"
+  while [ "$dir" != "/" ]; do
+    if [ -f "$dir/pf.py" ] && [ -f "$dir/Pfyfile.pf" ]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+    dir="$(dirname "$dir")"
+  done
+  return 1
+}
+
+SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+PHOENIX_ROOT="${PHOENIX_ROOT:-$(find_phoenix_root "$SCRIPT_DIR")}"
+cd "$PHOENIX_ROOT"
 
 # Usage: der-extract.sh <infile.der|.p12|.pfx|.cer|.crt|.pem> <out_dir> <name>
 # Produces: <out_dir>/<name>.crt (PEM cert), <out_dir>/<name>.key (PEM key, if available), <out_dir>/<name>.der (DER cert)

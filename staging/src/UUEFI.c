@@ -405,32 +405,29 @@ UpdateVariableWithBackup(
   return EFI_SUCCESS;
 }
 
-/**
-  Compare two GUIDs
-  
-  @param Guid1  First GUID
-  @param Guid2  Second GUID
-  
-  @retval TRUE   GUIDs are equal
-  @retval FALSE  GUIDs are different
-**/
-BOOLEAN
-CompareGuid(
-  IN EFI_GUID *Guid1,
-  IN EFI_GUID *Guid2
-  )
-{
-  UINT8 *g1 = (UINT8 *)Guid1;
-  UINT8 *g2 = (UINT8 *)Guid2;
-  
-  // Byte-by-byte comparison to avoid alignment issues
-  for (UINTN i = 0; i < sizeof(EFI_GUID); i++) {
-    if (g1[i] != g2[i]) {
-      return FALSE;
-    }
-  }
-  return TRUE;
-}
+EFI_STATUS
+GetSecureBootStatus(
+  OUT UINT8 *SecureBoot,
+  OUT UINT8 *SetupMode
+  );
+
+EFI_STATUS
+ValidateDbKeys(
+  OUT BOOLEAN *HasValidKey
+  );
+
+EFI_STATUS
+CheckSecureBootConfiguration(
+  OUT BOOLEAN *IsProperlyConfigured,
+  OUT CHAR16 *DiagnosticMessage
+  );
+
+EFI_STATUS
+GuardVariableModification(
+  IN VARIABLE_INFO *VarInfo,
+  OUT BOOLEAN *AllowModification,
+  OUT CHAR16 *WarningMessage
+  );
 
 /**
   Categorize a variable based on its name and GUID
@@ -1208,6 +1205,8 @@ EditVariable(
   }
   
   VARIABLE_INFO *var = &gVariables[VarIndex];
+  BOOLEAN AllowModification = FALSE;
+  CHAR16 WarningMessage[MAX_WARNING_MESSAGE_SIZE];
   
   AllowModification = FALSE;
   GuardVariableModification(var, &AllowModification, WarningMessage);
@@ -1222,13 +1221,6 @@ EditVariable(
   Print(L"\nVariable: %s\n", var->Name);
   Print(L"Description: %s\n", var->Description);
   Print(L"Current Size: %lu bytes\n", var->DataSize);
-  
-  // Read current value
-  UINT8 *CurrentData = AllocateZeroPool(var->DataSize);
-  if (CurrentData == NULL) {
-    Print(L"✗ Failed to allocate memory\n");
-    return EFI_OUT_OF_RESOURCES;
-  }
   
   UINTN DataSize = var->DataSize;
   EFI_STATUS Status = gRT->GetVariable(
@@ -1268,8 +1260,13 @@ EditVariable(
   
   Print(L"\n⚠ WARNING: Incorrect values may cause system instability!\n");
   Print(L"\nEdit Options:\n");
-  Print(L"  1. Set to 0 (Disable)\n");
-  Print(L"  2. Set to 1 (Enable)\n");
+  if (IsScalarValue) {
+    Print(L"  1. Set to 0 (Disable)\n");
+    Print(L"  2. Set to 1 (Enable)\n");
+  } else {
+    Print(L"  1. Set to 0 (unavailable: value is not 1/2/4-byte scalar)\n");
+    Print(L"  2. Set to 1 (unavailable: value is not 1/2/4-byte scalar)\n");
+  }
   Print(L"  3. Delete Variable\n");
   Print(L"  0. Cancel\n");
   Print(L"\nSelect option: ");
@@ -1285,9 +1282,23 @@ EditVariable(
   
   switch (Key.UnicodeChar) {
     case L'1':
+      if (!IsScalarValue) {
+        Print(L"Cannot safely coerce a non-scalar variable to 0\n");
+        if (CurrentData != NULL) {
+          FreePool(CurrentData);
+        }
+        return EFI_UNSUPPORTED;
+      }
       newValue = 0;
       break;
     case L'2':
+      if (!IsScalarValue) {
+        Print(L"Cannot safely coerce a non-scalar variable to 1\n");
+        if (CurrentData != NULL) {
+          FreePool(CurrentData);
+        }
+        return EFI_UNSUPPORTED;
+      }
       newValue = 1;
       break;
     case L'3':
@@ -1295,11 +1306,15 @@ EditVariable(
       break;
     case L'0':
       Print(L"Cancelled\n");
-      FreePool(CurrentData);
+      if (CurrentData != NULL) {
+        FreePool(CurrentData);
+      }
       return EFI_ABORTED;
     default:
       Print(L"Invalid option\n");
-      FreePool(CurrentData);
+      if (CurrentData != NULL) {
+        FreePool(CurrentData);
+      }
       return EFI_INVALID_PARAMETER;
   }
   
@@ -1313,7 +1328,9 @@ EditVariable(
   
   if (Key.UnicodeChar != L'Y' && Key.UnicodeChar != L'y') {
     Print(L"Cancelled\n");
-    FreePool(CurrentData);
+    if (CurrentData != NULL) {
+      FreePool(CurrentData);
+    }
     return EFI_ABORTED;
   }
   
@@ -1360,7 +1377,9 @@ EditVariable(
     }
   }
   
-  FreePool(CurrentData);
+  if (CurrentData != NULL) {
+    FreePool(CurrentData);
+  }
   return Status;
 }
 
@@ -1809,6 +1828,71 @@ ShowNuclearWipeMenu(VOID)
       gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
       break;
   }
+}
+
+/**
+  Read an unsigned decimal index from the console.
+
+  @param Value  Parsed value on success
+
+  @retval EFI_SUCCESS  A decimal value was entered
+  @retval EFI_ABORTED  User cancelled or entered an empty value
+**/
+EFI_STATUS
+ReadUintnFromConsole(
+  OUT UINTN *Value
+  )
+{
+  EFI_INPUT_KEY Key;
+  UINTN EventIndex;
+  CHAR16 Buffer[16];
+  UINTN Length = 0;
+  UINTN ParsedValue = 0;
+
+  ZeroMem(Buffer, sizeof(Buffer));
+
+  while (TRUE) {
+    gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &EventIndex);
+    gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+
+    if (Key.UnicodeChar == L'Q' || Key.UnicodeChar == L'q') {
+      Print(L"%c\n", Key.UnicodeChar);
+      return EFI_ABORTED;
+    }
+
+    if (Key.UnicodeChar == 0x000D) {
+      Print(L"\n");
+      break;
+    }
+
+    if (Key.UnicodeChar == 0x0008) {
+      if (Length > 0) {
+        Length--;
+        Buffer[Length] = 0;
+        Print(L"\b \b");
+      }
+      continue;
+    }
+
+    if (Key.UnicodeChar >= L'0' && Key.UnicodeChar <= L'9') {
+      if (Length < (sizeof(Buffer) / sizeof(Buffer[0])) - 1) {
+        Buffer[Length++] = Key.UnicodeChar;
+        Print(L"%c", Key.UnicodeChar);
+      }
+      continue;
+    }
+  }
+
+  if (Length == 0) {
+    return EFI_ABORTED;
+  }
+
+  for (UINTN i = 0; i < Length; i++) {
+    ParsedValue = (ParsedValue * 10) + (Buffer[i] - L'0');
+  }
+
+  *Value = ParsedValue;
+  return EFI_SUCCESS;
 }
 
 /**

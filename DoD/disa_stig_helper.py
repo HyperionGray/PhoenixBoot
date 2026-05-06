@@ -51,6 +51,7 @@ DISTRO_PROFILES = {
 
 
 def load_os_release() -> dict[str, str]:
+    """Parse /etc/os-release into a dictionary, or return an empty mapping if absent."""
     data: dict[str, str] = {}
     os_release = Path("/etc/os-release")
     if not os_release.exists():
@@ -65,6 +66,7 @@ def load_os_release() -> dict[str, str]:
 
 
 def parse_os_release_value(value: str) -> str:
+    """Parse an os-release value with shell-style quoting, falling back to simple trimming."""
     try:
         tokens = shlex.split(value, posix=True)
     except ValueError:
@@ -73,11 +75,13 @@ def parse_os_release_value(value: str) -> str:
 
 
 def tokenize_distro_fields(raw_id: str, raw_like: str) -> set[str]:
+    """Combine distro ID fields into normalized tokens for family matching."""
     combined = f"{raw_id} {raw_like}".replace("-", " ").strip()
     return {token for token in combined.split() if token}
 
 
 def detect_distro(requested: str | None = None) -> dict[str, str]:
+    """Detect distro family metadata, allowing an explicit override via argument or environment."""
     requested = requested or os.environ.get("DISTRO")
     if requested:
         raw_id = requested.lower()
@@ -108,6 +112,7 @@ def detect_distro(requested: str | None = None) -> dict[str, str]:
 
 
 def print_guidance(context: dict[str, str]) -> None:
+    """Print distro-specific compliance and security guidance to stdout."""
     print(f"Distribution: {context['pretty_name']}")
     print(f"Distro family: {context['label']}")
     print(f"Compliance focus: {context['compliance_focus']}")
@@ -117,6 +122,7 @@ def print_guidance(context: dict[str, str]) -> None:
 
 
 def generate_secure_config(output: Path, requested_distro: str | None, requested_profile: str | None) -> int:
+    """Generate a distro-aware kernel config fragment and return 0 on success."""
     context = detect_distro(requested_distro)
     profile = requested_profile or os.environ.get("PROFILE") or context["default_profile"]
     config_text, warnings = generate_config_fragment(profile)
@@ -145,6 +151,7 @@ def generate_secure_config(output: Path, requested_distro: str | None, requested
 
 
 def run_kernel_check(config_path: str | None, output_format: str, requested_distro: str | None, output: str | None) -> int:
+    """Run the kernel hardening analyzer with distro-aware guidance and return its exit code."""
     context = detect_distro(requested_distro)
     print_guidance(context)
     print("")

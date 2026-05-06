@@ -24,6 +24,8 @@
 /* Module signature magic number and structure definitions */
 #define MODULE_SIG_STRING "~Module signature appended~\n"
 #define MODULE_SIG_STRING_LEN (sizeof(MODULE_SIG_STRING) - 1)
+#define PG_FINGERPRINT_HEX_SIZE ((EVP_MAX_MD_SIZE * 2) + 1)
+#define PG_MAX_SIGNATURE_SIZE (16U * 1024U * 1024U)
 
 /* Module signature information structure */
 struct module_signature {
@@ -58,6 +60,23 @@ typedef struct cert_cache_entry {
 
 static cert_cache_entry_t *cert_cache = NULL;
 static int openssl_initialized = 0;
+
+static int pg_assign_string(char **target, const char *value) {
+    char *copy;
+
+    if (target == NULL || value == NULL) {
+        return 0;
+    }
+
+    copy = strdup(value);
+    if (copy == NULL) {
+        return 0;
+    }
+
+    free(*target);
+    *target = copy;
+    return 1;
+}
 
 /* Initialize OpenSSL and certificate cache */
 static int pg_init_openssl(void) {
@@ -117,28 +136,34 @@ static int pg_load_certificate(const char *cert_path) {
     }
     
     /* Create cache entry */
-    entry = malloc(sizeof(cert_cache_entry_t));
+    entry = calloc(1, sizeof(cert_cache_entry_t));
     if (!entry) {
         X509_free(cert);
         return 0;
     }
     
     entry->cert = cert;
-    entry->fingerprint = malloc(64);
-    entry->next = cert_cache;
-    cert_cache = entry;
+    entry->fingerprint = malloc(PG_FINGERPRINT_HEX_SIZE);
+    if (!entry->fingerprint) {
+        X509_free(cert);
+        free(entry);
+        return 0;
+    }
     
     /* Calculate fingerprint for identification */
     unsigned char md[EVP_MAX_MD_SIZE];
     unsigned int md_len;
     if (X509_digest(cert, EVP_sha256(), md, &md_len)) {
         for (unsigned int i = 0; i < md_len; i++) {
-            sprintf(entry->fingerprint + (i * 2), "%02x", md[i]);
+            snprintf(entry->fingerprint + (i * 2), 3, "%02x", md[i]);
         }
         entry->fingerprint[md_len * 2] = '\0';
     } else {
-        strcpy(entry->fingerprint, "unknown");
+        snprintf(entry->fingerprint, PG_FINGERPRINT_HEX_SIZE, "%s", "unknown");
     }
+
+    entry->next = cert_cache;
+    cert_cache = entry;
     
     return 1;
 }
@@ -176,17 +201,25 @@ int pg_load_certificates_from_dir(const char *cert_dir) {
 static long pg_find_module_signature(FILE *module_file, struct module_signature *sig) {
     char magic_buffer[MODULE_SIG_STRING_LEN];
     long file_size, sig_offset;
+    long min_size = (long)(MODULE_SIG_STRING_LEN + sizeof(struct module_signature));
     
     /* Get file size */
-    fseek(module_file, 0, SEEK_END);
+    if (fseek(module_file, 0, SEEK_END) != 0) {
+        return -1;
+    }
     file_size = ftell(module_file);
+    if (file_size < 0) {
+        return -1;
+    }
     
-    if (file_size < MODULE_SIG_STRING_LEN + sizeof(struct module_signature)) {
+    if (file_size < min_size) {
         return -1;
     }
     
     /* Check for signature magic at end of file */
-    fseek(module_file, file_size - MODULE_SIG_STRING_LEN, SEEK_SET);
+    if (fseek(module_file, file_size - (long)MODULE_SIG_STRING_LEN, SEEK_SET) != 0) {
+        return -1;
+    }
     if (fread(magic_buffer, 1, MODULE_SIG_STRING_LEN, module_file) != MODULE_SIG_STRING_LEN) {
         return -1;
     }
@@ -196,15 +229,21 @@ static long pg_find_module_signature(FILE *module_file, struct module_signature 
     }
     
     /* Read signature structure */
-    sig_offset = file_size - MODULE_SIG_STRING_LEN - sizeof(struct module_signature);
-    fseek(module_file, sig_offset, SEEK_SET);
+    sig_offset = file_size - min_size;
+    if (fseek(module_file, sig_offset, SEEK_SET) != 0) {
+        return -1;
+    }
     
     if (fread(sig, 1, sizeof(struct module_signature), module_file) != sizeof(struct module_signature)) {
         return -1;
     }
     
     /* Validate signature structure */
-    if (sig->sig_len == 0 || sig->sig_len > (file_size / 2)) {
+    if (sig->sig_len == 0 || sig->sig_len > PG_MAX_SIGNATURE_SIZE || sig->sig_len > (uint32_t)(file_size / 2)) {
+        return -1;
+    }
+
+    if (sig_offset < (long)sig->sig_len) {
         return -1;
     }
     
@@ -216,13 +255,21 @@ static unsigned char *pg_extract_signature(FILE *module_file,
                                          const struct module_signature *sig,
                                          long sig_data_offset) {
     unsigned char *sig_data;
+
+    if (sig == NULL || sig_data_offset < 0 || sig->sig_len == 0 || sig->sig_len > PG_MAX_SIGNATURE_SIZE) {
+        return NULL;
+    }
     
     sig_data = malloc(sig->sig_len);
     if (!sig_data) {
         return NULL;
     }
     
-    fseek(module_file, sig_data_offset, SEEK_SET);
+    if (fseek(module_file, sig_data_offset, SEEK_SET) != 0) {
+        free(sig_data);
+        return NULL;
+    }
+
     if (fread(sig_data, 1, sig->sig_len, module_file) != sig->sig_len) {
         free(sig_data);
         return NULL;
@@ -241,6 +288,7 @@ static unsigned char *pg_calculate_module_hash(FILE *module_file,
     unsigned char buffer[8192];
     size_t bytes_read;
     long bytes_remaining;
+    int hash_size;
     
     ctx = EVP_MD_CTX_new();
     if (!ctx) return NULL;
@@ -250,7 +298,13 @@ static unsigned char *pg_calculate_module_hash(FILE *module_file,
         return NULL;
     }
     
-    hash = malloc(EVP_MD_size(hash_algo));
+    hash_size = EVP_MD_size(hash_algo);
+    if (hash_size <= 0) {
+        EVP_MD_CTX_free(ctx);
+        return NULL;
+    }
+
+    hash = malloc((size_t)hash_size);
     if (!hash) {
         EVP_MD_CTX_free(ctx);
         return NULL;
@@ -261,7 +315,7 @@ static unsigned char *pg_calculate_module_hash(FILE *module_file,
     bytes_remaining = content_end;
     
     while (bytes_remaining > 0) {
-        size_t to_read = (bytes_remaining > sizeof(buffer)) ? sizeof(buffer) : bytes_remaining;
+        size_t to_read = (bytes_remaining > (long)sizeof(buffer)) ? sizeof(buffer) : (size_t)bytes_remaining;
         bytes_read = fread(buffer, 1, to_read, module_file);
         
         if (bytes_read == 0) break;
@@ -343,7 +397,7 @@ pg_verify_result_t *pg_verify_module_signature(const char *module_path) {
     /* Open module file */
     module_file = fopen(module_path, "rb");
     if (!module_file) {
-        result->error_message = strdup("Failed to open module file");
+        pg_assign_string(&result->error_message, "Failed to open module file");
         return result;
     }
     
@@ -351,7 +405,7 @@ pg_verify_result_t *pg_verify_module_signature(const char *module_path) {
     sig_data_offset = pg_find_module_signature(module_file, &sig);
     if (sig_data_offset < 0) {
         result->has_signature = 0;
-        result->error_message = strdup("No signature found in module");
+        pg_assign_string(&result->error_message, "No signature found in module");
         goto cleanup;
     }
     
@@ -362,26 +416,26 @@ pg_verify_result_t *pg_verify_module_signature(const char *module_path) {
     /* Extract signature data */
     sig_data = pg_extract_signature(module_file, &sig, sig_data_offset);
     if (!sig_data) {
-        result->error_message = strdup("Failed to extract signature data");
+        pg_assign_string(&result->error_message, "Failed to extract signature data");
         goto cleanup;
     }
     
     /* Determine hash algorithm */
     switch (sig.hash) {
-        case 0: hash_algo = EVP_sha1(); result->hash_algorithm = strdup("sha1"); break;
-        case 1: hash_algo = EVP_sha224(); result->hash_algorithm = strdup("sha224"); break;
-        case 2: hash_algo = EVP_sha256(); result->hash_algorithm = strdup("sha256"); break;
-        case 3: hash_algo = EVP_sha384(); result->hash_algorithm = strdup("sha384"); break;
-        case 4: hash_algo = EVP_sha512(); result->hash_algorithm = strdup("sha512"); break;
+        case 0: hash_algo = EVP_sha1(); pg_assign_string(&result->hash_algorithm, "sha1"); break;
+        case 1: hash_algo = EVP_sha224(); pg_assign_string(&result->hash_algorithm, "sha224"); break;
+        case 2: hash_algo = EVP_sha256(); pg_assign_string(&result->hash_algorithm, "sha256"); break;
+        case 3: hash_algo = EVP_sha384(); pg_assign_string(&result->hash_algorithm, "sha384"); break;
+        case 4: hash_algo = EVP_sha512(); pg_assign_string(&result->hash_algorithm, "sha512"); break;
         default:
-            result->error_message = strdup("Unknown hash algorithm");
+            pg_assign_string(&result->error_message, "Unknown hash algorithm");
             goto cleanup;
     }
     
     /* Calculate module hash */
     module_hash = pg_calculate_module_hash(module_file, sig_data_offset, hash_algo, &hash_len);
     if (!module_hash) {
-        result->error_message = strdup("Failed to calculate module hash");
+        pg_assign_string(&result->error_message, "Failed to calculate module hash");
         goto cleanup;
     }
     
@@ -389,15 +443,19 @@ pg_verify_result_t *pg_verify_module_signature(const char *module_path) {
     for (cert_entry = cert_cache; cert_entry; cert_entry = cert_entry->next) {
         if (pg_verify_signature_with_cert(module_hash, hash_len, sig_data, sig.sig_len, cert_entry->cert)) {
             result->valid = 1;
-            result->signer = strdup(cert_entry->fingerprint);
-            result->algorithm = strdup("rsa"); /* Assume RSA for now */
+            if (!pg_assign_string(&result->signer, cert_entry->fingerprint) ||
+                !pg_assign_string(&result->algorithm, "rsa")) {
+                result->valid = 0;
+                pg_assign_string(&result->error_message, "Failed to store verification details");
+                goto cleanup;
+            }
             verified = 1;
             break;
         }
     }
     
     if (!verified) {
-        result->error_message = strdup("Signature verification failed against all certificates");
+        pg_assign_string(&result->error_message, "Signature verification failed against all certificates");
     }
     
 cleanup:

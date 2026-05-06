@@ -1,9 +1,13 @@
 # PhoenixGuard Module Verification Library Makefile
 # Part of the edk2-bootkit-defense project
 
-CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -fPIC -O2 -g
-LDFLAGS = -shared
+CC ?= gcc
+CPPFLAGS ?= -D_FORTIFY_SOURCE=2
+CFLAGS ?= -Wall -Wextra -std=c99 -fPIC -O2 -g -fstack-protector-strong
+COMMON_LDFLAGS ?= -Wl,-z,relro,-z,now,-z,noexecstack
+RELEASE_LDFLAGS ?= -Wl,-s
+LDFLAGS = -shared $(COMMON_LDFLAGS) $(RELEASE_LDFLAGS)
+EXE_LDFLAGS = $(COMMON_LDFLAGS) -pie $(RELEASE_LDFLAGS)
 LIBS = -lssl -lcrypto
 
 # Library name and version
@@ -47,12 +51,12 @@ $(SHARED_LIB): $(OBJECTS)
 # Object files
 %.o: %.c
 	@echo "Compiling: $<"
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 # Test program
 $(TEST_PROG): pgmodverify.c
 	@echo "Building test program: $@"
-	$(CC) $(CFLAGS) -DPG_TEST_MAIN -o $@ $< $(LIBS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DPG_TEST_MAIN -o $@ $< $(EXE_LDFLAGS) $(LIBS)
 
 # Header file (generate from source)
 pgmodverify.h: pgmodverify.c
@@ -125,6 +129,7 @@ clean:
 	rm -f test_module.ko
 
 # Debug build
+debug: RELEASE_LDFLAGS =
 debug: CFLAGS += -DDEBUG -O0
 debug: all
 

@@ -36,7 +36,7 @@ validate_device_path() {
 device_contains_running_system() {
     local device="$1"
     lsblk -nrpo NAME,MOUNTPOINT "$device" 2>/dev/null | awk '
-        $2 == "/" || $2 == "/boot" || $2 == "/boot/efi" || $2 == "/boot/grub" || $2 == "/boot/grub2" { found=1 }
+        $2 == "/" || $2 == "/boot" || $2 == "/boot/efi" || $2 == "/efi" || $2 == "/boot/grub" || $2 == "/boot/grub2" { found=1 }
         END { exit found ? 0 : 1 }
     '
 }
@@ -55,8 +55,9 @@ confirm_wipe_target() {
     if device_contains_running_system "$device"; then
         echo "   Worst case: $device appears to host the currently running system."
         echo "              Wiping it can leave this machine immediately unbootable."
-        read -p "Type 'ERASE RUNNING SYSTEM' to accept this risk: " extra_confirmation
-        if [ "$extra_confirmation" != "ERASE RUNNING SYSTEM" ]; then
+        local running_system_confirmation="ERASE RUNNING SYSTEM"
+        read -p "Type '$running_system_confirmation' to accept this risk: " extra_confirmation
+        if [ "$extra_confirmation" != "$running_system_confirmation" ]; then
             echo "✅ Cancelled"
             exit 0
         fi

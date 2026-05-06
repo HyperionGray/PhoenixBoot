@@ -82,6 +82,7 @@ VMLINUZ="/boot/vmlinuz-$(uname -r)"
 INITRD="/boot/initrd.img-$(uname -r)"
 ROOT_UUID=$(findmnt -n -o UUID / || true)
 QCOW2="$(pwd)/ubuntu-24.04-minimal-cloudimg-amd64.qcow2"
+KVM_INSTALLER="$SCRIPT_DIR/install_kvm_snapshot_jump.sh"
 
 if [[ ! -f "$VMLINUZ" || ! -f "$INITRD" ]]; then
     echo "ERROR: Recovery kernel or initrd missing."
@@ -98,9 +99,14 @@ if [[ ! -f "$QCOW2" ]]; then
     exit 1
 fi
 
+if [[ ! -x "$KVM_INSTALLER" ]]; then
+    echo "ERROR: KVM snapshot installer missing or not executable: $KVM_INSTALLER"
+    exit 1
+fi
+
 # Install KVM snapshot jump configuration
 echo "[kvm] Installing KVM snapshot jump configuration"
-"$SCRIPT_DIR/install_kvm_snapshot_jump.sh" \
+"$KVM_INSTALLER" \
     --esp "$ESP" --vmlinuz "$VMLINUZ" --initrd "$INITRD" --root-uuid "$ROOT_UUID" \
     --qcow2 "$QCOW2" --loadvm base-snapshot \
     --gpu-bdf 0000:02:00.0 --gpu-ids 10de:2d58 || echo "☠  KVM config failed, continuing..."

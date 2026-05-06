@@ -91,9 +91,9 @@ STATIC UINTN gSuspiciousCount = 0;
 STATIC EFI_HANDLE gCurrentImageHandle = NULL;
 STATIC CHAR16 gBootMediaStatus[256] = L"Boot media scan not yet run";
 
-EFI_STATUS EnumerateAllVariables(VOID);
-VOID AnalyzeCurrentBootMedia(VOID);
-VOID RefreshDiagnostics(VOID);
+EFI_STATUS EnumerateAllVariables();
+VOID AnalyzeCurrentBootMedia();
+VOID RefreshDiagnostics();
 
 BOOLEAN
 IsScalarVariableSize(
@@ -789,7 +789,7 @@ AddVariableDescription(
   @retval Other        Error occurred
 **/
 EFI_STATUS
-EnumerateAllVariables(VOID)
+EnumerateAllVariables()
 {
   EFI_STATUS Status;
   CHAR16 VariableName[MAX_VARIABLE_NAME_SIZE];
@@ -881,7 +881,7 @@ EnumerateAllVariables(VOID)
 }
 
 VOID
-AnalyzeCurrentBootMedia(VOID)
+AnalyzeCurrentBootMedia()
 {
   EFI_STATUS Status;
   EFI_LOADED_IMAGE_PROTOCOL *LoadedImage;
@@ -1054,10 +1054,10 @@ AnalyzeCurrentBootMedia(VOID)
       UnicodeSPrint(
         Summary,
         256,
-        L"Boot media scan clean: %s layout with %lu partition entr%s",
+        L"Boot media scan clean: %s layout with %lu partition %s",
         HasGptHeader ? L"GPT" : L"MBR",
         PartitionEntries,
-        PartitionEntries == 1 ? L"y" : L"ies"
+        PartitionEntries == 1 ? L"entry" : L"entries"
       );
       StrCpyS(gBootMediaStatus, 256, Summary);
     }
@@ -1068,7 +1068,7 @@ AnalyzeCurrentBootMedia(VOID)
 }
 
 VOID
-RefreshDiagnostics(VOID)
+RefreshDiagnostics()
 {
   EnumerateAllVariables();
   AnalyzeCurrentBootMedia();

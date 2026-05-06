@@ -25,113 +25,133 @@ PhoenixBoot's **Progressive Recovery System** (also known as NuclearBoot) provid
 
 ---
 
-## The Six Escalation Levels
+## The First-Release Escalation Levels
 
-### Level 1: DETECT (Software-Based Scanning)
-**What it does:** Comprehensive bootkit detection with zero system changes
+### Level 1: FLASHROM (Direct Vendor BIOS Reflash)
+**What it does:** Tries the obvious fix first: reflash a known-good vendor BIOS with `flashrom`.
 
-**Risk:** ✅ None (read-only)  
-**Time:** ~2 minutes  
-**When to use:** Always start here
+**Risk:** ⚠️ Medium  
+**Time:** ~5-15 minutes  
+**When to use:** First recovery step once you have a trusted BIOS image
 
 **Command:**
 ```bash
-./pf.py secure-env
-```
-
-**Output:**
-```
-Risk Level: CLEAN | LOW | MEDIUM | HIGH | CRITICAL
+sudo FIRMWARE_PATH=/path/to/vendor-bios.bin ./pf.py firmware-recovery-restore
 ```
 
 ---
 
-### Level 2: SOFT (ESP Nuclear Boot ISO)
-**What it does:** Deploys Nuclear Boot recovery environment to ESP
+### Level 2: KEXEC (Double-Kexec Recovery)
+**What it does:** If `flashrom` is blocked by kernel protections, switch to a permissive recovery posture, flash, then harden again with Secure Boot and custom keys.
 
-**Risk:** ⚠️ Low (modifies ESP, but reversible)  
-**Time:** ~5-10 minutes  
-**When to use:** MEDIUM threat level
+**Risk:** ⚠️⚠️ Medium-High  
+**Time:** ~10-20 minutes  
+**When to use:** Direct flashing failed because the running kernel/lockdown path still owns boot
 
-**Command:**
+**Commands:**
+```bash
+./pf.py kernel-profile-permissive
+sudo ./pf.py secureboot-enable-kexec
+./pf.py kernel-profile-hardened
+PROFILE=hardened ./pf.py kernel-profile-compare
+```
+
+> Even if a stubborn hardware foothold remains, custom Secure Boot keys plus a hardened kernel usually make the bootkit chain brittle enough that the system can remain usable and materially safer.
+
+---
+
+### Level 3: ESP-CD (Fake CD in the ESP)
+**What it does:** Places the recovery ISO into the ESP so the next boot can jump into a minimal recovery OS without relying on your usual boot flow.
+
+**Risk:** ⚠️⚠️ Medium-High  
+**Time:** ~10-20 minutes  
+**When to use:** You need a cleaner OS context for BIOS flashing
+
+**Commands:**
 ```bash
 ./pf.py workflow-cd-prepare
+sudo bash components/workflows/scripts/esp-packaging/deploy-esp-iso.sh --iso PhoenixGuard-Nuclear-Recovery.iso
+sudo bash components/workflows/scripts/esp-packaging/boot-from-esp-iso.sh
+```
+
+The ESP should have enough free space for the recovery ISO before deploying it.
+
+---
+
+### Level 4: UUEFI (Targeted EFI Repair)
+**What it does:** Installs UUEFI as the next boot so you can inspect and fix suspicious EFI variables against a trusted vendor baseline.
+
+**Risk:** ⚠️⚠️ Medium-High  
+**Time:** ~10 minutes  
+**When to use:** The vendor BIOS is back, but EFI state still looks compromised
+
+**Commands:**
+```bash
+./pf.py uuefi-install
+./pf.py uuefi-apply
 sudo reboot
 ```
 
 ---
 
-### Level 3: SECURE (Double-kexec Firmware Access)
-**What it does:** Temporary firmware access using kexec
+### Level 5: UUEFI-NUKE (Aggressive EFI Reset)
+**What it does:** Uses UUEFI to wipe and rebuild EFI state when targeted fixes are not enough.
 
-**Risk:** ⚠️ Medium (temporary security reduction)  
-**Time:** ~10-15 minutes  
-**When to use:** HIGH threat level
+**Risk:** ⚠️⚠️⚠️ High  
+**Time:** ~15-30 minutes  
+**When to use:** Targeted UUEFI repair failed and you are ready for destructive cleanup
 
-**Command:**
+This is where users should be warned clearly that the recovery path is getting risky.
+
+---
+
+### Level 6: CMOS (Manual Motherboard Reset)
+**What it does:** Gives the user the old-school board-level reset instructions many people never try.
+
+**Risk:** ⚠️ High  
+**Time:** A few hours  
+**When to use:** Software-driven recovery paths are exhausted
+
+Try:
+- Clear-CMOS / clear-BIOS jumpers or reset buttons
+- Remove AC power and the main battery
+- Remove the CMOS battery
+- Wait at least a couple of hours before reassembly
+
+---
+
+### Level 7: CH341A (External Programmer)
+**What it does:** Moves to an external programmer when the platform is locked in SPI/DXE protections or otherwise refuses software recovery.
+
+**Risk:** ⚠️⚠️⚠️⚠️ Very High  
+**Time:** ~1-4 hours  
+**When to use:** All softer options failed
+
+**Commands:**
 ```bash
-./pf.py kernel-kexec-check
-./pf.py kernel-config-remediate
-sudo bash out/remediation/kernel_remediation.sh
+flashrom -p ch341a_spi -r current_firmware_backup.bin
+flashrom -p ch341a_spi -w /path/to/vendor-bios.bin -V
+flashrom -p ch341a_spi -v /path/to/vendor-bios.bin
 ```
 
----
-
-### Level 4: VM (Reboot to KVM Recovery Environment)
-**What it does:** Reboots into isolated KVM recovery environment
-
-**Risk:** ⚠️⚠️ Medium-High (system reboot required)  
-**Time:** ~30-60 minutes  
-**When to use:** HIGH threat level, need isolation
-
-**Command:**
-```bash
-bash scripts/recovery/install_kvm_snapshot_jump.sh
-bash scripts/recovery/reboot-to-vm.sh
-```
+Need help or a programmer? Contact **bootkit@hyperiongray.com**. Alex (`_hyp3ri0n` / `P4X`) will try to help, though OSS support may take a bit.
 
 ---
 
-### Level 5: XEN (Reboot to Xen dom0)
-**What it does:** Ultimate isolation with Xen hypervisor
-
-**Risk:** ⚠️⚠️⚠️ High (hypervisor reboot required)  
-**Time:** ~1-2 hours  
-**When to use:** CRITICAL threat level
-
----
-
-### Level 6: HARDWARE (Direct SPI Flash Recovery)
-**What it does:** Bypasses all software, directly programs firmware chip
-
-**Risk:** ⚠️⚠️⚠️⚠️ Very High (can brick system)  
-**Time:** ~2-4 hours  
-**When to use:** All software methods failed
-
-**Command:**
-```bash
-bash scripts/recovery/hardware-recovery.sh
-```
-
-⚠️ **WARNING:** This is the nuclear option. Only use if all other methods fail.
-
----
-
-## Quick Start: Automatic Progressive Recovery
+## Quick Start: Guided Progressive Recovery
 
 **The easy way - let PhoenixBoot decide:**
 
 ```bash
-python3 scripts/recovery/phoenix_progressive.py
+python3 components/workflows/scripts/recovery/autonuke.py
 ```
 
 This intelligent system:
-1. Detects threat level
-2. Recommends appropriate escalation
-3. Asks for user confirmation
-4. Executes recovery steps
-5. Verifies success
-6. Escalates if needed
+1. Starts with `flashrom`
+2. Escalates to the double-kexec path when firmware protections get in the way
+3. Offers the ESP fake-CD recovery environment
+4. Walks you into UUEFI targeted and destructive EFI repair
+5. Ends with manual reset and CH341A guidance if the platform is still locked down
 
 ---
 
@@ -160,35 +180,21 @@ See [UUEFI v3 Guide](UUEFI_V3_GUIDE.md) for details.
 
 ---
 
-## Nuclear Wipe Script (Emergency)
-
-For severe infections:
-
-```bash
-sudo bash scripts/recovery/nuclear-wipe.sh
-```
-
-**Four Options:**
-1. **Vendor variable wipe** - Remove bloatware (safe)
-2. **Full NVRAM reset** - Factory defaults
-3. **Disk wiping guide** - Instructions for nwipe
-4. **Complete nuclear wipe** - NVRAM + disk (EXTREME)
-
-⚠️ **WARNING:** Options 3 and 4 are PERMANENT!
-
----
-
 ## Decision Tree: Which Level Do I Need?
 
 ```
-Start: Run Level 1 (DETECT)
+Start: Run Level 1 (FLASHROM)
   ↓
-Risk Level?
+Did the vendor BIOS reflash work?
   ↓
-├─ CLEAN/LOW → ✅ Done (schedule next scan)
-├─ MEDIUM → Level 2 (ESP cleanup)
-├─ HIGH → Level 3 (kexec) or Level 4 (VM)
-└─ CRITICAL → Level 5 (Xen) or Level 6 (Hardware)
+├─ Yes → ✅ Re-enable hardening and stop
+└─ No
+   ├─ Kernel protections blocking flashrom? → Level 2 (KEXEC)
+   ├─ Need cleaner recovery OS? → Level 3 (ESP-CD)
+   ├─ EFI variables still suspect? → Level 4 (UUEFI)
+   ├─ Need destructive EFI cleanup? → Level 5 (UUEFI-NUKE)
+   ├─ Firmware still stuck? → Level 6 (CMOS)
+   └─ Platform still locked? → Level 7 (CH341A)
 ```
 
 ---
@@ -198,8 +204,8 @@ Risk Level?
 After recovery, verify:
 
 ```bash
-./pf.py secure-env
-# Should show: Risk Level: CLEAN
+./pf.py secureboot-check
+PROFILE=hardened ./pf.py kernel-profile-compare
 ```
 
 ---

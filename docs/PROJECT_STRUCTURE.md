@@ -39,7 +39,7 @@ Current components:
 
 - Continue using `./pf.py <task>` from the repository root
 - Continue using `scripts/...` paths if you already have automation built around them
-- Shared shell helpers now live in `includes/lib/`, with `scripts/lib/` retained as a compatibility symlink
+- Shared shell helpers now live in `includes/lib/`, and shell entrypoints should source them there directly
 
 ## Notes
 

@@ -408,6 +408,13 @@ What this means:
         print(warning)
         print("DXE/SPI cleanup is harder and may still require hardware access, so treat this as a risky last software-side step.")
         print()
+        self.print_recovery_commands([
+            "./pf.py uuefi-install",
+            "APP=UUEFI ./pf.py uuefi-apply",
+            "sudo reboot",
+            "# In UUEFI: Nuclear Wipe -> Full NVRAM reset, then rebuild trusted boot entries",
+            "./pf.py uuefi-report",
+        ])
 
         return self.confirm_action("Did you complete the UUEFI nuclear wipe and want to stop escalation here?", "HIGH")
 
@@ -439,8 +446,8 @@ What this means:
         print()
         self.print_recovery_commands([
             "flashrom -p ch341a_spi -r current_firmware_backup.bin",
-            f"flashrom -p ch341a_spi -w {display_firmware} -V",
-            f"flashrom -p ch341a_spi -v {display_firmware}",
+            f"flashrom -p ch341a_spi -w {shlex.quote(display_firmware)} -V",
+            f"flashrom -p ch341a_spi -v {shlex.quote(display_firmware)}",
         ])
         print("Checklist:")
         print("  • Locate the BIOS flash chip (often an 8-pin SOIC device)")

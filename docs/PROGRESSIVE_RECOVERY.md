@@ -103,6 +103,15 @@ sudo reboot
 
 This is where users should be warned clearly that the recovery path is getting risky.
 
+**Commands:**
+```bash
+./pf.py uuefi-install
+APP=UUEFI ./pf.py uuefi-apply
+sudo reboot
+# In UUEFI: Nuclear Wipe -> Full NVRAM reset, then rebuild trusted boot entries
+./pf.py uuefi-report
+```
+
 ---
 
 ### Level 6: CMOS (Manual Motherboard Reset)

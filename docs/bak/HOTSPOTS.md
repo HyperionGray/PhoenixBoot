@@ -9,7 +9,7 @@ This file tracks areas of active development or areas needing attention.
 1. **Container Architecture** - Actively being refined
    - Location: `containers/`
    - Status: Production-ready but evolving
-   - See: [docs/CONTAINER_ARCHITECTURE.md](docs/CONTAINER_ARCHITECTURE.md)
+   - See: [../CONTAINER_ARCHITECTURE.md](../CONTAINER_ARCHITECTURE.md)
 
 2. **Terminal UI (TUI)** - New interactive interface
    - Location: `containers/tui/`
@@ -19,7 +19,7 @@ This file tracks areas of active development or areas needing attention.
 3. **SecureBoot Bootable Media** - Key feature
    - Script: `create-secureboot-bootable-media.sh`
    - Status: Production-ready
-   - See: [docs/SECUREBOOT_BOOTABLE_MEDIA.md](docs/SECUREBOOT_BOOTABLE_MEDIA.md)
+   - See: [../SECUREBOOT_BOOTABLE_MEDIA.md](../SECUREBOOT_BOOTABLE_MEDIA.md)
 
 ### Maintenance Needed
 

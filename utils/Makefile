@@ -125,7 +125,6 @@ clean:
 	rm -f $(SONAME)
 	rm -f $(LIBNAME).so
 	rm -f $(TEST_PROG)
-	rm -f pgmodverify.h
 	rm -f test_module.ko
 
 # Debug build

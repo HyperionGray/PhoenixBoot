@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -59,8 +60,21 @@ def load_os_release() -> dict[str, str]:
         if "=" not in line:
             continue
         key, value = line.split("=", 1)
-        data[key] = value.strip().strip('"')
+        data[key] = parse_os_release_value(value)
     return data
+
+
+def parse_os_release_value(value: str) -> str:
+    try:
+        tokens = shlex.split(value, posix=True)
+    except ValueError:
+        return value.strip().strip('"')
+    return " ".join(tokens) if tokens else ""
+
+
+def tokenize_distro_fields(raw_id: str, raw_like: str) -> set[str]:
+    combined = f"{raw_id} {raw_like}".replace("-", " ").strip()
+    return {token for token in combined.split() if token}
 
 
 def detect_distro(requested: str | None = None) -> dict[str, str]:
@@ -75,7 +89,7 @@ def detect_distro(requested: str | None = None) -> dict[str, str]:
         raw_like = os.environ.get("DISTRO_LIKE", os_release.get("ID_LIKE", "")).lower()
         pretty_name = os.environ.get("DISTRO_NAME", os_release.get("PRETTY_NAME", raw_id or "Unknown Linux"))
 
-    tokens = {token for token in (raw_id + " " + raw_like).replace("-", " ").split() if token}
+    tokens = tokenize_distro_fields(raw_id, raw_like)
     for family, metadata in DISTRO_PROFILES.items():
         if tokens & metadata["aliases"]:
             return {
@@ -116,11 +130,10 @@ def generate_secure_config(output: Path, requested_distro: str | None, requested
         f"# Security focus: {context['security_focus']}",
         f"# Package manager: {context['package_manager']}",
         f"# Bootloader update: {context['bootloader_update']}",
-        "",
     ]
 
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text("\n".join(header) + config_text + "\n")
+    output.write_text("\n".join(header) + "\n\n" + config_text.rstrip() + "\n")
 
     print(f"✓ Generated {profile} secure config: {output}")
     print_guidance(context)

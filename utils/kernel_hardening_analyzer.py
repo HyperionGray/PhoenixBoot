@@ -20,14 +20,14 @@ Usage:
     python3 kernel_hardening_analyzer.py --generate-baseline > hardened_config.txt
 """
 
-import sys
-import re
+import argparse
+from datetime import datetime
 import gzip
 import json
 from pathlib import Path
+import re
+import sys
 from typing import Dict, List, Optional, Tuple
-from datetime import datetime
-import argparse
 
 from kernel_hardening_policy import (
     ConfigProfile,
@@ -38,8 +38,7 @@ from kernel_hardening_policy import (
 
 class KernelHardeningAnalyzer:
     """Analyzer for kernel configuration security with multiple profiles"""
-    HARDENING_CHECKS = HARDENING_CHECKS
-    
+
     def __init__(self, config_path: Optional[Path] = None):
         """Initialize analyzer with optional config path"""
         self.config_path = config_path
@@ -120,7 +119,7 @@ class KernelHardeningAnalyzer:
         """Run full security analysis"""
         results = {
             'config_path': str(self.config_path),
-            'total_checks': len(self.HARDENING_CHECKS),
+            'total_checks': len(HARDENING_CHECKS),
             'passed': 0,
             'failed': 0,
             'findings': [],
@@ -130,7 +129,7 @@ class KernelHardeningAnalyzer:
         }
         
         # Run all checks
-        for check in self.HARDENING_CHECKS:
+        for check in HARDENING_CHECKS:
             passed, actual_value = self.check_config_option(check)
             
             finding = {
@@ -240,7 +239,7 @@ class KernelHardeningAnalyzer:
         
         # Group by category
         by_category = {}
-        for check in self.HARDENING_CHECKS:
+        for check in HARDENING_CHECKS:
             if check.category not in by_category:
                 by_category[check.category] = []
             by_category[check.category].append(check)
@@ -266,7 +265,7 @@ class KernelHardeningAnalyzer:
         
         if profile == ConfigProfile.HARDENED:
             # Maximum security configuration - prevents kexec exploitation
-            for check in self.HARDENING_CHECKS:
+            for check in HARDENING_CHECKS:
                 config[check.name] = check.expected_value
             
             # Additional hardening for kexec prevention
@@ -282,7 +281,7 @@ class KernelHardeningAnalyzer:
         elif profile == ConfigProfile.PERMISSIVE:
             # Temporarily reduced security for BIOS/firmware access
             # Start with hardened base but selectively disable protections
-            for check in self.HARDENING_CHECKS:
+            for check in HARDENING_CHECKS:
                 config[check.name] = check.expected_value
             
             # Disable protections that block firmware access
@@ -299,7 +298,7 @@ class KernelHardeningAnalyzer:
             
         elif profile == ConfigProfile.TRANSITION:
             # Intermediate profile for safe transitions between permissive and hardened
-            for check in self.HARDENING_CHECKS:
+            for check in HARDENING_CHECKS:
                 config[check.name] = check.expected_value
             
             # Enable kexec but keep other protections

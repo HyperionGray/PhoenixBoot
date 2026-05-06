@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """
-PhoenixGuard Certificate Inventory Tool
-Part of the edk2-bootkit-defense project
+PhoenixGuard certificate inventory helpers.
 
-Scans and prepares PhoenixGuard SecureBoot certificates for kernel module signing.
-Converts certificates to PEM format and provides certificate metadata.
+This module is safe to import as a small library as well as execute as a CLI.
+
+Public API:
+    PhoenixGuardCertInventory:
+        Discover PhoenixBoot/PhoenixGuard certificate material, extract metadata,
+        convert DER certificates to PEM, and save an inventory report.
+    main():
+        Command-line entry point for generating a JSON inventory report.
 """
 
 import os
@@ -35,7 +40,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+__all__ = ["PhoenixGuardCertInventory", "main"]
+
 class PhoenixGuardCertInventory:
+    """Inspect a certificate directory and produce signing-oriented inventory data.
+
+    The class focuses on the highest-level workflow needed by callers:
+
+    1. locate the certificate directory,
+    2. catalog certificate-related files,
+    3. convert DER certificates when needed,
+    4. extract OpenSSL metadata, and
+    5. emit a single inventory dictionary or JSON report.
+    """
+
     def __init__(self, cert_dir: str = None):
         self.project_root = DEFAULT_PROJECT_ROOT
         self.cert_dir = str(
@@ -206,7 +224,7 @@ class PhoenixGuardCertInventory:
             }
     
     def inventory_all_certificates(self) -> Dict[str, Any]:
-        """Complete certificate inventory with conversion and analysis"""
+        """Build the complete high-level inventory for a certificate directory."""
         logger.info("Starting complete certificate inventory")
         
         # Scan files
@@ -287,7 +305,7 @@ class PhoenixGuardCertInventory:
         return recommendations
     
     def save_inventory(self, inventory: Dict, output_file: str = None) -> str:
-        """Save inventory to JSON file"""
+        """Persist an inventory dictionary as formatted JSON and return its path."""
         if not output_file:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             output_file = str(self.project_root / "out" / "reports" / f"cert_inventory_{timestamp}.json")
@@ -302,7 +320,7 @@ class PhoenixGuardCertInventory:
         return str(output_path)
 
 def main():
-    """Main entry point"""
+    """Run the certificate inventory CLI and return a process exit code."""
     import argparse
     
     parser = argparse.ArgumentParser(description='PhoenixGuard Certificate Inventory Tool')

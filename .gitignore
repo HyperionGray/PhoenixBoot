@@ -9,6 +9,9 @@ tags/
 PROJECT.txt
 AUTOMATION.txt
 
+# DoD audit logs (runtime-generated)
+logs/
+
 # Production-first hygiene additions
 # Build artifacts and outputs
 out/

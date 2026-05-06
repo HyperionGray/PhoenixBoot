@@ -229,3 +229,11 @@ The UUEFI diagnostic tool has significantly evolved. The issue noted it was "rea
 - [ ] Fix `pf` binary installation so `pf.py list` and all task-list UX works correctly (see `.pf_fix.py` for patch details)
 - [ ] Add `pf` binary availability check to `scripts/maintenance/toolchain-check.sh`
 - [ ] Investigate `test-cli` test 6 failure: `phoenixboot list` falls through to `pf.py` which requires `pf` binary
+
+## Modularity Follow-up
+
+- [x] `utils/kernel_hardening_analyzer.py` - extracted hardening policy/check definitions into `utils/kernel_hardening_policy.py`
+- [ ] `dev/tools/hardware_firmware_recovery.py`
+- [ ] `utils/hardware_firmware_recovery.py`
+- [ ] `components/core/scripts/validation/secure-env-check.sh`
+- [ ] `create-secureboot-bootable-media.sh`

@@ -99,8 +99,12 @@ if [ -f "$FIRMWARE_IMAGE" ]; then
     sudo mkdir -p "$BACKUP_DIR"
 
     CMD=(sudo python3 scripts/hardware_firmware_recovery.py "$FIRMWARE_IMAGE" --output "$RESULTS_FILE")
-    [ -n "$VERBOSE" ] && CMD+=(-v)
-    [ -n "$VERIFY_ONLY" ] && CMD+=(--verify-only)
+    if [ -n "$VERBOSE" ]; then
+        CMD+=(-v)
+    fi
+    if [ -n "$VERIFY_ONLY" ]; then
+        CMD+=(--verify-only)
+    fi
 
     "${CMD[@]}"
     echo "☠ Recovery results saved to: $RESULTS_FILE"

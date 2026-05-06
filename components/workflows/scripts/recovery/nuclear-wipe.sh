@@ -35,7 +35,8 @@ validate_device_path() {
 
 device_contains_running_system() {
     local device="$1"
-    lsblk -nrpo NAME,MOUNTPOINT "$device" 2>/dev/null | awk '$2 ~ /^\/$|^\/boot$|^\/boot\/efi$|^\/boot\/grub(2)?$/ { found=1 } END { exit found ? 0 : 1 }'
+    local running_system_mounts='^/$|^/boot$|^/boot/efi$|^/boot/grub(2)?$'
+    lsblk -nrpo NAME,MOUNTPOINT "$device" 2>/dev/null | awk -v mounts="$running_system_mounts" '$2 ~ mounts { found=1 } END { exit found ? 0 : 1 }'
 }
 
 confirm_wipe_target() {

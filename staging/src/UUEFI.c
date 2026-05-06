@@ -30,6 +30,7 @@
 #define MAX_DISPLAYED_DELETIONS 10
 #define MAX_BACKUP_VARIABLES 10
 #define MAX_INDEX_INPUT_SIZE 16
+#define MAX_UINTN_VALUE ((UINTN)-1)
 
 // UEFI Variable Protection System
 typedef enum {
@@ -89,6 +90,10 @@ STATIC SUSPICIOUS_ITEM gSuspiciousItems[MAX_SUSPICIOUS_ITEMS];
 STATIC UINTN gSuspiciousCount = 0;
 STATIC EFI_HANDLE gCurrentImageHandle = NULL;
 STATIC CHAR16 gBootMediaStatus[256] = L"Boot media scan not yet run";
+
+EFI_STATUS EnumerateAllVariables(VOID);
+VOID AnalyzeCurrentBootMedia(VOID);
+VOID RefreshDiagnostics(VOID);
 
 BOOLEAN
 IsScalarVariableSize(
@@ -207,7 +212,7 @@ ParseDecimalUintn(
     }
 
     Digit = (UINTN)(Buffer[Index] - L'0');
-    if (ParsedValue > ((((UINTN)-1) - Digit) / 10)) {
+    if (ParsedValue > ((MAX_UINTN_VALUE - Digit) / 10)) {
       return EFI_BAD_BUFFER_SIZE;
     }
 
@@ -353,7 +358,8 @@ UpdateVariableWithBackup(
       NULL
     );
 
-    if (Status != EFI_NOT_FOUND && !(Status == EFI_SUCCESS && VerifySize == 0)) {
+    BOOLEAN DeleteVerified = (Status == EFI_NOT_FOUND) || (Status == EFI_SUCCESS && VerifySize == 0);
+    if (!DeleteVerified) {
       RestoreVariableBackup(&Backup);
       FreeVariableBackup(&Backup);
       return EFI_COMPROMISED_DATA;
@@ -1048,7 +1054,7 @@ AnalyzeCurrentBootMedia(VOID)
       UnicodeSPrint(
         Summary,
         256,
-        L"Boot media scan clean: %s layout with %u partition entr%s",
+        L"Boot media scan clean: %s layout with %lu partition entr%s",
         HasGptHeader ? L"GPT" : L"MBR",
         PartitionEntries,
         PartitionEntries == 1 ? L"y" : L"ies"
@@ -1324,7 +1330,7 @@ EditVariable(
 
     if (!IsScalarVariableSize(DataSize)) {
       Print(L"✗ Structured variable edits are blocked in UUEFI\n");
-      Print(L"  Only scalar 1/2/4/8-byte values can be safely flipped here\n");
+      Print(L"  Only scalar 1/2/4/8-byte values can be safely modified here\n");
       Print(L"  Use OS-side tooling for complex binary structures\n");
       FreePool(CurrentData);
       return EFI_UNSUPPORTED;

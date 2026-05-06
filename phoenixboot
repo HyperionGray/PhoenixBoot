@@ -1,6 +1,35 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+CURRENT_ACTION="initializing phoenixboot"
+
+fail_loud() {
+  local status="$1"
+  shift
+
+  echo "phoenixboot ERROR: $1" >&2
+  shift || true
+  for detail in "$@"; do
+    echo "  - $detail" >&2
+  done
+  exit "$status"
+}
+
+on_error() {
+  local status="$1"
+  local line="$2"
+
+  trap - ERR
+  echo "phoenixboot ERROR: command failed unexpectedly." >&2
+  echo "  - Action: ${CURRENT_ACTION}" >&2
+  echo "  - Exit status: ${status}" >&2
+  echo "  - Location: ${SCRIPT_PATH}:${line}" >&2
+  echo "  - Working directory: $(pwd)" >&2
+  echo "  - Command: ${BASH_COMMAND}" >&2
+  echo "  - The failing command's stderr/stdout should appear above this message." >&2
+  exit "$status"
+}
+
 find_phoenix_root() {
   local dir="$1"
   while [ "$dir" != "/" ]; do
@@ -44,24 +73,93 @@ EOF
 }
 
 run_pf() {
-  ./pf.py "$@"
+  [ -f "$PF_SCRIPT" ] || fail_loud 1 \
+    "PhoenixBoot task runner wrapper is missing." \
+    "Expected file: $PF_SCRIPT" \
+    "PhoenixBoot root: $PHOENIX_ROOT"
+  [ -f "$PFYFILE" ] || fail_loud 1 \
+    "PhoenixBoot task definition file is missing." \
+    "Expected file: $PFYFILE" \
+    "PhoenixBoot root: $PHOENIX_ROOT"
+
+  if ! command -v pf >/dev/null 2>&1; then
+    fail_loud 127 \
+      "Cannot execute PhoenixBoot task(s) because the required 'pf' executable is not available." \
+      "Attempted pf.py arguments: $*" \
+      "Expected launcher: $PF_SCRIPT" \
+      "Install pf-runner or make 'pf' available in PATH, then retry."
+  fi
+
+  CURRENT_ACTION="running pf task(s): $*"
+  "$PF_SCRIPT" "$@"
+}
+
+require_existing_path() {
+  local path="$1"
+  local label="$2"
+
+  [ -e "$path" ] || fail_loud 2 \
+    "${label} does not exist." \
+    "Path: $path" \
+    "Action: ${CURRENT_ACTION}" \
+    "Working directory: $(pwd)"
+}
+
+require_existing_task_paths() {
+  local task_label="$1"
+  shift
+
+  local missing=()
+  local candidate
+  for candidate in "$@"; do
+    if [ ! -e "$PHOENIX_ROOT/$candidate" ]; then
+      missing+=("$PHOENIX_ROOT/$candidate")
+    fi
+  done
+
+  if [ "${#missing[@]}" -gt 0 ]; then
+    echo "phoenixboot ERROR: refusing to run '${task_label}' because required script path(s) are missing." >&2
+    echo "  - PhoenixBoot root: $PHOENIX_ROOT" >&2
+    echo "  - This CLI intentionally fails loud instead of delegating into a broken task path." >&2
+    for candidate in "${missing[@]}"; do
+      echo "  - Missing path: $candidate" >&2
+    done
+    exit 1
+  fi
 }
 
 SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+trap 'on_error "$?" "$LINENO"' ERR
 
-if [ -n "${PHOENIX_ROOT:-}" ] && [ -f "${PHOENIX_ROOT}/pf.py" ] && [ -f "${PHOENIX_ROOT}/Pfyfile.pf" ]; then
-  :
+if [ -n "${PHOENIX_ROOT:-}" ]; then
+  [ -d "${PHOENIX_ROOT}" ] || fail_loud 1 \
+    "PHOENIX_ROOT was provided but does not point to a directory." \
+    "PHOENIX_ROOT=${PHOENIX_ROOT}" \
+    "Wrapper path: $SCRIPT_PATH"
+  [ -f "${PHOENIX_ROOT}/pf.py" ] || fail_loud 1 \
+    "PHOENIX_ROOT was provided but does not contain pf.py." \
+    "PHOENIX_ROOT=${PHOENIX_ROOT}" \
+    "Expected file: ${PHOENIX_ROOT}/pf.py"
+  [ -f "${PHOENIX_ROOT}/Pfyfile.pf" ] || fail_loud 1 \
+    "PHOENIX_ROOT was provided but does not contain Pfyfile.pf." \
+    "PHOENIX_ROOT=${PHOENIX_ROOT}" \
+    "Expected file: ${PHOENIX_ROOT}/Pfyfile.pf"
 elif PHOENIX_ROOT="$(find_phoenix_root "$SCRIPT_DIR")"; then
   :
 elif PHOENIX_ROOT="$(find_phoenix_root "$(pwd)")"; then
   :
 else
-  echo "Error: unable to locate PhoenixBoot root (pf.py + Pfyfile.pf)." >&2
-  exit 1
+  fail_loud 1 \
+    "Unable to locate the PhoenixBoot root directory." \
+    "Searched from script directory: $SCRIPT_DIR" \
+    "Searched from current working directory: $(pwd)" \
+    "Required files: pf.py and Pfyfile.pf"
 fi
 
 cd "$PHOENIX_ROOT"
+PF_SCRIPT="$PHOENIX_ROOT/pf.py"
+PFYFILE="$PHOENIX_ROOT/Pfyfile.pf"
 
 cmd="${1:-help}"
 shift || true
@@ -72,14 +170,29 @@ case "$cmd" in
     ;;
 
   setup)
+    CURRENT_ACTION="preflighting setup"
+    require_existing_task_paths "setup" \
+      "scripts/maintenance/toolchain-check.sh" \
+      "scripts/build/build-production.sh" \
+      "scripts/esp-packaging/esp-package.sh" \
+      "scripts/validation/verify-esp-robust.sh"
     run_pf setup
     ;;
 
   build)
+    CURRENT_ACTION="preflighting build"
+    require_existing_task_paths "build" \
+      "scripts/build/build-production.sh" \
+      "scripts/esp-packaging/esp-package.sh"
     run_pf build-build build-package-esp
     ;;
 
   verify)
+    CURRENT_ACTION="preflighting verify"
+    require_existing_task_paths "verify" \
+      "scripts/validation/validate-keys.sh" \
+      "scripts/validation/validate-esp.sh" \
+      "scripts/validation/verify-esp-robust.sh"
     run_pf verify
     ;;
 
@@ -100,10 +213,17 @@ case "$cmd" in
     ;;
 
   test)
+    CURRENT_ACTION="preflighting test"
+    require_existing_task_paths "test" "scripts/testing/qemu-test.sh"
     run_pf test-qemu
     ;;
 
   test-all)
+    CURRENT_ACTION="preflighting test-all"
+    require_existing_task_paths "test-all" \
+      "scripts/testing/qemu-test.sh" \
+      "scripts/testing/qemu-test-secure-positive.sh" \
+      "scripts/testing/qemu-test-uuefi.sh"
     run_pf test-qemu test-qemu-secure-positive test-qemu-uuefi
     ;;
 
@@ -127,6 +247,8 @@ case "$cmd" in
       esac
     done
     [ -n "$usb_device" ] || { echo "Usage: ./phoenixboot usb --device /dev/sdX" >&2; exit 2; }
+    CURRENT_ACTION="preflighting usb write"
+    require_existing_task_paths "usb" "scripts/usb-tools/usb-write-dd.sh"
     USB_DEVICE="$usb_device" USB_DEVICE_CONFIRM=I_UNDERSTAND run_pf workflow-usb-write-dd
     ;;
 
@@ -135,15 +257,23 @@ case "$cmd" in
     shift || true
     case "$sub" in
       keygen)
+        CURRENT_ACTION="preflighting secure keygen"
+        require_existing_task_paths "secure keygen" "scripts/secure-boot/generate-sb-keys.sh"
         run_pf secure-keygen
         ;;
       auth)
+        CURRENT_ACTION="preflighting secure auth"
+        require_existing_task_paths "secure auth" "scripts/secure-boot/create-auth-files.sh"
         run_pf secure-make-auth
         ;;
       enroll)
+        CURRENT_ACTION="preflighting secure enroll"
+        require_existing_task_paths "secure enroll" "scripts/secure-boot/enroll-secureboot.sh"
         run_pf secure-enroll-secureboot
         ;;
       check)
+        CURRENT_ACTION="preflighting secure check"
+        require_existing_task_paths "secure check" "scripts/secure-boot/check-secureboot-status.sh"
         run_pf secureboot-check
         ;;
       media)
@@ -157,12 +287,15 @@ case "$cmd" in
               echo "Unknown secure media option: $1" >&2
               exit 2
               ;;
-          esac
-        done
-        [ -n "$iso_path" ] || { echo "Usage: ./phoenixboot secure media --iso <path> [--usb-device /dev/sdX]" >&2; exit 2; }
-        if [ -n "$usb_device" ]; then
-          ISO_PATH="$iso_path" USB_DEVICE="$usb_device" run_pf secureboot-create-usb
-        else
+           esac
+         done
+         [ -n "$iso_path" ] || { echo "Usage: ./phoenixboot secure media --iso <path> [--usb-device /dev/sdX]" >&2; exit 2; }
+         CURRENT_ACTION="preflighting secure media creation"
+         require_existing_path "$iso_path" "Secure Boot source ISO"
+         require_existing_path "$PHOENIX_ROOT/create-secureboot-bootable-media.sh" "Secure Boot media creation script"
+         if [ -n "$usb_device" ]; then
+           ISO_PATH="$iso_path" USB_DEVICE="$usb_device" run_pf secureboot-create-usb
+         else
           ISO_PATH="$iso_path" run_pf secureboot-create
         fi
         ;;
@@ -177,10 +310,12 @@ case "$cmd" in
               echo "Unknown secure mok-new option: $1" >&2
               exit 2
               ;;
-          esac
-        done
-        NAME="${name:-PGMOK}" CN="${cn:-PhoenixGuard Module Key}" run_pf secure-mok-new
-        ;;
+           esac
+         done
+         CURRENT_ACTION="preflighting secure mok-new"
+         require_existing_task_paths "secure mok-new" "scripts/mok-management/mok-new.sh"
+         NAME="${name:-PGMOK}" CN="${cn:-PhoenixGuard Module Key}" run_pf secure-mok-new
+         ;;
       mok-enroll)
         cert_pem=""
         cert_der=""
@@ -194,14 +329,18 @@ case "$cmd" in
               echo "Unknown secure mok-enroll option: $1" >&2
               exit 2
               ;;
-          esac
-        done
-        MOK_CERT_PEM="${cert_pem:-out/keys/mok/PGMOK.crt}" \
-        MOK_CERT_DER="${cert_der:-out/keys/mok/PGMOK.der}" \
-        MOK_DRY_RUN="$dry_run" \
-        run_pf os-mok-enroll
-        ;;
+           esac
+         done
+         CURRENT_ACTION="preflighting secure mok-enroll"
+         require_existing_task_paths "secure mok-enroll" "scripts/mok-management/enroll-mok.sh"
+         MOK_CERT_PEM="${cert_pem:-out/keys/mok/PGMOK.crt}" \
+         MOK_CERT_DER="${cert_der:-out/keys/mok/PGMOK.der}" \
+         MOK_DRY_RUN="$dry_run" \
+         run_pf os-mok-enroll
+         ;;
       mok-list)
+        CURRENT_ACTION="preflighting secure mok-list"
+        require_existing_task_paths "secure mok-list" "scripts/mok-management/mok-list-keys.sh"
         run_pf os-mok-list-keys
         ;;
       kmod-sign)
@@ -215,11 +354,13 @@ case "$cmd" in
               echo "Unknown secure kmod-sign option: $1" >&2
               exit 2
               ;;
-          esac
-        done
-        [ -n "$module_path" ] || { echo "Usage: ./phoenixboot secure kmod-sign --module <file|dir> [--force]" >&2; exit 2; }
-        MODULE_PATH="$module_path" FORCE="$force" run_pf os-kmod-sign
-        ;;
+           esac
+         done
+         [ -n "$module_path" ] || { echo "Usage: ./phoenixboot secure kmod-sign --module <file|dir> [--force]" >&2; exit 2; }
+         CURRENT_ACTION="preflighting secure kmod-sign"
+         require_existing_path "$module_path" "Kernel module path"
+         MODULE_PATH="$module_path" FORCE="$force" run_pf os-kmod-sign
+         ;;
       *)
         echo "Unknown secure subcommand: ${sub:-<missing>}" >&2
         usage
@@ -229,14 +370,20 @@ case "$cmd" in
     ;;
 
   secure-keygen)
+    CURRENT_ACTION="preflighting secure-keygen"
+    require_existing_task_paths "secure-keygen" "scripts/secure-boot/generate-sb-keys.sh"
     run_pf secure-keygen
     ;;
 
   secure-make-auth)
+    CURRENT_ACTION="preflighting secure-make-auth"
+    require_existing_task_paths "secure-make-auth" "scripts/secure-boot/create-auth-files.sh"
     run_pf secure-make-auth
     ;;
 
   secure-enroll)
+    CURRENT_ACTION="preflighting secure-enroll"
+    require_existing_task_paths "secure-enroll" "scripts/secure-boot/enroll-secureboot.sh"
     run_pf secure-enroll-secureboot
     ;;
 
@@ -251,17 +398,21 @@ case "$cmd" in
           echo "Unknown secureboot-create option: $1" >&2
           exit 2
           ;;
-      esac
-    done
-    [ -n "$iso_path" ] || { echo "Usage: ./phoenixboot secureboot-create --iso <path> [--usb-device /dev/sdX]" >&2; exit 2; }
-    if [ -n "$usb_device" ]; then
-      ISO_PATH="$iso_path" USB_DEVICE="$usb_device" run_pf secureboot-create-usb
-    else
-      ISO_PATH="$iso_path" run_pf secureboot-create
-    fi
-    ;;
+       esac
+     done
+     [ -n "$iso_path" ] || { echo "Usage: ./phoenixboot secureboot-create --iso <path> [--usb-device /dev/sdX]" >&2; exit 2; }
+     CURRENT_ACTION="preflighting secureboot-create"
+     require_existing_path "$iso_path" "Secure Boot source ISO"
+     require_existing_path "$PHOENIX_ROOT/create-secureboot-bootable-media.sh" "Secure Boot media creation script"
+     if [ -n "$usb_device" ]; then
+       ISO_PATH="$iso_path" USB_DEVICE="$usb_device" run_pf secureboot-create-usb
+     else
+       ISO_PATH="$iso_path" run_pf secureboot-create
+     fi
+     ;;
 
   *)
+    CURRENT_ACTION="forwarding command to pf.py: $cmd $*"
     run_pf "$cmd" "$@"
     ;;
 esac

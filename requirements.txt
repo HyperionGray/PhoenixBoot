@@ -2,7 +2,7 @@
 # Core requirements for PhoenixBoot functionality
 
 # Task runner and automation
-fabric>=3.2,<4
+fabric>=3.2.3,<4
 
 # Testing and validation
 pytest>=7.0.0
@@ -11,16 +11,16 @@ pytest-cov>=4.0.0
 # Container and TUI support
 docker>=6.0.0
 rich>=13.0.0
-textual>=0.40.0
+textual>=8.2.5
 
 # Security and cryptography
 # Updated to fix CVE-2024-26130, CVE-2023-50782, CVE-2023-49083 (see SECURITY_REVIEW_2025-12-07.md)
 cryptography>=42.0.4
-pyopenssl>=23.0.0
+pyopenssl>=26.1.0
 
 # System and hardware interaction
 psutil>=5.9.0
-pynvml>=11.0.0
+pynvml>=13.0.1
 
 # Data processing and analysis
 requests>=2.28.0
@@ -34,7 +34,7 @@ mypy>=1.0.0
 
 # Documentation generation
 sphinx>=7.0.0
-sphinx-rtd-theme>=1.3.0
+sphinx-rtd-theme>=3.1.0
 
 # Optional: Playwright for web testing (if needed)
 # playwright>=1.40.0

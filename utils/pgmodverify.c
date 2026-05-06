@@ -73,7 +73,9 @@ static int pg_assign_string(char **target, const char *value) {
         return 0;
     }
 
-    free(*target);
+    if (*target != NULL) {
+        free(*target);
+    }
     *target = copy;
     return 1;
 }

@@ -33,6 +33,9 @@ typedef void* EFI_HANDLE;
 #define NULL ((void*)0)
 #endif
 
+#define DEMO_STR_ERROR_INVALID_PARAMETER  (-1)
+#define DEMO_STR_ERROR_TRUNCATED          (-2)
+
 static inline UINTN DemoStrLen(const CHAR16 *String) {
   UINTN Length = 0;
 
@@ -65,7 +68,7 @@ static inline int DemoStrCpyS(CHAR16 *Destination, UINTN DestinationSize, const 
   UINTN Index = 0;
 
   if ((Destination == NULL) || (Source == NULL) || (DestinationSize == 0)) {
-    return -1;
+    return DEMO_STR_ERROR_INVALID_PARAMETER;
   }
 
   while ((Index + 1 < DestinationSize) && (Source[Index] != 0)) {
@@ -74,7 +77,7 @@ static inline int DemoStrCpyS(CHAR16 *Destination, UINTN DestinationSize, const 
   }
 
   Destination[Index] = 0;
-  return (Source[Index] == 0) ? 0 : -1;
+  return (Source[Index] == 0) ? 0 : DEMO_STR_ERROR_TRUNCATED;
 }
 
 static inline int DemoStrCatS(CHAR16 *Destination, UINTN DestinationSize, const CHAR16 *Source) {
@@ -82,13 +85,12 @@ static inline int DemoStrCatS(CHAR16 *Destination, UINTN DestinationSize, const 
   UINTN Index = 0;
 
   if ((Destination == NULL) || (Source == NULL) || (DestinationSize == 0)) {
-    return -1;
+    return DEMO_STR_ERROR_INVALID_PARAMETER;
   }
 
   DestinationLength = DemoStrLen(Destination);
   if (DestinationLength >= DestinationSize) {
-    Destination[DestinationSize - 1] = 0;
-    return -1;
+    return DEMO_STR_ERROR_TRUNCATED;
   }
 
   while ((DestinationLength + Index + 1 < DestinationSize) && (Source[Index] != 0)) {
@@ -97,7 +99,7 @@ static inline int DemoStrCatS(CHAR16 *Destination, UINTN DestinationSize, const 
   }
 
   Destination[DestinationLength + Index] = 0;
-  return (Source[Index] == 0) ? 0 : -1;
+  return (Source[Index] == 0) ? 0 : DEMO_STR_ERROR_TRUNCATED;
 }
 
 static inline UINTN DemoAsciiStrLen(const CHAR8 *String) {
@@ -118,7 +120,7 @@ static inline int DemoAsciiStrCpyS(CHAR8 *Destination, UINTN DestinationSize, co
   UINTN Index = 0;
 
   if ((Destination == NULL) || (Source == NULL) || (DestinationSize == 0)) {
-    return -1;
+    return DEMO_STR_ERROR_INVALID_PARAMETER;
   }
 
   while ((Index + 1 < DestinationSize) && (Source[Index] != '\0')) {
@@ -127,7 +129,7 @@ static inline int DemoAsciiStrCpyS(CHAR8 *Destination, UINTN DestinationSize, co
   }
 
   Destination[Index] = '\0';
-  return (Source[Index] == '\0') ? 0 : -1;
+  return (Source[Index] == '\0') ? 0 : DEMO_STR_ERROR_TRUNCATED;
 }
 
 static inline int DemoAsciiStrCatS(CHAR8 *Destination, UINTN DestinationSize, const CHAR8 *Source) {
@@ -135,13 +137,12 @@ static inline int DemoAsciiStrCatS(CHAR8 *Destination, UINTN DestinationSize, co
   UINTN Index = 0;
 
   if ((Destination == NULL) || (Source == NULL) || (DestinationSize == 0)) {
-    return -1;
+    return DEMO_STR_ERROR_INVALID_PARAMETER;
   }
 
   DestinationLength = DemoAsciiStrLen(Destination);
   if (DestinationLength >= DestinationSize) {
-    Destination[DestinationSize - 1] = '\0';
-    return -1;
+    return DEMO_STR_ERROR_TRUNCATED;
   }
 
   while ((DestinationLength + Index + 1 < DestinationSize) && (Source[Index] != '\0')) {
@@ -150,7 +151,7 @@ static inline int DemoAsciiStrCatS(CHAR8 *Destination, UINTN DestinationSize, co
   }
 
   Destination[DestinationLength + Index] = '\0';
-  return (Source[Index] == '\0') ? 0 : -1;
+  return (Source[Index] == '\0') ? 0 : DEMO_STR_ERROR_TRUNCATED;
 }
 
 // EFI Status codes

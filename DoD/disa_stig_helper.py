@@ -94,21 +94,21 @@ def detect_distro(requested: str | None = None) -> dict[str, str]:
         pretty_name = os.environ.get("DISTRO_NAME", os_release.get("PRETTY_NAME", raw_id or "Unknown Linux"))
 
     tokens = tokenize_distro_fields(raw_id, raw_like)
+
+    def _build_distro_info(family: str) -> dict[str, str]:
+        metadata = DISTRO_PROFILES[family]
+        return {
+            "id": raw_id or family,
+            "pretty_name": pretty_name,
+            "family": family,
+            **{k: v for k, v in metadata.items() if k != "aliases"},
+        }
+
     for family, metadata in DISTRO_PROFILES.items():
         if tokens & metadata["aliases"]:
-            return {
-                "id": raw_id or family,
-                "pretty_name": pretty_name,
-                "family": family,
-                **{k: v for k, v in metadata.items() if k != "aliases"},
-            }
+            return _build_distro_info(family)
 
-    return {
-        "id": raw_id or "generic",
-        "pretty_name": pretty_name,
-        "family": "generic",
-        **{k: v for k, v in DISTRO_PROFILES["generic"].items() if k != "aliases"},
-    }
+    return _build_distro_info("generic")
 
 
 def print_guidance(context: dict[str, str]) -> None:

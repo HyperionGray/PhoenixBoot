@@ -19,6 +19,15 @@ if [ ! -f "NuclearBootEdk2.c" ] || [ ! -f "NuclearBootEdk2.inf" ]; then
     exit 1
 fi
 
+for tool in git make gcc nasm python3; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        echo "ERROR: required EDK2 build tool not found: $tool"
+        exit 1
+    fi
+done
+
+TOOLCHAIN_TAG="${EDK2_TOOLCHAIN_TAG:-GCC}"
+
 # Check for EDK2 setup
 if [ -z "${EDK_TOOLS_PATH:-}" ]; then
     echo "Setting up EDK2 environment..."
@@ -188,7 +197,8 @@ if ! grep -q "RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf" "$DSC_FILE" 2>/de
 fi
 
 # Build command for X64 architecture
-build -p PhoenixGuardPkg/PhoenixGuardPkg.dsc -a X64 -t GCC5 -b RELEASE
+echo "Using EDK2 toolchain tag: $TOOLCHAIN_TAG"
+build -p PhoenixGuardPkg/PhoenixGuardPkg.dsc -a X64 -t "$TOOLCHAIN_TAG" -b RELEASE
 
 BUILD_STATUS=$?
 

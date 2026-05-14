@@ -9,7 +9,11 @@ set -euo pipefail
 
 # Get absolute path to PhoenixGuard root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+if PROJECT_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"; then
+    :
+else
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+fi
 cd "$PROJECT_ROOT"
 
 echo "☠ PhoenixGuard Boot Issue Fixer"
@@ -23,8 +27,8 @@ echo "   Cause: Including full Ubuntu ISO inside ESP"
 echo "   Fix: Creating minimal ESP without embedded ISOs"
 
 # Check current ESP size
-if [ -f "build/esp/esp.img" ]; then
-    CURRENT_SIZE=$(du -h build/esp/esp.img | cut -f1)
+if [ -f "out/esp/esp.img" ]; then
+    CURRENT_SIZE=$(du -h out/esp/esp.img | cut -f1)
     echo "   Current ESP size: $CURRENT_SIZE"
 fi
 
@@ -299,8 +303,8 @@ case "${1:-help}" in
     status)
         echo "☠ System Status:"
         echo -n "  ESP Image: "
-        if [ -f "build/esp/esp.img" ]; then
-            du -h build/esp/esp.img | cut -f1
+        if [ -f "out/esp/esp.img" ]; then
+            du -h out/esp/esp.img | cut -f1
         else
             echo "Not built"
         fi
@@ -413,12 +417,12 @@ echo ""
 echo "☠ Applying fixes..."
 
 # Clean up old bloated images
-if [ -f "build/esp/esp.img" ]; then
-    SIZE_MB=$(du -m build/esp/esp.img | cut -f1)
+if [ -f "out/esp/esp.img" ]; then
+    SIZE_MB=$(du -m out/esp/esp.img | cut -f1)
     if [ "$SIZE_MB" -gt 500 ]; then
         echo "  Removing bloated ESP image (${SIZE_MB}MB)"
-        rm -f build/esp/esp.img
-        rm -f build/esp/esp.img.sha256
+        rm -f out/esp/esp.img
+        rm -f out/esp/esp.img.sha256
     fi
 fi
 

@@ -4,6 +4,17 @@
 
 Instead of fighting bootkits at their own game (trying to execute first), we **bypass the entire infected system** using an immutable, signed, verified boot medium that jumps directly into a clean, isolated environment.
 
+## ☠ **Risk Classification**
+
+| Workflow | Risk | Most likely outcome | Could happen | Worst case |
+| --- | --- | --- | --- | --- |
+| Build and verify Nuclear Boot media | Medium | You create recovery media without touching the host firmware | A bad build or unsigned image wastes time and requires rebuilding | You boot unreliable media and have to restart recovery planning |
+| Boot Nuclear Boot media for analysis only | Medium | You reach a clean recovery environment and inspect the host safely | Boot configuration or media compatibility issues require manual boot-menu work | Recovery media will not boot and you must use another path |
+| Stage Nuclear Boot onto the host ESP | High | A one-time recovery boot option is added for later use | ESP or BootNext cleanup is needed afterward | A fragile EFI setup needs manual repair before normal boot works again |
+| Use Nuclear Boot to rewrite firmware | Critical | Clean firmware is restored and persistent boot malware is removed | Flash protections, image mismatch, or interruptions block recovery | The motherboard is bricked and requires an external programmer or replacement |
+
+Bootkits can be unpredictable. Even when the recovery environment itself is clean, firmware repair and boot-entry edits should be treated as **last resort** operations with a rollback plan, backups, and alternate recovery hardware ready.
+
 ## ☠ **Nuclear Boot CD Architecture**
 
 ```
@@ -187,8 +198,8 @@ make create-usb-recovery # Create bootable USB version
 - **User Friendly**: GUI interface for recovery
 
 ### **Safety**
-- **No Bricking Risk**: Original firmware untouched during analysis
-- **Reversible**: Can always reboot to original system
+- **Lower Bricking Risk During Analysis**: Read-only inspection avoids firmware writes
+- **Usually Reversible**: Many flows return to the original system, but boot-entry cleanup may still be required
 - **Isolated**: Recovery happens in separate environment
 - **Verified**: All components cryptographically signed
 

@@ -111,8 +111,19 @@ class AutoNuke:
 {Colors.WHITE}    6. ☠ CMOS: Manual board reset guidance{Colors.END}
 {Colors.RED}    7. ☠ CH341A: External programmer recovery{Colors.END}
 
-"""
+        """
         print(banner)
+
+    def print_risk_assessment(self, risk_level: str, likely: str, could_happen: str, worst_case: str,
+                              last_resort: bool = False):
+        """Display a concrete risk summary for the next action."""
+        print(f"{Colors.YELLOW}☠ Risk Level: {risk_level}{Colors.END}")
+        print(f"   Most likely: {likely}")
+        print(f"   Could happen: {could_happen}")
+        print(f"   Worst case: {worst_case}")
+        if last_resort:
+            print("   Use this only as a last resort after safer steps and backups are exhausted.")
+        print()
         
     def confirm_action(self, message: str, danger_level: str = "LOW") -> bool:
         """Get user confirmation with appropriate warnings"""
@@ -208,6 +219,125 @@ class AutoNuke:
                 
         self.log("☠ Prerequisites check passed", "SUCCESS")
         return True
+    
+    def level_1_scan(self) -> bool:
+        """Level 1: Bootkit detection and analysis"""
+        self.log("☠ LEVEL 1: Starting bootkit detection scan...")
+        self.print_risk_assessment(
+            "LOW",
+            "You get scan results without changing firmware, boot entries, or disks.",
+            "The scan may fail or miss a deeply hidden threat.",
+            "You trust a compromised system for too long and delay stronger recovery."
+        )
+        
+        if not self.confirm_action("☠ Run comprehensive bootkit scan?", "LOW"):
+            return False
+            
+        # Run bootkit scan
+        code, stdout, stderr = self.run_command("make scan-bootkits")
+        
+        if code == 0:
+            self.log("☠ Bootkit scan completed successfully", "SUCCESS")
+            
+            # Check if any threats were detected
+            scan_results_file = self.project_root / "bootkit_scan_results.json"
+            if scan_results_file.exists():
+                with open(scan_results_file, 'r') as f:
+                    results = json.load(f)
+                
+                threats_found = False
+                if 'threats_detected' in results and results['threats_detected']:
+                    threats_found = True
+                    self.log("☠  THREATS DETECTED! Proceeding to next level recommended.", "WARNING")
+                    print(f"\n{Colors.RED}☠ BOOTKIT THREATS DETECTED:{Colors.END}")
+                    for threat in results.get('detected_threats', []):
+                        print(f"  • {threat}")
+                else:
+                    self.log("☠ No immediate threats detected", "SUCCESS")
+                    print(f"{Colors.GREEN}☠ System appears clean at software level{Colors.END}")
+                
+                return not threats_found  # Return False if threats found (need escalation)
+            else:
+                self.log("☠  No scan results file found", "WARNING")
+                return False
+        else:
+            self.log(f"☠ Bootkit scan failed: {stderr}", "ERROR")
+            return False
+    
+    def level_2_soft_recovery(self) -> bool:
+        """Level 2: ESP-based Nuclear Boot ISO recovery"""
+        self.log("☠ LEVEL 2: Preparing ESP Nuclear Boot ISO recovery...")
+        self.print_risk_assessment(
+            "MEDIUM",
+            "PhoenixGuard adds a recovery boot option to the ESP so you can recover later.",
+            "ESP or GRUB cleanup may be needed if deployment is interrupted.",
+            "A fragile boot configuration may need manual EFI repair before normal boot returns."
+        )
+        
+        if not self.confirm_action("☠ Deploy Nuclear Boot recovery ISO to ESP?", "MEDIUM"):
+            return False
+        
+        # Check if ISO exists, build if needed
+        iso_path = self.project_root / "PhoenixGuard-Nuclear-Recovery.iso"
+        if not iso_path.exists():
+            self.log("☠ Nuclear Boot ISO not found, building...")
+            code, stdout, stderr = self.run_command("make build-nuclear-cd")
+            if code != 0:
+                self.log(f"☠ Failed to build Nuclear Boot ISO: {stderr}", "ERROR")
+                return False
+        
+        # Deploy to ESP
+        code, stdout, stderr = self.run_command("make deploy-esp-iso")
+        if code != 0:
+            self.log(f"☠ Failed to deploy ISO to ESP: {stderr}", "ERROR")
+            return False
+            
+        self.log("☠ Nuclear Boot ISO deployed to ESP", "SUCCESS")
+        
+        # Offer immediate boot or manual reboot
+        print(f"\n{Colors.GREEN}☠ Nuclear Boot recovery environment ready!{Colors.END}")
+        print(f"{Colors.CYAN}Options:{Colors.END}")
+        print("  1. Boot into recovery environment now (guided)")
+        print("  2. Manual reboot to GRUB menu (select PhoenixGuard Recovery)")
+        print("  3. Continue to next escalation level")
+        
+        choice = input(f"{Colors.CYAN}Choose option [1/2/3]: {Colors.END}").strip()
+        
+        if choice == "1":
+            # Try guided boot
+            code, stdout, stderr = self.run_command("make boot-from-esp-iso")
+            return code == 0
+        elif choice == "2":
+            print(f"{Colors.YELLOW}☠  Please reboot and select 'PhoenixGuard Nuclear Recovery' from GRUB menu{Colors.END}")
+            return True
+        else:
+            return False  # Continue escalation
+    
+    def level_3_hardware_recovery(self) -> bool:
+        """Level 3: Direct hardware firmware recovery"""
+        self.log("☠ LEVEL 3: Preparing hardware-level firmware recovery...")
+        
+        warning_msg = """☠ HARDWARE FIRMWARE RECOVERY
+        
+This will attempt to directly access your system's SPI flash chip
+to restore clean firmware, bypassing any bootkit protections.
+
+RISKS:
+• System may become temporarily unbootable if interrupted
+• Requires administrator privileges
+• Will overwrite current firmware
+
+        SAFETY MEASURES:
+        • Full firmware backup will be created first
+        • Recovery can be undone with backup
+        • Uses hardware-level verification"""
+        self.print_risk_assessment(
+            "HIGH",
+            "Hardware recovery may restore clean firmware when software remediation fails.",
+            "Flash access may fail or leave recovery incomplete, forcing escalation.",
+            "A bad write or interruption can brick the board and require external programming.",
+            last_resort=True
+        )
 
     def prompt_for_firmware_path(self) -> Optional[Path]:
         """Prompt for a vendor firmware image path."""
@@ -243,81 +373,14 @@ class AutoNuke:
             ("☠ CH341A", self.level_7_ch341a_recovery),
         ]
 
-    def get_secureboot_resilience_message(self) -> str:
-        return (
-            "Even when a bootkit still has sticky firmware footholds, most chains stay brittle once "
-            "you set custom Secure Boot keys and boot a hardened kernel.\n"
-            "Try these PhoenixBoot CLI flags:\n"
-            "  • ./pf.py kernel-profile-permissive   # temporary unsafe profile for flash access\n"
-            "  • sudo ./pf.py secureboot-enable-kexec\n"
-            "  • ./pf.py kernel-profile-hardened     # move back to a hardened baseline\n"
-            "  • PROFILE=hardened ./pf.py kernel-profile-compare\n"
-            "A system can often remain usable and materially safer after that hardening step alone."
+ ☠  THIS IS THE MOST EXTREME RECOVERY METHOD ☠"""
+        self.print_risk_assessment(
+            "CRITICAL",
+            "An external programmer may recover systems locked down beyond software repair.",
+            "You may still fail to attach correctly, flash the wrong image, or need repeated attempts.",
+            "The board may remain bricked or physically damaged if the process goes wrong.",
+            last_resort=True
         )
-
-    def print_recovery_commands(self, commands: List[str]):
-        print(f"{Colors.CYAN}Exact commands:{Colors.END}")
-        for command in commands:
-            print(f"  {command}")
-        print()
-
-    def ask_if_recovered(self, prompt: str = "Did this solve the bootkit problem?") -> bool:
-        response = input(f"{Colors.CYAN}{prompt} [y/N]: {Colors.END}").strip().lower()
-        return response in ["y", "yes"]
-
-    def level_1_flashrom_restore(self) -> bool:
-        """Level 1: Try a direct flashrom-based vendor BIOS restore."""
-        self.log("☠ LEVEL 1: Trying direct flashrom BIOS restore...")
-
-        print(f"\n{Colors.BOLD}☠ LEVEL 1: FLASHROM{Colors.END}")
-        print("Start with the least invasive repair: reflash a known-good vendor BIOS.")
-        print("If this fails, it is usually because the running kernel is still blocking boot firmware access.")
-        print()
-
-        firmware_path = self.prompt_for_firmware_path()
-        display_path = str(firmware_path) if firmware_path else "/path/to/vendor-bios.bin"
-        self.print_recovery_commands([
-            f"sudo FIRMWARE_PATH={shlex.quote(display_path)} ./pf.py firmware-recovery-restore",
-            f"sudo flashrom --programmer internal --write {shlex.quote(display_path)} --verify",
-        ])
-
-        if firmware_path and self.confirm_action("Try the PhoenixBoot flashrom restore now?", "MEDIUM"):
-            code, _, stderr = self.run_command(
-                "./pf.py firmware-recovery-restore",
-                env={"FIRMWARE_PATH": str(firmware_path)},
-            )
-            if code == 0:
-                self.log("☠ Flashrom-based restore completed", "SUCCESS")
-                return self.ask_if_recovered()
-
-            self.log(f"☠ Flashrom-based restore failed: {stderr}", "WARNING")
-            print(f"{Colors.YELLOW}☠ Direct flashing did not succeed cleanly. Escalating to the kexec method is the next step.{Colors.END}")
-
-        return False
-
-    def level_2_double_kexec_recovery(self) -> bool:
-        """Level 2: Generate a permissive profile and guide the double-kexec flow."""
-        self.log("☠ LEVEL 2: Preparing double-kexec recovery flow...")
-
-        print(f"\n{Colors.BOLD}☠ LEVEL 2: DOUBLE KEXEC{Colors.END}")
-        print("Use a deliberately permissive kernel profile to temporarily regain firmware access without a full reboot.")
-        print("Flash the vendor BIOS from that environment, then re-enable Secure Boot with your own keys.")
-        print()
-        self.print_recovery_commands([
-            "./pf.py kernel-profile-permissive",
-            "sudo ./pf.py secureboot-enable-kexec",
-            "./pf.py kernel-profile-hardened",
-            "PROFILE=hardened ./pf.py kernel-profile-compare",
-        ])
-        print(self.get_secureboot_resilience_message())
-        print()
-
-        if self.confirm_action("Generate the permissive kernel profile now?", "LOW"):
-            code, _, stderr = self.run_command("./pf.py kernel-profile-permissive")
-            if code != 0:
-                self.log(f"☠ Failed to generate permissive profile: {stderr}", "WARNING")
-            else:
-                self.log("☠ Permissive kernel profile generated", "SUCCESS")
 
         return self.ask_if_recovered("After the double-kexec flash + Secure Boot re-hardening, is the system usable?")
 

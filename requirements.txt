@@ -9,7 +9,7 @@ pytest>=7.0.0
 pytest-cov>=4.0.0
 
 # Container and TUI support
-docker>=6.0.0
+docker>=7.1.0
 rich>=13.0.0
 textual>=8.2.5
 

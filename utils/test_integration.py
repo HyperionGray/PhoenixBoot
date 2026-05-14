@@ -18,6 +18,7 @@ import json
 import subprocess
 import tempfile
 import shutil
+import struct
 from pathlib import Path
 import ctypes
 from ctypes import Structure, c_int, c_char_p, c_size_t, c_long, c_time_t
@@ -304,6 +305,45 @@ class PhoenixGuardIntegrationTest:
         
         return True
 
+    def test_malformed_signature_bounds(self):
+        """Test malformed signature metadata is rejected safely"""
+        if not self.lib_handle:
+            return True
+
+        malformed_module = self.temp_dir / "malformed_signature.ko"
+        module_signature = struct.pack(
+            "<BBBBB3xI",
+            0,   # algo
+            2,   # hash (sha256)
+            0,   # id_type
+            0,   # signer_len
+            0,   # key_id_len
+            32,  # claimed signature length larger than available prefix
+        )
+
+        with open(malformed_module, "wb") as handle:
+            handle.write(b"PAYLOAD!!")
+            handle.write(module_signature)
+            handle.write(b"~Module signature appended~\n")
+
+        result_ptr = self.lib_handle.pg_verify_module_signature(
+            str(malformed_module).encode("utf-8")
+        )
+
+        if not result_ptr:
+            print("☠ Malformed signature test returned NULL")
+            return False
+
+        try:
+            result = result_ptr.contents
+            print(f"☠ Malformed signature has_signature={bool(result.has_signature)}")
+            if result.error_message:
+                print(f"   Error: {result.error_message.decode('utf-8')}")
+
+            return (not bool(result.valid)) and (not bool(result.has_signature))
+        finally:
+            self.lib_handle.pg_free_verify_result(result_ptr)
+
     def run_all_tests(self):
         """Run all integration tests"""
         print("☠ Starting PhoenixGuard Integration Test Suite")
@@ -318,6 +358,7 @@ class PhoenixGuardIntegrationTest:
             ("Module Signing Simulation", self.test_module_signing_simulation),
             ("System Integration", self.test_system_integration),
             ("Error Handling", self.test_error_handling),
+            ("Malformed Signature Bounds", self.test_malformed_signature_bounds),
         ]
         
         # Run all tests

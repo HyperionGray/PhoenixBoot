@@ -85,8 +85,8 @@ fi
 echo "[TEST 6] Testing phoenixboot list..."
 if ./phoenixboot list > /tmp/phoenixboot_list_output.txt 2>&1; then
     pass "phoenixboot list works"
-elif grep -qi "fabric\|module.*not.*found" /tmp/phoenixboot_list_output.txt; then
-    skip "phoenixboot list requires fabric module (not in test env)"
+elif grep -qi "fabric\|module.*not.*found\|pf runner not found\|make 'pf' available" /tmp/phoenixboot_list_output.txt; then
+    skip "phoenixboot list requires runtime dependency not present in test env"
 else
     fail "phoenixboot list failed"
 fi

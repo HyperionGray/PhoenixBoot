@@ -218,7 +218,7 @@ class AutoNuke:
             return default_path
         if not response:
             return None
-        candidate = Path(response).expanduser()
+        candidate = Path(response).expanduser().resolve()
         return candidate if candidate.exists() else None
 
     def detect_esp_path(self) -> Optional[Path]:

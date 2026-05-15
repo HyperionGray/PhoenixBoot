@@ -17,7 +17,7 @@ bandit>=1.7.0
 safety>=3.7.0
 
 # Documentation tools
-sphinx>=7.0.0
+sphinx>=9.1.0
 
 # System utilities
 psutil>=5.9.0

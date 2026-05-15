@@ -19,7 +19,7 @@ cryptography>=48.0.0
 pyopenssl>=26.1.0
 
 # System and hardware interaction
-psutil>=5.9.0
+psutil>=7.2.2
 pynvml>=13.0.1
 
 # Data processing and analysis

@@ -91,8 +91,11 @@ nohup*.out
 # Stray podman/sqlite dumps at the repo root
 /db.sql
 
-# Demo / vendor sample tree (license + size); fetched out-of-band for alpha
-examples_and_samples/
+# Demo / vendor sample tree (license + size); fetched out-of-band for alpha.
+# Untrack everything *under* the directory but keep the README stub so
+# contributors can see what's supposed to be there.
+examples_and_samples/*
+!examples_and_samples/README.md
 
 # Rust build output (we ship sources for experimental/nuclear-boot-rust/ but
 # never the compiled target/ tree; cargo recreates it on demand)

@@ -22,6 +22,7 @@ repo root.
 | `firmware-recovery-dev/` | Older parallel copy of `utils/hardware_firmware_recovery.py` plus flashrom helpers (formerly `dev/tools/`). | Superseded by `utils/hardware_firmware_recovery.py`; kept here for diffs only. |
 | `cloud-integration/` | API sketches for a cooperative defense / cloud attestation service (formerly `ideas/cloud_integration/`). | Concept code, no server, no auth. |
 | `web/` | Flask "hardware database" prototype server (formerly `web/`). | Demo only, no auth, do not expose. |
+| `nuclear-boot-rust/` | Rust `no_std` PoC of a network-booted, attested bootloader (formerly under `examples_and_samples/demo/legacy-old/`). | PoC. Source only; build artifacts (`target/`) are gitignored. |
 
 ## Reading the canonical implementation
 

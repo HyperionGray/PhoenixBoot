@@ -72,7 +72,10 @@ nohup*.out
 /overlay-images/
 /overlay-layers/
 **/overlay/.has-mount-program
-**/*.lock
+# (Specific lock files for podman/buildah; do NOT match Cargo.lock etc.)
+**/containers.lock
+**/images.lock
+**/layers.lock
 
 # Kernel modules are user-specific artifacts, never tracked
 *.ko
@@ -90,6 +93,10 @@ nohup*.out
 
 # Demo / vendor sample tree (license + size); fetched out-of-band for alpha
 examples_and_samples/
+
+# Rust build output (we ship sources for experimental/nuclear-boot-rust/ but
+# never the compiled target/ tree; cargo recreates it on demand)
+**/target/
 
 # Generated documentation files
 copilot-instructions.md

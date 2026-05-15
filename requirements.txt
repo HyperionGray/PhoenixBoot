@@ -16,7 +16,7 @@ textual>=8.2.5
 # Security and cryptography
 # Updated to fix CVE-2024-26130, CVE-2023-50782, CVE-2023-49083 (see SECURITY_REVIEW_2025-12-07.md)
 cryptography>=48.0.0
-pyopenssl>=26.1.0
+pyopenssl>=26.2.0
 
 # System and hardware interaction
 psutil>=5.9.0

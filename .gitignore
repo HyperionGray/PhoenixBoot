@@ -59,6 +59,38 @@ nohup*.out
 *.xxd.xxd
 *.xxd.xxd.xxd
 
+# Local indexer / bish caches (never tracked, anywhere in the tree)
+.bish-index
+.bish.sqlite
+**/.bish-index
+**/.bish.sqlite
+
+# Podman / Buildah rootless storage leftovers
+# (these accidentally land in the repo if podman is run from cwd)
+/overlay/
+/overlay-containers/
+/overlay-images/
+/overlay-layers/
+**/overlay/.has-mount-program
+**/*.lock
+
+# Kernel modules are user-specific artifacts, never tracked
+*.ko
+*.ko.unsigned
+*.ko.zst
+
+# Pre-built native libraries should be produced by the build, not tracked
+*.o
+*.a
+*.so
+*.so.*
+
+# Stray podman/sqlite dumps at the repo root
+/db.sql
+
+# Demo / vendor sample tree (license + size); fetched out-of-band for alpha
+examples_and_samples/
+
 # Generated documentation files
 copilot-instructions.md
 WARP.md

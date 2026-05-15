@@ -1,0 +1,46 @@
+name: "PhoenixBoot CodeQL config"
+
+# Anything in this file is honored by both default setup and advanced
+# (workflow-based) setup. See:
+# https://docs.github.com/en/code-security/code-scanning/managing-your-code-scanning-configuration/codeql-code-scanning-for-compiled-languages#about-codeql-default-setup
+
+# We deliberately exclude the prototype Python servers under
+# experimental/ from analysis.
+#
+# Rationale: the experimental/ tree is explicitly NOT part of the alpha
+# API (see ALPHA_RELEASE_PLAN.md §2 and experimental/README.md). It
+# contains prototype Flask/FastAPI servers and hardware-scraping demos
+# that ship with well-known prototype-grade bugs (log-injection,
+# flask-debug=True, path-injection, stack-trace-exposure). None of these
+# servers are built, tested, or shipped by CI; all of them are
+# documented as "may be rewritten or removed at any time", and the
+# READMEs tell users not to expose them.
+#
+# When a piece of experimental/ graduates to the supported surface
+# (criteria: pf task wired up, CI smoke test, doc page, maintainer
+# owner — see experimental/README.md), it leaves this tree and CodeQL
+# starts covering it again automatically.
+#
+# Note: `experimental/nuclear-boot-rust/` is intentionally NOT in the
+# ignore list. It is the only Rust source in the repo, and CodeQL's
+# default setup expects to find at least one .rs file when Rust is
+# enabled. Excluding it would cause the Rust analyzer to error out
+# with "CodeQL could not process any code written in Rust".
+
+paths-ignore:
+  - experimental/cloud-integration/**
+  - experimental/web/**
+  - experimental/universal-bios/**
+  - experimental/universal-bios-plus/**
+  - experimental/scrapers/**
+  - experimental/hardware-database/**
+  - experimental/scraped-hardware/**
+  - experimental/firmware-recovery-dev/**
+  - examples_and_samples/**
+  - out/**
+  - "**/target/**"
+
+# We do NOT override `queries:` here. Default setup picks its own query
+# suite (currently `security-extended`), and overriding it from the
+# repo config would inadvertently widen or narrow the alert surface for
+# the supported tree. Path scope is the only thing we want to change.

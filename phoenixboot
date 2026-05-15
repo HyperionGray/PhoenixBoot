@@ -47,28 +47,35 @@ usage() {
 Usage: ./phoenixboot <command> [options]
 
 Common commands:
-  setup
-  build
-  verify
-  status
-  list
-  test
-  test-all
-  usb --device /dev/sdX
+  setup                    Toolchain check + build + verify
+  build                    Build production artifacts and package ESP
+  verify                   Validate keys + ESP image
+  status                   Show current artifact / key state
+  list                     List wrapper + pf tasks (pf required for full list)
+  test                     Run the main QEMU boot test
+  test-all                 Run QEMU + SecureBoot + UUEFI tests
+  usb --device /dev/sdX    Write the ESP image to a USB device
 
 Secure Boot commands:
-  secure keygen
-  secure auth
-  secure enroll
-  secure check
-  secure media --iso <path> [--usb-device /dev/sdX]
-  secure mok-new [--name NAME] [--cn COMMON_NAME]
-  secure mok-enroll [--cert-pem <path>] [--cert-der <path>] [--dry-run]
-  secure mok-list
-  secure kmod-sign --module <file|dir> [--force]
+  secure keygen                                             Generate PK/KEK/db keys
+  secure auth                                               Build ESL + AUTH files
+  secure enroll                                             Enroll keys in OVMF
+  secure check                                              Show host Secure Boot state
+  secure media --iso <path> [--usb-device /dev/sdX]         Build bootable media
+  secure mok-new [--name NAME] [--cn COMMON_NAME]           Create MOK keypair
+  secure mok-enroll [--cert-pem <p>] [--cert-der <p>] [--dry-run]
+  secure mok-list                                           Show local + enrolled MOKs
+  secure kmod-sign --module <file|dir> [--force]            Sign kernel module(s)
+
+Meta:
+  help                     Show this help
+  version                  Show the alpha release status
 
 Advanced:
-  Any unknown command is passed directly to ./pf.py.
+  Any unknown command is passed directly to the `pf` task runner.
+
+Alpha scope: see ALPHA_RELEASE_PLAN.md at the repo root for the supported
+feature set. Anything under experimental/ is NOT part of the alpha API.
 EOF
 }
 
@@ -87,7 +94,11 @@ run_pf() {
       "Cannot execute PhoenixBoot task(s) because the required 'pf' executable is not available." \
       "Attempted pf.py arguments: $*" \
       "Expected launcher: $PF_SCRIPT" \
-      "Install pf-runner or make 'pf' available in PATH, then retry."
+      "Install instructions:" \
+      "  git clone https://github.com/P4X-ng/pf-runner ~/.local/src/pf-runner" \
+      "  pip install --user fabric lark" \
+      "  install -m 0755 ~/.local/src/pf-runner/pf-cli-base/pf_parser.py ~/.local/bin/pf" \
+      "Then ensure ~/.local/bin is on PATH and retry. See docs/AGENTS.md for more."
   fi
 
   CURRENT_ACTION="running pf task(s): $*"
@@ -196,6 +207,11 @@ shift || true
 case "$cmd" in
   help|-h|--help)
     usage
+    ;;
+
+  version|--version|-V)
+    echo "PhoenixBoot v0.1.0-alpha (pre-release)"
+    echo "See ALPHA_RELEASE_PLAN.md for the supported feature set."
     ;;
 
   setup)

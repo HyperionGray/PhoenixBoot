@@ -37,15 +37,7 @@ cd "$SCRIPT_DIR"
 
 # Source common utilities
 # shellcheck disable=SC1091  # Script path not followed during static analysis
-source scripts/lib/common.sh 2>/dev/null || {
-    info() { printf 'ℹ☠  %s\n' "$*"; }
-    ok() { printf '☠ %s\n' "$*"; }
-    warn() { printf '☠  %s\n' "$*"; }
-    err() { printf '☠ %s\n' "$*" >&2; }
-    die() { err "$*"; exit 1; }
-    require_cmd() { command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"; }
-    ensure_dir() { mkdir -p "$1"; }
-}
+source includes/lib/common.sh
 
 # Default configuration
 ISO_PATH=""

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-source scripts/lib/common.sh
+source includes/lib/common.sh
 
 IMG=out/esp/esp.img
 [ -f "$IMG" ] || die "Missing $IMG; run 'just package-esp' first"

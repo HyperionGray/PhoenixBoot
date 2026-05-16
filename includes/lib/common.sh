@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Common helpers for PhoenixGuard scripts
-# Usage: source "$(dirname "$0")/lib/common.sh"
+# Usage: source includes/lib/common.sh
 
 log()  { printf '%s\n' "$*"; }
 info() { printf 'ℹ☠  %s\n' "$*"; }
@@ -59,4 +59,3 @@ discover_ovmf() {
 sha256_file() {
   sha256sum "$1" | awk '{print $1}'
 }
-

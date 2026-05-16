@@ -18,6 +18,7 @@
 #include <Library/PrintLib.h>
 #include <Protocol/SimpleFileSystem.h>
 #include <Protocol/LoadedImage.h>
+#include <Protocol/BlockIo.h>
 #include <Guid/FileInfo.h>
 #include <Guid/GlobalVariable.h>
 
@@ -28,6 +29,8 @@
 #define MAX_DESCRIPTION_SIZE 512
 #define MAX_DISPLAYED_DELETIONS 10
 #define MAX_BACKUP_VARIABLES 10
+#define MAX_INDEX_INPUT_SIZE 16
+#define MAX_CONFIRMATION_INPUT_SIZE 32
 
 // UEFI Variable Protection System
 typedef enum {
@@ -85,6 +88,375 @@ STATIC VARIABLE_INFO *gVariables = NULL;
 STATIC UINTN gVariableCount = 0;
 STATIC SUSPICIOUS_ITEM gSuspiciousItems[MAX_SUSPICIOUS_ITEMS];
 STATIC UINTN gSuspiciousCount = 0;
+STATIC EFI_HANDLE gCurrentImageHandle = NULL;
+STATIC CHAR16 gBootMediaStatus[256] = L"Boot media scan not yet run";
+
+EFI_STATUS EnumerateAllVariables();
+VOID AnalyzeCurrentBootMedia();
+VOID RefreshDiagnostics();
+
+BOOLEAN
+IsScalarVariableSize(
+  IN UINTN DataSize
+  )
+{
+  return (DataSize == sizeof(UINT8) ||
+          DataSize == sizeof(UINT16) ||
+          DataSize == sizeof(UINT32) ||
+          DataSize == sizeof(UINT64));
+}
+
+VOID
+SetScalarBufferValue(
+  OUT VOID *Buffer,
+  IN UINTN DataSize,
+  IN UINT64 Value
+  )
+{
+  if (DataSize == sizeof(UINT8)) {
+    *(UINT8 *)Buffer = (UINT8)Value;
+  } else if (DataSize == sizeof(UINT16)) {
+    *(UINT16 *)Buffer = (UINT16)Value;
+  } else if (DataSize == sizeof(UINT32)) {
+    *(UINT32 *)Buffer = (UINT32)Value;
+  } else if (DataSize == sizeof(UINT64)) {
+    *(UINT64 *)Buffer = Value;
+  }
+}
+
+BOOLEAN
+IsScalarBufferEnabled(
+  IN VOID *Buffer,
+  IN UINTN DataSize
+  )
+{
+  if (DataSize == sizeof(UINT8)) {
+    return (*(UINT8 *)Buffer != 0);
+  } else if (DataSize == sizeof(UINT16)) {
+    return (*(UINT16 *)Buffer != 0);
+  } else if (DataSize == sizeof(UINT32)) {
+    return (*(UINT32 *)Buffer != 0);
+  } else if (DataSize == sizeof(UINT64)) {
+    return (*(UINT64 *)Buffer != 0);
+  }
+
+  return FALSE;
+}
+
+EFI_STATUS
+ReadConsoleLine(
+  OUT CHAR16 *Buffer,
+  IN UINTN BufferChars
+  )
+{
+  EFI_INPUT_KEY Key;
+  UINTN Index;
+  UINTN Position;
+
+  if (Buffer == NULL || BufferChars == 0) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  ZeroMem(Buffer, BufferChars * sizeof(CHAR16));
+  Position = 0;
+
+  while (TRUE) {
+    gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
+    gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
+
+    if (Key.UnicodeChar == CHAR_CARRIAGE_RETURN) {
+      Print(L"\n");
+      return EFI_SUCCESS;
+    }
+
+    if (Key.UnicodeChar == CHAR_BACKSPACE) {
+      if (Position > 0) {
+        Position--;
+        Buffer[Position] = 0;
+        Print(L"\b \b");
+      }
+      continue;
+    }
+
+    if (Key.ScanCode == SCAN_ESC) {
+      Print(L"\n");
+      return EFI_ABORTED;
+    }
+
+    if (Key.UnicodeChar >= L' ' && Position + 1 < BufferChars) {
+      Buffer[Position++] = Key.UnicodeChar;
+      Buffer[Position] = 0;
+      Print(L"%c", Key.UnicodeChar);
+    }
+  }
+}
+
+EFI_STATUS
+ParseDecimalUintn(
+  IN CHAR16 *Buffer,
+  OUT UINTN *Value
+  )
+{
+  UINTN Index;
+  UINTN ParsedValue;
+
+  if (Buffer == NULL || Value == NULL || Buffer[0] == 0) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  ParsedValue = 0;
+  for (Index = 0; Buffer[Index] != 0; Index++) {
+    UINTN Digit;
+
+    if (Buffer[Index] < L'0' || Buffer[Index] > L'9') {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    Digit = (UINTN)(Buffer[Index] - L'0');
+    if (ParsedValue > ((MAX_UINTN - Digit) / 10)) {
+      return EFI_BAD_BUFFER_SIZE;
+    }
+
+    ParsedValue = (ParsedValue * 10) + Digit;
+  }
+
+  *Value = ParsedValue;
+  return EFI_SUCCESS;
+}
+
+STATIC
+CHAR16
+ToUpperAsciiChar16(
+  IN CHAR16 Character
+  )
+{
+  if (Character >= L'a' && Character <= L'z') {
+    return (CHAR16)(Character - (L'a' - L'A'));
+  }
+
+  return Character;
+}
+
+BOOLEAN
+IsConfirmationTokenMatch(
+  IN CONST CHAR16 *Input,
+  IN CONST CHAR16 *Expected
+  )
+{
+  UINTN InputIndex;
+  UINTN ExpectedIndex;
+
+  if (Input == NULL || Input[0] == 0 || Expected == NULL || Expected[0] == 0) {
+    return FALSE;
+  }
+
+  InputIndex = 0;
+  while (Input[InputIndex] != 0 && (Input[InputIndex] == L' ' || Input[InputIndex] == L'\t')) {
+    InputIndex++;
+  }
+
+  ExpectedIndex = 0;
+  while (Expected[ExpectedIndex] != 0) {
+    if (Input[InputIndex] == 0) {
+      return FALSE;
+    }
+
+    if (ToUpperAsciiChar16(Input[InputIndex]) != ToUpperAsciiChar16(Expected[ExpectedIndex])) {
+      return FALSE;
+    }
+
+    InputIndex++;
+    ExpectedIndex++;
+  }
+
+  while (Input[InputIndex] != 0 && (Input[InputIndex] == L' ' || Input[InputIndex] == L'\t')) {
+    InputIndex++;
+  }
+
+  return (Input[InputIndex] == 0);
+}
+
+VOID
+FreeVariableBackup(
+  IN OUT VARIABLE_BACKUP *Backup
+  )
+{
+  if (Backup == NULL) {
+    return;
+  }
+
+  if (Backup->Data != NULL) {
+    FreePool(Backup->Data);
+  }
+
+  ZeroMem(Backup, sizeof(VARIABLE_BACKUP));
+}
+
+EFI_STATUS
+CaptureVariableBackup(
+  IN VARIABLE_INFO *VarInfo,
+  OUT VARIABLE_BACKUP *Backup
+  )
+{
+  EFI_STATUS Status;
+  UINTN DataSize;
+
+  if (VarInfo == NULL || Backup == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  ZeroMem(Backup, sizeof(VARIABLE_BACKUP));
+  StrCpyS(Backup->Name, MAX_VARIABLE_NAME_SIZE, VarInfo->Name);
+  CopyMem(&Backup->VendorGuid, &VarInfo->VendorGuid, sizeof(EFI_GUID));
+
+  DataSize = 0;
+  Status = gRT->GetVariable(
+    VarInfo->Name,
+    &VarInfo->VendorGuid,
+    &Backup->Attributes,
+    &DataSize,
+    NULL
+  );
+
+  if (Status != EFI_BUFFER_TOO_SMALL && Status != EFI_SUCCESS) {
+    return Status;
+  }
+
+  Backup->DataSize = DataSize;
+  if (DataSize > 0) {
+    Backup->Data = AllocateZeroPool(DataSize);
+    if (Backup->Data == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    Status = gRT->GetVariable(
+      VarInfo->Name,
+      &VarInfo->VendorGuid,
+      &Backup->Attributes,
+      &Backup->DataSize,
+      Backup->Data
+    );
+    if (EFI_ERROR(Status)) {
+      FreeVariableBackup(Backup);
+      return Status;
+    }
+  }
+
+  Backup->IsValid = TRUE;
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
+RestoreVariableBackup(
+  IN VARIABLE_BACKUP *Backup
+  )
+{
+  if (Backup == NULL || !Backup->IsValid) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  return gRT->SetVariable(
+    Backup->Name,
+    &Backup->VendorGuid,
+    Backup->Attributes,
+    Backup->DataSize,
+    Backup->Data
+  );
+}
+
+EFI_STATUS
+UpdateVariableWithBackup(
+  IN OUT VARIABLE_INFO *VarInfo,
+  IN UINT32 Attributes,
+  IN UINTN NewDataSize,
+  IN VOID *NewData
+  )
+{
+  EFI_STATUS Status;
+  VARIABLE_BACKUP Backup;
+  VOID *VerifyData;
+  UINTN VerifySize;
+  UINT32 VerifyAttributes;
+  BOOLEAN DeleteVerified;
+
+  if (VarInfo == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  ZeroMem(&Backup, sizeof(VARIABLE_BACKUP));
+  Status = CaptureVariableBackup(VarInfo, &Backup);
+  if (EFI_ERROR(Status)) {
+    return Status;
+  }
+
+  Status = gRT->SetVariable(
+    VarInfo->Name,
+    &VarInfo->VendorGuid,
+    Attributes,
+    NewDataSize,
+    NewData
+  );
+  if (EFI_ERROR(Status)) {
+    FreeVariableBackup(&Backup);
+    return Status;
+  }
+
+  if (NewDataSize == 0) {
+    VerifySize = 0;
+    VerifyAttributes = 0;
+    Status = gRT->GetVariable(
+      VarInfo->Name,
+      &VarInfo->VendorGuid,
+      &VerifyAttributes,
+      &VerifySize,
+      NULL
+    );
+
+    DeleteVerified = (Status == EFI_NOT_FOUND) || (Status == EFI_SUCCESS && VerifySize == 0);
+    if (!DeleteVerified) {
+      RestoreVariableBackup(&Backup);
+      FreeVariableBackup(&Backup);
+      return EFI_COMPROMISED_DATA;
+    }
+
+    VarInfo->DataSize = 0;
+    VarInfo->Attributes = Attributes;
+    FreeVariableBackup(&Backup);
+    return EFI_SUCCESS;
+  }
+
+  VerifyData = AllocateZeroPool(NewDataSize);
+  if (VerifyData == NULL) {
+    RestoreVariableBackup(&Backup);
+    FreeVariableBackup(&Backup);
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  VerifySize = NewDataSize;
+  VerifyAttributes = 0;
+  Status = gRT->GetVariable(
+    VarInfo->Name,
+    &VarInfo->VendorGuid,
+    &VerifyAttributes,
+    &VerifySize,
+    VerifyData
+  );
+  if (EFI_ERROR(Status) ||
+      VerifySize != NewDataSize ||
+      VerifyAttributes != Attributes ||
+      CompareMem(VerifyData, NewData, NewDataSize) != 0) {
+    FreePool(VerifyData);
+    RestoreVariableBackup(&Backup);
+    FreeVariableBackup(&Backup);
+    return EFI_COMPROMISED_DATA;
+  }
+
+  FreePool(VerifyData);
+  VarInfo->DataSize = NewDataSize;
+  VarInfo->Attributes = Attributes;
+  FreeVariableBackup(&Backup);
+  return EFI_SUCCESS;
+}
 
 EFI_STATUS
 GetSecureBootStatus(
@@ -468,7 +840,7 @@ AddVariableDescription(
   @retval Other        Error occurred
 **/
 EFI_STATUS
-EnumerateAllVariables(VOID)
+EnumerateAllVariables()
 {
   EFI_STATUS Status;
   CHAR16 VariableName[MAX_VARIABLE_NAME_SIZE];
@@ -479,6 +851,11 @@ EnumerateAllVariables(VOID)
   
   Print(L"\n=== Enumerating All EFI Variables ===\n");
   Print(L"This may take a moment...\n\n");
+
+  if (gVariables != NULL) {
+    FreePool(gVariables);
+    gVariables = NULL;
+  }
   
   // Allocate memory for variable array
   gVariables = AllocateZeroPool(MAX_VARIABLES * sizeof(VARIABLE_INFO));
@@ -554,6 +931,201 @@ EnumerateAllVariables(VOID)
   return EFI_SUCCESS;
 }
 
+VOID
+AnalyzeCurrentBootMedia()
+{
+  EFI_STATUS Status;
+  EFI_LOADED_IMAGE_PROTOCOL *LoadedImage;
+  EFI_BLOCK_IO_PROTOCOL *BlockIo;
+  UINT8 *Block0;
+  UINT8 *Block1;
+  CHAR16 Detail[256];
+  CHAR16 Summary[256];
+  BOOLEAN HasSignature;
+  BOOLEAN HasGptHeader;
+  BOOLEAN HasProtectiveMbr;
+  BOOLEAN HasKnownFilesystem;
+  BOOLEAN HasAnomaly;
+  UINTN EntryIndex;
+
+  StrCpyS(gBootMediaStatus, 256, L"Boot media scan unavailable");
+  if (gCurrentImageHandle == NULL) {
+    return;
+  }
+
+  LoadedImage = NULL;
+  Status = gBS->HandleProtocol(
+    gCurrentImageHandle,
+    &gEfiLoadedImageProtocolGuid,
+    (VOID **)&LoadedImage
+  );
+  if (EFI_ERROR(Status) || LoadedImage == NULL || LoadedImage->DeviceHandle == NULL) {
+    StrCpyS(gBootMediaStatus, 256, L"Boot media scan unavailable (no loaded image device)");
+    return;
+  }
+
+  BlockIo = NULL;
+  Status = gBS->HandleProtocol(
+    LoadedImage->DeviceHandle,
+    &gEfiBlockIoProtocolGuid,
+    (VOID **)&BlockIo
+  );
+  if (EFI_ERROR(Status) || BlockIo == NULL || BlockIo->Media == NULL) {
+    StrCpyS(gBootMediaStatus, 256, L"Boot media scan unavailable (Block I/O not present)");
+    return;
+  }
+
+  if (BlockIo->Media->BlockSize < 512) {
+    UnicodeSPrint(gBootMediaStatus, 256, L"Boot media scan skipped (block size %lu < 512)", BlockIo->Media->BlockSize);
+    return;
+  }
+
+  Block0 = AllocateZeroPool(BlockIo->Media->BlockSize);
+  Block1 = AllocateZeroPool(BlockIo->Media->BlockSize);
+  if (Block0 == NULL || Block1 == NULL) {
+    if (Block0 != NULL) {
+      FreePool(Block0);
+    }
+    if (Block1 != NULL) {
+      FreePool(Block1);
+    }
+    StrCpyS(gBootMediaStatus, 256, L"Boot media scan failed (out of resources)");
+    return;
+  }
+
+  Status = BlockIo->ReadBlocks(
+    BlockIo,
+    BlockIo->Media->MediaId,
+    0,
+    BlockIo->Media->BlockSize,
+    Block0
+  );
+  if (EFI_ERROR(Status)) {
+    UnicodeSPrint(gBootMediaStatus, 256, L"Boot media scan failed (LBA0 read error: %r)", Status);
+    FreePool(Block0);
+    FreePool(Block1);
+    return;
+  }
+
+  HasSignature = (Block0[510] == 0x55 && Block0[511] == 0xAA);
+  HasAnomaly = FALSE;
+
+  if (BlockIo->Media->LogicalPartition) {
+    HasKnownFilesystem =
+      (CompareMem(Block0 + 82, "FAT32   ", 8) == 0) ||
+      (CompareMem(Block0 + 54, "FAT12   ", 8) == 0) ||
+      (CompareMem(Block0 + 54, "FAT16   ", 8) == 0) ||
+      (CompareMem(Block0 + 3,  "EXFAT   ", 8) == 0);
+
+    if (!HasSignature) {
+      UnicodeSPrint(Detail, 256, L"EFI partition boot sector on current device is missing the 0x55AA signature");
+      AddSuspiciousItem(L"Boot media anomaly detected", Detail, 3);
+      HasAnomaly = TRUE;
+    }
+
+    if (!HasKnownFilesystem) {
+      UnicodeSPrint(Detail, 256, L"EFI partition boot sector does not look like FAT/exFAT despite being the active boot partition");
+      AddSuspiciousItem(L"Unexpected EFI partition format", Detail, 2);
+      HasAnomaly = TRUE;
+    }
+
+    if (HasAnomaly) {
+      StrCpyS(gBootMediaStatus, 256, L"Boot media anomaly detected in active EFI partition");
+    } else {
+      StrCpyS(gBootMediaStatus, 256, L"Boot media scan clean: EFI partition boot sector looks valid");
+    }
+  } else {
+    UINTN PartitionEntries;
+    UINTN ActiveEntries;
+
+    PartitionEntries = 0;
+    ActiveEntries = 0;
+    HasGptHeader = FALSE;
+    HasProtectiveMbr = FALSE;
+
+    if (BlockIo->Media->LastBlock >= 1) {
+      Status = BlockIo->ReadBlocks(
+        BlockIo,
+        BlockIo->Media->MediaId,
+        1,
+        BlockIo->Media->BlockSize,
+        Block1
+      );
+      if (!EFI_ERROR(Status) && CompareMem(Block1, "EFI PART", 8) == 0) {
+        HasGptHeader = TRUE;
+      }
+    }
+
+    for (EntryIndex = 0; EntryIndex < 4; EntryIndex++) {
+      UINT8 *Entry = Block0 + 446 + (EntryIndex * 16);
+
+      if (Entry[4] != 0) {
+        PartitionEntries++;
+      }
+      if (Entry[0] == 0x80) {
+        ActiveEntries++;
+      }
+      if (Entry[4] == 0xEE) {
+        HasProtectiveMbr = TRUE;
+      }
+    }
+
+    if (!HasSignature) {
+      UnicodeSPrint(Detail, 256, L"Current boot disk LBA0 is missing the 0x55AA signature");
+      AddSuspiciousItem(L"Boot media anomaly detected", Detail, 3);
+      HasAnomaly = TRUE;
+    }
+
+    if (HasGptHeader && !HasProtectiveMbr) {
+      UnicodeSPrint(Detail, 256, L"Current boot disk has a GPT header but the protective MBR entry is missing");
+      AddSuspiciousItem(L"GPT/protective MBR mismatch", Detail, 2);
+      HasAnomaly = TRUE;
+    }
+
+    if (!HasGptHeader && HasProtectiveMbr) {
+      UnicodeSPrint(Detail, 256, L"Current boot disk advertises a protective MBR but no GPT header was found at LBA1");
+      AddSuspiciousItem(L"Protective MBR without GPT", Detail, 2);
+      HasAnomaly = TRUE;
+    }
+
+    if (!HasGptHeader && PartitionEntries == 0) {
+      UnicodeSPrint(Detail, 256, L"Current boot disk exposes neither a GPT header nor any populated MBR partition entries");
+      AddSuspiciousItem(L"Boot disk layout missing", Detail, 2);
+      HasAnomaly = TRUE;
+    }
+
+    if (ActiveEntries > 1) {
+      UnicodeSPrint(Detail, 256, L"Current boot disk has %lu active MBR partitions; only one is normally expected", ActiveEntries);
+      AddSuspiciousItem(L"Multiple active MBR partitions", Detail, 2);
+      HasAnomaly = TRUE;
+    }
+
+    if (HasAnomaly) {
+      StrCpyS(gBootMediaStatus, 256, L"Boot media anomaly detected in current boot disk layout");
+    } else {
+      UnicodeSPrint(
+        Summary,
+        256,
+        L"Boot media scan clean: %s layout with %lu partition %s",
+        HasGptHeader ? L"GPT" : L"MBR",
+        PartitionEntries,
+        PartitionEntries == 1 ? L"entry" : L"entries"
+      );
+      StrCpyS(gBootMediaStatus, 256, Summary);
+    }
+  }
+
+  FreePool(Block0);
+  FreePool(Block1);
+}
+
+VOID
+RefreshDiagnostics()
+{
+  EnumerateAllVariables();
+  AnalyzeCurrentBootMedia();
+}
+
 /**
   Display all variables by category
   
@@ -627,10 +1199,11 @@ DisplaySecurityReport(VOID)
   
   Print(L"\nTotal Variables Analyzed: %lu\n", gVariableCount);
   Print(L"Suspicious Items Found: %lu\n\n", gSuspiciousCount);
+  Print(L"Boot Media Scan: %s\n\n", gBootMediaStatus);
   
   if (gSuspiciousCount == 0) {
     Print(L"✓ No suspicious activity detected\n");
-    Print(L"  All variables appear normal\n");
+    Print(L"  EFI variables and boot media appear normal\n");
     return;
   }
   
@@ -678,6 +1251,8 @@ EditVariable(
   IN UINTN VarIndex
   )
 {
+  BOOLEAN AllowModification;
+  CHAR16 WarningMessage[MAX_WARNING_MESSAGE_SIZE];
   if (VarIndex >= gVariableCount) {
     return EFI_INVALID_PARAMETER;
   }
@@ -686,6 +1261,7 @@ EditVariable(
   BOOLEAN AllowModification = FALSE;
   CHAR16 WarningMessage[MAX_WARNING_MESSAGE_SIZE];
   
+  AllowModification = FALSE;
   GuardVariableModification(var, &AllowModification, WarningMessage);
   if (!AllowModification) {
     Print(L"%s\n", WarningMessage);
@@ -700,47 +1276,39 @@ EditVariable(
   Print(L"Current Size: %lu bytes\n", var->DataSize);
   
   UINTN DataSize = var->DataSize;
-  UINT8 *CurrentData = NULL;
-  EFI_STATUS Status = EFI_SUCCESS;
-  BOOLEAN IsScalarValue = (DataSize == sizeof(UINT8) || DataSize == sizeof(UINT16) || DataSize == sizeof(UINT32));
+  EFI_STATUS Status = gRT->GetVariable(
+    var->Name,
+    &var->VendorGuid,
+    NULL,
+    &DataSize,
+    CurrentData
+  );
 
-  if (DataSize > 0) {
-    CurrentData = AllocateZeroPool(DataSize);
-    if (CurrentData == NULL) {
-      Print(L"✗ Failed to allocate memory\n");
-      return EFI_OUT_OF_RESOURCES;
-    }
-
-    Status = gRT->GetVariable(
-      var->Name,
-      &var->VendorGuid,
-      NULL,
-      &DataSize,
-      CurrentData
-    );
+  if (EFI_ERROR(Status)) {
+    Print(L"✗ Failed to read current variable value: %r\n", Status);
+    FreePool(CurrentData);
+    return Status;
   }
+
+  Print(L"Current Value (hex): ");
+  for (UINTN i = 0; i < (DataSize > 16 ? 16 : DataSize); i++) {
+    Print(L"%02x ", CurrentData[i]);
+  }
+  if (DataSize > 16) {
+    Print(L"... (%lu more bytes)", DataSize - 16);
+  }
+  Print(L"\n");
   
-  if (CurrentData != NULL && !EFI_ERROR(Status)) {
-    Print(L"Current Value (hex): ");
-    for (UINTN i = 0; i < (DataSize > 16 ? 16 : DataSize); i++) {
-      Print(L"%02x ", CurrentData[i]);
-    }
-    if (DataSize > 16) {
-      Print(L"... (%lu more bytes)", DataSize - 16);
-    }
-    Print(L"\n");
-    
-    // Try to interpret value
-    if (DataSize == 1) {
-      Print(L"Current Value (decimal): %u\n", CurrentData[0]);
-      Print(L"Current Value (boolean): %s\n", CurrentData[0] ? L"Enabled" : L"Disabled");
-    } else if (DataSize == 2) {
-      UINT16 val = *(UINT16*)CurrentData;
-      Print(L"Current Value (decimal): %u\n", val);
-    } else if (DataSize == 4) {
-      UINT32 val = *(UINT32*)CurrentData;
-      Print(L"Current Value (decimal): %u\n", val);
-    }
+  // Try to interpret value
+  if (DataSize == 1) {
+    Print(L"Current Value (decimal): %u\n", CurrentData[0]);
+    Print(L"Current Value (boolean): %s\n", CurrentData[0] ? L"Enabled" : L"Disabled");
+  } else if (DataSize == 2) {
+    UINT16 val = *(UINT16*)CurrentData;
+    Print(L"Current Value (decimal): %u\n", val);
+  } else if (DataSize == 4) {
+    UINT32 val = *(UINT32*)CurrentData;
+    Print(L"Current Value (decimal): %u\n", val);
   }
   
   Print(L"\n⚠ WARNING: Incorrect values may cause system instability!\n");
@@ -820,47 +1388,44 @@ EditVariable(
   }
   
   if (deleteVar) {
-    // Delete variable by setting size to 0
-    Status = gRT->SetVariable(
-      var->Name,
-      &var->VendorGuid,
-      var->Attributes,
-      0,
-      NULL
-    );
-    
+    Status = UpdateVariableWithBackup(var, var->Attributes, 0, NULL);
     if (EFI_ERROR(Status)) {
       Print(L"✗ Failed to delete variable: %r\n", Status);
-      Print(L"  Variable may be read-only or protected\n");
+      Print(L"  Original value was preserved when possible\n");
     } else {
       Print(L"✓ Variable deleted successfully\n");
+      Print(L"  Write was verified after applying the change\n");
       Print(L"  Change will take effect after reboot\n");
     }
   } else {
-    UINT8 NewData[sizeof(UINT32)];
-    ZeroMem(NewData, sizeof(NewData));
-    if (DataSize == sizeof(UINT8)) {
-      NewData[0] = newValue;
-    } else if (DataSize == sizeof(UINT16)) {
-      *(UINT16 *)NewData = (UINT16)newValue;
-    } else {
-      *(UINT32 *)NewData = (UINT32)newValue;
+    VOID *NewData;
+
+    if (!IsScalarVariableSize(DataSize)) {
+      Print(L"✗ Structured variable edits are blocked in UUEFI\n");
+      Print(L"  Only scalar 1/2/4/8-byte values can be safely modified here\n");
+      Print(L"  Use OS-side tooling for complex binary structures\n");
+      FreePool(CurrentData);
+      return EFI_UNSUPPORTED;
     }
 
-    Status = gRT->SetVariable(
-      var->Name,
-      &var->VendorGuid,
-      var->Attributes,
-      DataSize,
-      NewData
-    );
-    
+    NewData = AllocateZeroPool(DataSize);
+    if (NewData == NULL) {
+      Print(L"✗ Failed to allocate memory for new value\n");
+      FreePool(CurrentData);
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    SetScalarBufferValue(NewData, DataSize, newValue);
+    Status = UpdateVariableWithBackup(var, var->Attributes, DataSize, NewData);
+    FreePool(NewData);
+
     if (EFI_ERROR(Status)) {
       Print(L"✗ Failed to modify variable: %r\n", Status);
-      Print(L"  Variable may be read-only or protected\n");
+      Print(L"  Original value was restored when verification failed\n");
     } else {
       Print(L"✓ Variable modified successfully\n");
       Print(L"  New value: %u\n", newValue);
+      Print(L"  Write was verified after applying the change\n");
       Print(L"  Change will take effect after reboot\n");
     }
   }
@@ -886,6 +1451,10 @@ ToggleVariable(
 {
   BOOLEAN AllowModification = FALSE;
   CHAR16 WarningMessage[MAX_WARNING_MESSAGE_SIZE];
+  EFI_STATUS Status;
+  UINT8 *CurrentData;
+  UINTN DataSize;
+  VOID *NewData;
   
   if (VarIndex >= gVariableCount) {
     return EFI_INVALID_PARAMETER;
@@ -918,23 +1487,49 @@ ToggleVariable(
     return EFI_ABORTED;
   }
   
-  // Set variable to zero (disable)
-  UINT8 zeroValue = 0;
-  EFI_STATUS Status = gRT->SetVariable(
+  DataSize = var->DataSize;
+  if (!IsScalarVariableSize(DataSize)) {
+    Print(L"✗ Toggle is only supported for scalar 1/2/4/8-byte variables\n");
+    return EFI_UNSUPPORTED;
+  }
+
+  CurrentData = AllocateZeroPool(DataSize);
+  NewData = AllocateZeroPool(DataSize);
+  if (CurrentData == NULL || NewData == NULL) {
+    if (CurrentData != NULL) {
+      FreePool(CurrentData);
+    }
+    if (NewData != NULL) {
+      FreePool(NewData);
+    }
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Status = gRT->GetVariable(
     var->Name,
     &var->VendorGuid,
-    var->Attributes,
-    sizeof(zeroValue),
-    &zeroValue
+    NULL,
+    &DataSize,
+    CurrentData
   );
-  
   if (EFI_ERROR(Status)) {
-    Print(L"✗ Failed to modify variable: %r\n", Status);
-    Print(L"  Variable may be read-only or protected\n");
+    Print(L"✗ Failed to read variable before toggle: %r\n", Status);
+    FreePool(CurrentData);
+    FreePool(NewData);
     return Status;
   }
-  
-  Print(L"✓ Variable disabled successfully\n");
+
+  SetScalarBufferValue(NewData, DataSize, IsScalarBufferEnabled(CurrentData, DataSize) ? 0 : 1);
+  Status = UpdateVariableWithBackup(var, var->Attributes, DataSize, NewData);
+  FreePool(CurrentData);
+  FreePool(NewData);
+  if (EFI_ERROR(Status)) {
+    Print(L"✗ Failed to toggle variable: %r\n", Status);
+    Print(L"  Original value was restored when verification failed\n");
+    return Status;
+  }
+
+  Print(L"✓ Variable toggled successfully\n");
   Print(L"  Change will take effect after reboot\n");
   
   return EFI_SUCCESS;
@@ -1005,7 +1600,10 @@ ShowNuclearWipeMenu(VOID)
   Print(L"%c\n", Key.UnicodeChar);
   
   switch (Key.UnicodeChar) {
-    case L'1':
+    case L'1': {
+      CHAR16 ConfirmBuffer[MAX_CONFIRMATION_INPUT_SIZE];
+      EFI_STATUS ConfirmStatus;
+
       // Wipe vendor variables only
       Print(L"\n☢ VENDOR VARIABLE WIPE ☢\n");
       Print(L"═══════════════════════════\n");
@@ -1033,15 +1631,8 @@ ShowNuclearWipeMenu(VOID)
       
       Print(L"\nType 'WIPE' to confirm (or anything else to cancel): ");
       
-      // NOTE: Full string input is complex in UEFI without additional libraries.
-      // This implementation checks first character only. For production use,
-      // consider implementing full string comparison or using UEFI Forms Browser.
-      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
-      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
-      Print(L"%c...\n", Key.UnicodeChar);
-      
-      // Check first character as simplified confirmation
-      if (Key.UnicodeChar == L'W' || Key.UnicodeChar == L'w') {
+      ConfirmStatus = ReadConsoleLine(ConfirmBuffer, sizeof(ConfirmBuffer) / sizeof(ConfirmBuffer[0]));
+      if (!EFI_ERROR(ConfirmStatus) && IsConfirmationTokenMatch(ConfirmBuffer, L"WIPE")) {
         Print(L"\n⚠ Wiping vendor variables...\n");
         
         UINTN deletedCount = 0;
@@ -1072,8 +1663,12 @@ ShowNuclearWipeMenu(VOID)
       gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
       gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
       break;
+    }
       
-    case L'2':
+    case L'2': {
+      CHAR16 ConfirmBuffer[MAX_CONFIRMATION_INPUT_SIZE];
+      EFI_STATUS ConfirmStatus;
+
       // Full NVRAM reset
       Print(L"\n☢☢☢ FULL NVRAM RESET ☢☢☢\n");
       Print(L"═════════════════════════════\n");
@@ -1089,15 +1684,8 @@ ShowNuclearWipeMenu(VOID)
       Print(L"\n");
       Print(L"Type 'RESET' to confirm (or anything else to cancel): ");
       
-      // NOTE: Full string input is complex in UEFI without additional libraries.
-      // This implementation checks first character only. For production use,
-      // consider implementing full string comparison or using UEFI Forms Browser.
-      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
-      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
-      Print(L"%c...\n", Key.UnicodeChar);
-      
-      // Check first character as simplified confirmation
-      if (Key.UnicodeChar == L'R' || Key.UnicodeChar == L'r') {
+      ConfirmStatus = ReadConsoleLine(ConfirmBuffer, sizeof(ConfirmBuffer) / sizeof(ConfirmBuffer[0]));
+      if (!EFI_ERROR(ConfirmStatus) && IsConfirmationTokenMatch(ConfirmBuffer, L"RESET")) {
         Print(L"\n⚠⚠⚠ Performing full NVRAM reset...\n");
         
         UINTN resetCount = 0;
@@ -1137,6 +1725,7 @@ ShowNuclearWipeMenu(VOID)
       gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
       gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
       break;
+    }
       
     case L'3':
       // Disk wiping information
@@ -1375,7 +1964,7 @@ ShowInteractiveMenu(VOID)
     Print(L"2. View Boot Configuration Variables\n");
     Print(L"3. View Security Variables\n");
     Print(L"4. View Vendor-Specific Variables\n");
-    Print(L"5. Show Security Report (Suspicious Activity)\n");
+    Print(L"5. Show Security Report (Variables + Boot Media)\n");
     Print(L"6. Edit Variable (Advanced)\n");
     Print(L"7. Re-scan Variables\n");
     Print(L"8. ☢ Nuclear Wipe Menu (EXTREME)\n");
@@ -1424,6 +2013,11 @@ ShowInteractiveMenu(VOID)
         break;
         
       case L'6':
+      {
+        CHAR16 InputBuffer[MAX_INDEX_INPUT_SIZE];
+        EFI_STATUS SelectionStatus;
+        UINTN SelectedIndex;
+
         Print(L"\n╔════════════════════════════════════════════╗\n");
         Print(L"║           VARIABLE EDITING                ║\n");
         Print(L"╚════════════════════════════════════════════╝\n");
@@ -1447,30 +2041,39 @@ ShowInteractiveMenu(VOID)
           Print(L"  No safely editable variables found\n");
         } else {
           Print(L"\n⚠ Note: Variable indices shown in brackets []\n");
-          Print(L"Enter index to edit, or Q to cancel: ");
+          Print(L"  Enter the index to edit one of the listed variables.\n");
+          Print(L"  Press Enter on an empty line or Esc to cancel.\n");
+          Print(L"\nVariable index: ");
 
-          UINTN SelectedIndex = 0;
-          EFI_STATUS EditStatus = ReadUintnFromConsole(&SelectedIndex);
-          if (EFI_ERROR(EditStatus)) {
+          SelectionStatus = ReadConsoleLine(InputBuffer, MAX_INDEX_INPUT_SIZE);
+          if (SelectionStatus == EFI_ABORTED || InputBuffer[0] == 0) {
             Print(L"Cancelled\n");
-          } else if (SelectedIndex >= gVariableCount) {
-            Print(L"Invalid variable index: %lu\n", SelectedIndex);
-          } else {
-            EditStatus = EditVariable(SelectedIndex);
-            if (!EFI_ERROR(EditStatus)) {
-              Print(L"\nRe-scanning variables after modification...\n");
-              EnumerateAllVariables();
-            }
+            break;
           }
+
+          SelectionStatus = ParseDecimalUintn(InputBuffer, &SelectedIndex);
+          if (EFI_ERROR(SelectionStatus) || SelectedIndex >= gVariableCount) {
+            Print(L"Invalid variable index\n");
+            break;
+          }
+
+          if (!gVariables[SelectedIndex].IsEditable) {
+            Print(L"Selected variable is not in the editable set\n");
+            break;
+          }
+
+          EditVariable(SelectedIndex);
+          RefreshDiagnostics();
         }
         
         Print(L"\nPress any key to continue...");
         gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
         gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
         break;
+      }
         
       case L'7':
-        EnumerateAllVariables();
+        RefreshDiagnostics();
         Print(L"\nPress any key to continue...");
         gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
         gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
@@ -2551,15 +3154,17 @@ UefiMain (
   Print(L"  ADVANCED: Variable Management & Security\n");
   Print(L"═══════════════════════════════════════════════\n");
   
-  EnumerateAllVariables();
+  gCurrentImageHandle = ImageHandle;
+  RefreshDiagnostics();
   
   // Show quick summary of suspicious items
   if (gSuspiciousCount > 0) {
     Print(L"\n⚠ ALERT: %lu suspicious items detected!\n", gSuspiciousCount);
-    Print(L"  Use the interactive menu to view details.\n");
+    Print(L"  Use the interactive menu to review variables and boot media findings.\n");
   } else {
-    Print(L"\n✓ No suspicious activity detected in variables\n");
+    Print(L"\n✓ No suspicious activity detected in variables or boot media\n");
   }
+  Print(L"  %s\n", gBootMediaStatus);
 
   // Display completion marker
   Print(L"\n[UUEFI-COMPLETE]\n");
@@ -2567,7 +3172,7 @@ UefiMain (
   // NEW: Interactive menu
   Print(L"\n\nOptions:\n");
   Print(L"  M - Enter Interactive Menu (View & Manage Variables)\n");
-  Print(L"  R - Show Security Report\n");
+  Print(L"  R - Show Security Report (Variables + Boot Media)\n");
   Print(L"  D - 🔍 Debug Diagnostics (EVERYTHING - ALL vars, logs, protocols!)\n");
   Print(L"  N - ☢ Nuclear Wipe Menu (EXTREME)\n");
   Print(L"  Q - Return to Firmware\n");

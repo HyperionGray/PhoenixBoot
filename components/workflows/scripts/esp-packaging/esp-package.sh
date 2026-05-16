@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-source scripts/lib/common.sh
+source includes/lib/common.sh
 
 info "☠ Creating bootable ESP image..."
 require_cmd dd
@@ -44,7 +44,6 @@ if [ -f keys/db.key ] && [ -f keys/db.crt ]; then
   SIGNED_TMP=$(mktemp)
   sbsign --key keys/db.key --cert keys/db.crt \
     --output "$SIGNED_TMP" out/staging/BootX64.efi
-  sudo install -D -m0644 "$SIGNED_TMP" out/esp/mount/EFI/BOOT/BOOTX64.EFI
   sudo install -D -m0644 "$SIGNED_TMP" out/esp/mount/EFI/PhoenixGuard/BootX64.efi
   rm -f "$SIGNED_TMP"
 else
@@ -85,6 +84,41 @@ if [ -n "$SHIM_SRC" ]; then
 else
   info "shimx64.efi not found on host; will attempt direct GRUB chainload"
 fi
+
+# Choose default boot path. NuclearBoot is opt-in only:
+#   PG_BOOT_DEFAULT=nuclearboot ./pf.py build-package-esp
+BOOT_DEFAULT_MODE="grub"
+case "${PG_BOOT_DEFAULT:-grub}" in
+  nuclearboot)
+    BOOT_DEFAULT_MODE="nuclearboot"
+    sudo install -D -m0644 out/esp/mount/EFI/PhoenixGuard/BootX64.efi out/esp/mount/EFI/BOOT/BOOTX64.EFI
+    warn "Using NuclearBoot as default BOOTX64 (PG_BOOT_DEFAULT=nuclearboot)"
+    ;;
+  *)
+    if [ -n "$SHIM_SRC" ]; then
+      BOOT_DEFAULT_MODE="shim"
+      sudo install -D -m0644 "$SHIM_SRC" out/esp/mount/EFI/BOOT/BOOTX64.EFI
+      for mm in \
+        "/usr/lib/shim/mmx64.efi.signed" \
+        "/usr/lib/shim/mmx64.efi" \
+        "/usr/lib/shim/MokManager.efi.signed" \
+        "/usr/lib/shim/MokManager.efi"; do
+        if [ -f "$mm" ]; then
+          sudo install -D -m0644 "$mm" out/esp/mount/EFI/BOOT/mmx64.efi
+          break
+        fi
+      done
+    elif [ -n "$GRUB_SRC" ]; then
+      BOOT_DEFAULT_MODE="grub-direct"
+      sudo install -D -m0644 "$GRUB_SRC" out/esp/mount/EFI/BOOT/BOOTX64.EFI
+      warn "shim not found; defaulting BOOTX64 to grubx64.efi"
+    else
+      BOOT_DEFAULT_MODE="nuclearboot-fallback"
+      sudo install -D -m0644 out/esp/mount/EFI/PhoenixGuard/BootX64.efi out/esp/mount/EFI/BOOT/BOOTX64.EFI
+      warn "Neither shim nor grub found; falling back to NuclearBoot default"
+    fi
+    ;;
+esac
 
 # Minimal GRUB modules (best-effort)
 sudo mkdir -p out/esp/mount/boot/grub/x86_64-efi
@@ -187,6 +221,7 @@ sudo cp "$GRUBCFG_TMP" out/esp/mount/boot/grub/grub.cfg
 rm -f "$GRUBCFG_TMP"
 
 # Unmount and finalize
+printf '%s\n' "$BOOT_DEFAULT_MODE" > out/esp/boot-default-mode.txt
 sudo umount out/esp/mount
 rmdir out/esp/mount
 sha256sum out/esp/esp.img > out/esp/esp.img.sha256
@@ -208,10 +243,11 @@ echo "════════════════════════�
 echo ""
 echo "📁 Output location: out/esp/esp.img ($(du -h out/esp/esp.img | cut -f1))"
 echo "   Checksum: $(cat out/esp/esp.img.sha256 | cut -d' ' -f1 | cut -c1-16)..."
+echo "   Default boot mode: ${BOOT_DEFAULT_MODE}"
 echo ""
 echo "📦 What's inside this ESP image:"
 echo ""
-echo "   🔹 EFI/BOOT/BOOTX64.EFI          - PhoenixGuard bootloader (signed with db key)"
+echo "   🔹 EFI/BOOT/BOOTX64.EFI          - Default boot entry (${BOOT_DEFAULT_MODE})"
 echo "   🔹 EFI/PhoenixGuard/BootX64.efi   - PhoenixGuard vendor copy"
 if [ -f out/staging/KeyEnrollEdk2.efi ]; then
 echo "   🔹 EFI/BOOT/KeyEnrollEdk2.efi     - Key enrollment tool (for first-time setup)"
@@ -272,4 +308,3 @@ echo "   • Keys explained: keys/README.md"
 echo "   • SecureBoot setup: SECUREBOOT_QUICKSTART.md"
 echo "   • Full docs: docs/SECURE_BOOT.md"
 echo ""
-

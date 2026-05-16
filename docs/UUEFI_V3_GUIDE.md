@@ -45,7 +45,7 @@ When you boot into UUEFI for the first time, you'll see:
 UUEFI will automatically:
 1. Display firmware and system information
 2. Enumerate all EFI variables (may take 10-30 seconds)
-3. Run security heuristics to detect suspicious variables
+3. Run security heuristics to detect suspicious variables and basic boot-media anomalies
 4. Show a quick summary of findings
 
 Then you can press **M** to enter the interactive menu.
@@ -60,7 +60,7 @@ Then you can press **M** to enter the interactive menu.
 2. View Boot Configuration Variables
 3. View Security Variables
 4. View Vendor-Specific Variables
-5. Show Security Report (Suspicious Activity)
+5. Show Security Report (Variables + Boot Media)
 6. Edit Variable (Advanced)
 7. Re-scan Variables
 
@@ -101,11 +101,12 @@ Example output:
 Same as option 1, but filtered by category (Boot, Security, Vendor) for easier navigation.
 
 #### 5. Security Report
-Shows suspicious variables detected by UUEFI's heuristics engine:
+Shows suspicious findings detected by UUEFI's heuristics engine:
 - Unusually large variables (possible data hiding)
 - Boot variables with wrong attributes (possible tampering)
 - Security variables without authentication (bypass vulnerabilities)
 - Variables with suspicious names (Debug, Test, Backdoor, Hidden)
+- Boot-media anomalies on the currently loaded EFI partition/disk (missing signatures, malformed GPT/MBR layout, unexpected filesystem boot sector)
 
 #### 6. Edit Variable (Advanced)
 **⚠️ USE WITH CAUTION**
@@ -115,6 +116,8 @@ This allows you to modify EFI variables. Safety features:
 - Critical boot variables are **protected**
 - Double confirmation required
 - Shows current value before editing
+- Verifies the write after applying it and restores the original value if verification fails
+- Limits in-firmware flipping to scalar 1/2/4/8-byte variables so complex blobs are not accidentally corrupted
 
 Common use cases:
 ```bash

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-source scripts/lib/common.sh
+source includes/lib/common.sh
 
 info "☠ Packaging enrollment ESP (no sudo, mtools)"
 [ -f staging/boot/KeyEnrollEdk2.efi ] || die "Missing KeyEnrollEdk2.efi in staging/boot/"

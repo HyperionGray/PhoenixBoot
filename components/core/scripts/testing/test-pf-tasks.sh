@@ -177,6 +177,17 @@ else
     fail "os-kmod-sign still uses broken PATH-based configuration"
 fi
 
+# Test 14: Ensure ESP packaging defaults are not NuclearBoot demo-first
+echo "[TEST 14] Checking ESP default boot policy..."
+ESP_PACKAGE_SUDO="components/workflows/scripts/esp-packaging/esp-package.sh"
+ESP_PACKAGE_NOSUDO="components/workflows/scripts/esp-packaging/esp-package-nosudo.sh"
+if grep -q 'PG_BOOT_DEFAULT:-grub' "$ESP_PACKAGE_SUDO" && \
+   grep -q 'PG_BOOT_DEFAULT:-grub' "$ESP_PACKAGE_NOSUDO"; then
+    pass "ESP packaging defaults to non-NuclearBoot boot path"
+else
+    fail "ESP packaging default is not explicitly non-NuclearBoot"
+fi
+
 # Summary
 echo
 echo "======================="

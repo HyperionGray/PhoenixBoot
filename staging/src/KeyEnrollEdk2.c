@@ -2,6 +2,7 @@
 #include <Library/UefiLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
+#include <Library/BaseLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/PrintLib.h>
@@ -17,6 +18,13 @@ STATIC EFI_STATUS ReadFile(EFI_FILE_PROTOCOL *Root, CHAR16 *Path, VOID **Buffer,
   EFI_FILE_PROTOCOL *File = NULL;
   EFI_FILE_INFO *FileInfo = NULL;
   UINTN InfoSize = 0;
+
+  if ((Root == NULL) || (Path == NULL) || (Buffer == NULL) || (BufferSize == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  *Buffer = NULL;
+  *BufferSize = 0;
 
   Status = Root->Open(Root, &File, Path, EFI_FILE_MODE_READ, 0);
   if (EFI_ERROR(Status)) return Status;
@@ -46,6 +54,15 @@ STATIC EFI_STATUS EnrollFromAuth(EFI_FILE_PROTOCOL *Root, CHAR16 *Name, EFI_GUID
   VOID *Data = NULL;
   UINTN Size = 0;
   UINT32 Attr = EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS;
+
+  if ((Root == NULL) || (Name == NULL) || (VendorGuid == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if ((StrLen(KEYS_DIR) + StrLen(Name) + 1) >= (sizeof(Path) / sizeof(Path[0]))) {
+    Print(L"[Enroll] Auth path too long for %s\n", Name);
+    return EFI_INVALID_PARAMETER;
+  }
 
   UnicodeSPrint(Path, sizeof(Path), L"%s%s", KEYS_DIR, Name);
   Status = ReadFile(Root, Path, &Data, &Size);
@@ -95,4 +112,3 @@ EFI_STATUS EFIAPI UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *Syste
   Print(L"Reboot firmware and enable Secure Boot to use the custom keys.\n");
   return EFI_SUCCESS;
 }
-

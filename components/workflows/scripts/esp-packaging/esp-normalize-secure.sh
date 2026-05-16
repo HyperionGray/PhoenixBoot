@@ -6,7 +6,7 @@ set -euo pipefail
 # Logs to: out/logs/esp-normalize-secure.log
 
 cd "$(dirname "$0")/../.."
-source scripts/lib/common.sh
+source includes/lib/common.sh
 
 IMG=${IMG:-out/esp/esp.img}
 [ -f "$IMG" ] || die "Missing $IMG; run 'just package-esp' or 'just iso-prep' first"

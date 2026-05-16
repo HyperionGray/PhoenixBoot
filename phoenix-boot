@@ -3,7 +3,8 @@
 # This script forwards all commands to the current phoenixboot CLI.
 # Use ./phoenixboot directly for new scripts and documentation.
 
+set -euo pipefail
+
 SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
-
-exec "$SCRIPT_DIR/phoenixboot" "$@"
+exec "${SCRIPT_DIR}/phoenixboot" "$@"

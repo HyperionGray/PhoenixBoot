@@ -16,7 +16,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from utils.kernel_config_profiles import generate_config_fragment
+from utils.kernel_config_profiles import KERNEL_PROFILES, generate_config_fragment
+
+PROFILE_CHOICES = tuple(KERNEL_PROFILES.keys())
 
 
 DISTRO_PROFILES = {
@@ -124,7 +126,16 @@ def print_guidance(context: dict[str, str]) -> None:
 def generate_secure_config(output: Path, requested_distro: str | None, requested_profile: str | None) -> int:
     """Generate a distro-aware kernel config fragment and return 0 on success."""
     context = detect_distro(requested_distro)
-    profile = requested_profile or os.environ.get("PROFILE") or context["default_profile"]
+    env_profile = os.environ.get("PROFILE")
+    profile = requested_profile or env_profile or context["default_profile"]
+    if profile not in KERNEL_PROFILES:
+        available = ", ".join(PROFILE_CHOICES)
+        source = "PROFILE environment variable" if env_profile and not requested_profile else "profile"
+        print(
+            f"✗ Unknown {source}: {profile!r}. Available profiles: {available}",
+            file=sys.stderr,
+        )
+        return 1
     config_text, warnings = generate_config_fragment(profile)
 
     header = [
@@ -184,7 +195,7 @@ def main() -> int:
 
     config_parser = subparsers.add_parser("generate-secure-config", help="Generate a distro-aware secure kernel config fragment")
     config_parser.add_argument("--distro", help="Override distro detection for generation")
-    config_parser.add_argument("--profile", choices=["permissive", "balanced", "hardened"], help="Kernel config profile")
+    config_parser.add_argument("--profile", choices=PROFILE_CHOICES, help="Kernel config profile")
     config_parser.add_argument("--output", default=os.environ.get("OUTPUT", str(REPO_ROOT / "out" / "dod" / "secure_kernel.config")), help="Output file")
 
     args = parser.parse_args()

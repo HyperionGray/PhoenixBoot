@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-source scripts/lib/common.sh
+source includes/lib/common.sh
 
 info "☠ Creating bootable ESP image (no sudo, mtools)"
 [ -f out/staging/BootX64.efi ] || die "No BootX64.efi found - run 'just build' first"

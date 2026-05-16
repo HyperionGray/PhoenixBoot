@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-source scripts/lib/common.sh
+source includes/lib/common.sh
 
 : "${USB1_DEV:?USB1_DEV is required, e.g. /dev/sdX}"
 IMG=out/esp/esp.img

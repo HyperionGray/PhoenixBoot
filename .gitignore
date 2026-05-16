@@ -9,6 +9,9 @@ tags/
 PROJECT.txt
 AUTOMATION.txt
 
+# DoD audit logs (runtime-generated)
+logs/
+
 # Production-first hygiene additions
 # Build artifacts and outputs
 out/
@@ -92,10 +95,12 @@ nohup*.out
 /db.sql
 
 # Demo / vendor sample tree (license + size); fetched out-of-band for alpha.
-# Untrack everything *under* the directory but keep the README stub so
-# contributors can see what's supposed to be there.
-examples_and_samples/*
+# Untrack everything *under* the directory but keep README.md files at
+# every level so contributors can navigate what's supposed to be there.
+examples_and_samples/**
+!examples_and_samples/**/
 !examples_and_samples/README.md
+!examples_and_samples/**/README.md
 
 # Rust build output (we ship sources for experimental/nuclear-boot-rust/ but
 # never the compiled target/ tree; cargo recreates it on demand)

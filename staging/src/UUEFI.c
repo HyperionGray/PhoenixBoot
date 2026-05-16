@@ -30,6 +30,7 @@
 #define MAX_DISPLAYED_DELETIONS 10
 #define MAX_BACKUP_VARIABLES 10
 #define MAX_INDEX_INPUT_SIZE 16
+#define MAX_CONFIRMATION_INPUT_SIZE 32
 
 // UEFI Variable Protection System
 typedef enum {
@@ -221,6 +222,58 @@ ParseDecimalUintn(
 
   *Value = ParsedValue;
   return EFI_SUCCESS;
+}
+
+STATIC
+CHAR16
+ToUpperAsciiChar16(
+  IN CHAR16 Character
+  )
+{
+  if (Character >= L'a' && Character <= L'z') {
+    return (CHAR16)(Character - (L'a' - L'A'));
+  }
+
+  return Character;
+}
+
+BOOLEAN
+IsConfirmationTokenMatch(
+  IN CONST CHAR16 *Input,
+  IN CONST CHAR16 *Expected
+  )
+{
+  UINTN InputIndex;
+  UINTN ExpectedIndex;
+
+  if (Input == NULL || Input[0] == 0 || Expected == NULL || Expected[0] == 0) {
+    return FALSE;
+  }
+
+  InputIndex = 0;
+  while (Input[InputIndex] != 0 && (Input[InputIndex] == L' ' || Input[InputIndex] == L'\t')) {
+    InputIndex++;
+  }
+
+  ExpectedIndex = 0;
+  while (Expected[ExpectedIndex] != 0) {
+    if (Input[InputIndex] == 0) {
+      return FALSE;
+    }
+
+    if (ToUpperAsciiChar16(Input[InputIndex]) != ToUpperAsciiChar16(Expected[ExpectedIndex])) {
+      return FALSE;
+    }
+
+    InputIndex++;
+    ExpectedIndex++;
+  }
+
+  while (Input[InputIndex] != 0 && (Input[InputIndex] == L' ' || Input[InputIndex] == L'\t')) {
+    InputIndex++;
+  }
+
+  return (Input[InputIndex] == 0);
 }
 
 VOID
@@ -1547,7 +1600,10 @@ ShowNuclearWipeMenu(VOID)
   Print(L"%c\n", Key.UnicodeChar);
   
   switch (Key.UnicodeChar) {
-    case L'1':
+    case L'1': {
+      CHAR16 ConfirmBuffer[MAX_CONFIRMATION_INPUT_SIZE];
+      EFI_STATUS ConfirmStatus;
+
       // Wipe vendor variables only
       Print(L"\n☢ VENDOR VARIABLE WIPE ☢\n");
       Print(L"═══════════════════════════\n");
@@ -1575,15 +1631,8 @@ ShowNuclearWipeMenu(VOID)
       
       Print(L"\nType 'WIPE' to confirm (or anything else to cancel): ");
       
-      // NOTE: Full string input is complex in UEFI without additional libraries.
-      // This implementation checks first character only. For production use,
-      // consider implementing full string comparison or using UEFI Forms Browser.
-      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
-      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
-      Print(L"%c...\n", Key.UnicodeChar);
-      
-      // Check first character as simplified confirmation
-      if (Key.UnicodeChar == L'W' || Key.UnicodeChar == L'w') {
+      ConfirmStatus = ReadConsoleLine(ConfirmBuffer, sizeof(ConfirmBuffer) / sizeof(ConfirmBuffer[0]));
+      if (!EFI_ERROR(ConfirmStatus) && IsConfirmationTokenMatch(ConfirmBuffer, L"WIPE")) {
         Print(L"\n⚠ Wiping vendor variables...\n");
         
         UINTN deletedCount = 0;
@@ -1614,8 +1663,12 @@ ShowNuclearWipeMenu(VOID)
       gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
       gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
       break;
+    }
       
-    case L'2':
+    case L'2': {
+      CHAR16 ConfirmBuffer[MAX_CONFIRMATION_INPUT_SIZE];
+      EFI_STATUS ConfirmStatus;
+
       // Full NVRAM reset
       Print(L"\n☢☢☢ FULL NVRAM RESET ☢☢☢\n");
       Print(L"═════════════════════════════\n");
@@ -1631,15 +1684,8 @@ ShowNuclearWipeMenu(VOID)
       Print(L"\n");
       Print(L"Type 'RESET' to confirm (or anything else to cancel): ");
       
-      // NOTE: Full string input is complex in UEFI without additional libraries.
-      // This implementation checks first character only. For production use,
-      // consider implementing full string comparison or using UEFI Forms Browser.
-      gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
-      gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
-      Print(L"%c...\n", Key.UnicodeChar);
-      
-      // Check first character as simplified confirmation
-      if (Key.UnicodeChar == L'R' || Key.UnicodeChar == L'r') {
+      ConfirmStatus = ReadConsoleLine(ConfirmBuffer, sizeof(ConfirmBuffer) / sizeof(ConfirmBuffer[0]));
+      if (!EFI_ERROR(ConfirmStatus) && IsConfirmationTokenMatch(ConfirmBuffer, L"RESET")) {
         Print(L"\n⚠⚠⚠ Performing full NVRAM reset...\n");
         
         UINTN resetCount = 0;
@@ -1679,6 +1725,7 @@ ShowNuclearWipeMenu(VOID)
       gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Index);
       gST->ConIn->ReadKeyStroke(gST->ConIn, &Key);
       break;
+    }
       
     case L'3':
       // Disk wiping information

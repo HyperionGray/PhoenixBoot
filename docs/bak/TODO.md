@@ -1,14 +1,43 @@
+# PhoenixBoot Release Readiness Gap Analysis
+
+> **Reviewed:** 2026-05-06
+> **Goal:** capture what is release-ready, what is experimental/dev, and what still needs hardening before a real release.
+
+## Release buckets
+
+| Area | Current state | Release label | What it needs before broad release |
+|------|---------------|---------------|------------------------------------|
+| Secure Boot media creation (`create-secureboot-bootable-media.sh`) | Real functionality exists and is the clearest end-user workflow | Release candidate | Dependency checks need to be easy to satisfy in CI/dev containers and the docs need a short supported-platform matrix |
+| Key enrollment (`KeyEnrollEdk2`, auth file generation, key scripts) | Core functionality is present | Release candidate | End-to-end validation with `efitools` available and clearer docs for first-boot enrollment |
+| Host security checks (`secure-env`, kernel hardening tooling, firmware checksum tooling) | Real functionality exists and runs in normal Linux environments | Release candidate | More baseline data and better polish around expected degraded/non-root results |
+| UUEFI reporting/install flow | Reporting is useful today; install/apply flows are real but require root and built EFI artifacts | Experimental/dev | More packaged binaries, clearer safety guidance, and hardware validation coverage |
+| Recovery ladder / progressive recovery / AutoNuke | Mixed state; some scripts are real, some paths still depend on niche hardware or legacy recovery media flows | Experimental/dev | Remove legacy/demo language, document supported paths, and validate each escalation path on current hardware targets |
+| Recovery boot app internals (`NuclearBootEdk2` naming still present internally) | Internal implementation exists, but the old branding and demo story overstate readiness | Experimental/dev | Keep internal filenames if needed, but present the feature to users as recovery tooling only and finish release hardening/testing |
+| QEMU / E2E testing | Real tests exist, but require QEMU/OVMF/mtools and built artifacts | Experimental/dev in generic CI, release-gating in provisioned environments | Standardize the test environment so the same targets can run locally and in CI without guesswork |
+| Hardware firmware recovery workflows | Powerful but dangerous and hardware-specific | Experimental/dev | Supported hardware matrix, operator playbooks, and rollback/recovery validation |
+| `pf.py list` / CLI task discovery UX | Wrapper exists, but environment still breaks when the `pf` runtime dependency is missing | Not release-ready | Ship or vendor the required runtime, or degrade gracefully with a clear fallback path |
+| Demo/archive content under `examples_and_samples/demo/` | Legacy/prototype material only | Archive only | Keep out of user-facing workflows; anything promoted from here must use real product paths |
+
+## Release guidance
+
+- Ship the Secure Boot media creation, key management, and host-side validation flows as the current release surface.
+- Mark recovery escalation, advanced firmware modification, and hardware-specific workflows as **experimental/dev** until they have repeatable validation.
+- Keep archived demo material out of the user path; do not advertise it as product functionality.
+- Keep internal `NuclearBoot*` filenames as implementation details only; do not use that branding in release-facing UX/docs.
+
+---
+
 # PhoenixBoot pf Task Assessment
 
-> **Generated:** 2026-03-18  
-> **Environment:** Ubuntu 24.04 (Azure VM), non-root, no EDK2 toolchain, no QEMU/OVMF  
+> **Generated:** 2026-03-18 
+> **Environment:** Ubuntu 24.04 (Azure VM), non-root, no EDK2 toolchain, no QEMU/OVMF 
 > **pf binary:** Not installed (tasks invoked via `bash scripts/...` directly for testing)
 
 This document records which `pf` tasks were tested, which succeeded, and which failed — along with the reason for failure and any required prerequisites.
 
 ---
 
-## ✅ Tested & Succeeded
+## Tested & Succeeded
 
 These tasks executed successfully in the current environment.
 
@@ -48,7 +77,7 @@ These tasks executed successfully in the current environment.
 
 ---
 
-## ❌ Broken / Requires Missing Dependencies
+## Broken / Requires Missing Dependencies
 
 These tasks fail in a standard CI environment. The reason and prerequisites are noted.
 
@@ -150,7 +179,7 @@ These tasks fail in a standard CI environment. The reason and prerequisites are 
 
 ---
 
-## 🔧 Bugs Fixed in This Assessment
+## Bugs Fixed in This Assessment
 
 The following bugs were discovered and fixed during task testing:
 
@@ -196,22 +225,22 @@ The following bugs were discovered and fixed during task testing:
 
 ---
 
-## 📊 UUEFI Current State
+## UUEFI Current State
 
 **Current Version:** v3.2.0 (as of 2025-12-22)
 
 The UUEFI diagnostic tool has significantly evolved. The issue noted it was "read-only but still helpful" — that was accurate for v1/v2. The current state:
 
 ### v3.2.0 Features (Latest)
-- ✅ **Read-only variable reporting** — UEFI variable enumeration (up to 500 variables), categorized by boot/security/hardware/vendor
-- ✅ **Security heuristics** — Detects suspicious boot anomalies (up to 50 items)  
-- ✅ **Real-time security status reports** — Boot chain integrity, SecureBoot state
-- ✅ **Interactive menu** — 9 options for browsing variables, security analysis, configuration
-- ✅ **Secure Boot Variable Guarding** (v3.2.0) — Blocks unsafe modifications when SecureBoot is in a broken state (enabled but empty db); prevents hardware lockouts and bricking
-- ✅ **Comprehensive variable descriptions** (v3.0.0) — 150+ vendor patterns (ASUS, Intel, MS), human-readable explanations
-- ✅ **Editable variables** (v3.0.0) — Non-critical vendor variables can be toggled with safety confirmations; security variables (PK, KEK, db, dbx) are protected from editing
-- ✅ **Nuclear Wipe Menu** (v3.0.0) — 4-option sanitization suite: vendor variable wipe, full NVRAM reset, disk wiping guidance, combined nuclear wipe
-- ✅ **Validation** (v3.2.0) — `ValidateDbKeys()`, `CheckSecureBootConfiguration()`, `GuardVariableModification()`
+- **Read-only variable reporting** — UEFI variable enumeration (up to 500 variables), categorized by boot/security/hardware/vendor
+- **Security heuristics** — Detects suspicious boot anomalies (up to 50 items) 
+- **Real-time security status reports** — Boot chain integrity, SecureBoot state
+- **Interactive menu** — 9 options for browsing variables, security analysis, configuration
+- **Secure Boot Variable Guarding** (v3.2.0) — Blocks unsafe modifications when SecureBoot is in a broken state (enabled but empty db); prevents hardware lockouts and bricking
+- **Comprehensive variable descriptions** (v3.0.0) — 150+ vendor patterns (ASUS, Intel, MS), human-readable explanations
+- **Editable variables** (v3.0.0) — Non-critical vendor variables can be toggled with safety confirmations; security variables (PK, KEK, db, dbx) are protected from editing
+- **Nuclear Wipe Menu** (v3.0.0) — 4-option sanitization suite: vendor variable wipe, full NVRAM reset, disk wiping guidance, combined nuclear wipe
+- **Validation** (v3.2.0) — `ValidateDbKeys()`, `CheckSecureBootConfiguration()`, `GuardVariableModification()`
 
 ### UUEFI Notes
 - The `uuefi-report` pf task (read-only host report) was broken by the `cd` path bug; now fixed
@@ -221,7 +250,7 @@ The UUEFI diagnostic tool has significantly evolved. The issue noted it was "rea
 
 ---
 
-## 🔜 Remaining Work
+## Remaining Work
 
 - [ ] Install `efitools` (`cert-to-efi-sig-list`) to unblock `secure-make-auth` and downstream tasks
 - [ ] Install `qemu-system-x86_64` + `ovmf` + `mtools` to enable QEMU test suite

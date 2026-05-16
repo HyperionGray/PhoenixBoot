@@ -23,7 +23,7 @@ print_header() {
     echo -e "${CYAN}${BOLD}"
     echo "╔═══════════════════════════════════════════════════════════════╗"
     echo "║                                                               ║"
-    echo "║          🔥 PhoenixBoot: Complete Bootkit Defense 🔥         ║"
+    echo "║            PhoenixBoot: Complete Bootkit Defense            ║"
     echo "║                                                               ║"
     echo "║              Stop Bootkits in Three Stages                   ║"
     echo "║                                                               ║"
@@ -45,19 +45,19 @@ print_stage() {
 }
 
 print_info() {
-    echo -e "${BLUE}ℹ️  $*${NC}"
+    echo -e "${BLUE}[i] $*${NC}"
 }
 
 print_success() {
-    echo -e "${GREEN}✅ $*${NC}"
+    echo -e "${GREEN}[ok] $*${NC}"
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠️  $*${NC}"
+    echo -e "${YELLOW}[!] $*${NC}"
 }
 
 print_error() {
-    echo -e "${RED}❌ $*${NC}"
+    echo -e "${RED}[x] $*${NC}"
 }
 
 print_option() {
@@ -80,13 +80,13 @@ show_main_menu() {
     
     echo -e "${WHITE}${BOLD}This wizard guides you through complete bootkit defense:${NC}"
     echo ""
-    echo -e "${GREEN}  1.${NC} 🔐 ${BOLD}Stage 1:${NC} Create SecureBoot bootable media with custom keys"
-    echo -e "${GREEN}  2.${NC} 💿 ${BOLD}Stage 2:${NC} Install OS cleanly with SecureBoot enforced"
-    echo -e "${GREEN}  3.${NC} 🔥 ${BOLD}Stage 3:${NC} Clear malicious EFI vars (NuclearBoot)"
+    echo -e "${GREEN}  1.${NC} ${BOLD}Stage 1:${NC} Create SecureBoot bootable media with custom keys"
+    echo -e "${GREEN}  2.${NC} ${BOLD}Stage 2:${NC} Install OS cleanly with SecureBoot enforced"
+    echo -e "${GREEN}  3.${NC} ${BOLD}Stage 3:${NC} Recovery and EFI cleanup (experimental/dev)"
     echo ""
-    echo -e "${BLUE}  4.${NC} 📚 View complete workflow documentation"
-    echo -e "${BLUE}  5.${NC} 🔍 Run security check on current system"
-    echo -e "${BLUE}  6.${NC} 🛠️  Advanced options"
+    echo -e "${BLUE}  4.${NC} View complete workflow documentation"
+    echo -e "${BLUE}  5.${NC} Run security check on current system"
+    echo -e "${BLUE}  6.${NC} Advanced options"
     echo ""
     echo -e "${YELLOW}  0.${NC} Exit"
     echo ""
@@ -98,10 +98,10 @@ stage1_menu() {
         "Generate custom SecureBoot keys and create bootable install media"
     
     echo -e "${WHITE}${BOLD}This stage will:${NC}"
-    echo "  ✅ Generate YOUR custom SecureBoot keys (PK, KEK, db)"
-    echo "  ✅ Create bootable USB/CD image from your ISO"
-    echo "  ✅ Include key enrollment tools on the media"
-    echo "  ✅ Set up everything for secure OS installation"
+    echo "  - Generate YOUR custom SecureBoot keys (PK, KEK, db)"
+    echo "  - Create bootable USB/CD image from your ISO"
+    echo "  - Include key enrollment tools on the media"
+    echo "  - Set up everything for secure OS installation"
     echo ""
     
     print_info "You will need:"
@@ -196,7 +196,7 @@ stage2_menu() {
 
 stage3_menu() {
     clear
-    print_stage "3" "Clear Malicious EFI Variables (NuclearBoot)" \
+    print_stage "3" "Recovery and EFI cleanup" \
         "Use progressive escalation to remove bootkit infections"
     
     echo -e "${WHITE}${BOLD}Stage 3: Post-Install Protection${NC}"
@@ -205,7 +205,7 @@ stage3_menu() {
     echo "PhoenixBoot provides progressive escalation to clean your system:"
     echo ""
     echo -e "${GREEN}Level 1:${NC} DETECT   - Software-based scanning (no changes)"
-    echo -e "${GREEN}Level 2:${NC} SOFT     - ESP Nuclear Boot ISO (software-only)"
+    echo -e "${GREEN}Level 2:${NC} SOFT     - ESP recovery media path (software-only)"
     echo -e "${GREEN}Level 3:${NC} SECURE   - Double-kexec firmware access"
     echo -e "${GREEN}Level 4:${NC} VM       - Reboot to KVM recovery environment"
     echo -e "${GREEN}Level 5:${NC} XEN      - Reboot to Xen dom0 (ultimate isolation)"
@@ -214,7 +214,7 @@ stage3_menu() {
     
     print_option "1" "Run automatic progressive recovery"
     print_option "2" "Manual inspection with UUEFI tool"
-    print_option "3" "Nuclear wipe (EXTREME - for severe infections)"
+    print_option "3" "Full firmware reset (EXTREME - for severe infections)"
     print_option "0" "Back to main menu"
     echo ""
     
@@ -256,7 +256,7 @@ stage3_menu() {
             echo "  • Edit tweakable variables"
             echo "  • Security analysis and suspicious pattern detection"
             echo "  • Vendor bloat removal"
-            echo "  • Nuclear wipe options"
+            echo "  • Advanced reset options"
             echo ""
             
             if ask_continue "Reboot now"; then
@@ -265,16 +265,16 @@ stage3_menu() {
             ;;
         3)
             echo ""
-            print_warning "EXTREME CAUTION: Nuclear wipe is PERMANENT!"
+            print_warning "EXTREME CAUTION: Full reset is PERMANENT!"
             echo ""
             print_info "This will:"
             echo "  • Option 1: Remove vendor bloat (safe)"
             echo "  • Option 2: Reset NVRAM to factory defaults"
             echo "  • Option 3: Guide for secure disk wipe"
-            echo "  • Option 4: Complete nuclear wipe (NVRAM + disk)"
+            echo "  • Option 4: Complete reset workflow (NVRAM + disk)"
             echo ""
             
-            if ask_continue "Proceed with nuclear wipe"; then
+            if ask_continue "Proceed with the full reset workflow"; then
                 sudo bash scripts/recovery/nuclear-wipe.sh
             fi
             ;;
@@ -295,7 +295,7 @@ view_documentation() {
     clear
     print_header
     
-    echo -e "${WHITE}${BOLD}📚 Complete Bootkit Defense Workflow${NC}"
+    echo -e "${WHITE}${BOLD}Complete Bootkit Defense Workflow${NC}"
     echo ""
     
     if [ -f BOOTKIT_DEFENSE_WORKFLOW.md ]; then
@@ -318,7 +318,7 @@ run_security_check() {
     clear
     print_header
     
-    echo -e "${WHITE}${BOLD}🔍 Running Security Check${NC}"
+    echo -e "${WHITE}${BOLD}Running Security Check${NC}"
     echo ""
     
     print_info "This comprehensive check will verify:"
@@ -352,7 +352,7 @@ advanced_menu() {
         clear
         print_header
         
-        echo -e "${WHITE}${BOLD}🛠️  Advanced Options${NC}"
+        echo -e "${WHITE}${BOLD}Advanced Options${NC}"
         echo ""
         print_option "1" "Sign kernel modules (for SecureBoot)"
         print_option "2" "Generate new SecureBoot keys"
@@ -464,7 +464,7 @@ main() {
             0)
                 echo ""
                 print_success "Thank you for using PhoenixBoot!"
-                print_info "Stop bootkits, period. 🔥"
+                print_info "Stop bootkits, period."
                 echo ""
                 exit 0
                 ;;

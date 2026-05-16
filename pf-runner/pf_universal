@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+_pf_self="${BASH_SOURCE[0]}"
+while [ -L "$_pf_self" ]; do
+  _pf_target="$(readlink "$_pf_self")"
+  if [[ "$_pf_target" = /* ]]; then
+    _pf_self="$_pf_target"
+  else
+    _pf_self="$(cd "$(dirname "$_pf_self")" && cd "$(dirname "$_pf_target")" && pwd -P)/$(basename "$_pf_target")"
+  fi
+done
+
+SCRIPT_DIR="$(cd "$(dirname "$_pf_self")" && pwd -P)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd -P)"
+
+source "${SCRIPT_DIR}/pf_runtime.sh"
+pf_exec_runner "${SCRIPT_DIR}" "${ROOT_DIR}" "$@"
+

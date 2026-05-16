@@ -125,7 +125,7 @@ class TaskOutputScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Header()
         
-        status = " Success" if self.exit_code == 0 else f" Failed (exit code: {self.exit_code})"
+        status = "[ok] Success" if self.exit_code == 0 else f"[FAIL] Failed (exit code: {self.exit_code})"
         status_class = "success" if self.exit_code == 0 else "error"
         
         with Container():
@@ -210,7 +210,7 @@ class PhoenixBootTUI(App):
         Binding("d", "toggle_dark", "Toggle Dark Mode"),
     ]
     
-    TITLE = " PhoenixBoot - Secure Boot Defense System"
+    TITLE = "PhoenixBoot - Secure Boot Defense System"
     SUB_TITLE = "Interactive Management Interface"
     
     def compose(self) -> ComposeResult:
@@ -221,14 +221,14 @@ class PhoenixBootTUI(App):
             # Sidebar with categories
             with Container(id="sidebar"):
                 yield Static("Task Categories", classes="category-title")
-                yield Button(" Build & Setup", id="cat-build", variant="primary")
-                yield Button(" Testing", id="cat-test", variant="primary")
-                yield Button(" SecureBoot", id="cat-secureboot", variant="primary")
-                yield Button(" MOK & Signing", id="cat-mok", variant="primary")
-                yield Button(" UUEFI", id="cat-uuefi", variant="primary")
-                yield Button(" Installer", id="cat-installer", variant="primary")
-                yield Button(" Security", id="cat-security", variant="primary")
-                yield Button(" Maintenance", id="cat-maint", variant="primary")
+                yield Button("Build & Setup", id="cat-build", variant="primary")
+                yield Button("Testing", id="cat-test", variant="primary")
+                yield Button("SecureBoot", id="cat-secureboot", variant="primary")
+                yield Button("MOK & Signing", id="cat-mok", variant="primary")
+                yield Button("UUEFI", id="cat-uuefi", variant="primary")
+                yield Button("Installer", id="cat-installer", variant="primary")
+                yield Button("Security", id="cat-security", variant="primary")
+                yield Button("Maintenance", id="cat-maint", variant="primary")
                 yield Button("ℹ About", id="cat-about", variant="default")
             
             # Main content area

@@ -242,11 +242,11 @@ Tools for managing UEFI boot entries:
 - `os-boot-clean`: Clean stale UEFI boot entries
 - `os-mok-enroll`: Enroll MOK keys for module signing
 - `os-mok-list-keys`: List available MOK certificates
-- `uuefi-install`: Install UUEFI.efi to system ESP
-- `uuefi-apply`: Set BootNext for one-time UUEFI boot
+- `uuefi-install`: Install UUEFI.efi to system ESP (**alpha-gated pending broader host-side validation**)
+- `uuefi-apply`: Set BootNext for one-time UUEFI boot (**alpha-gated pending broader host-side validation**)
 - `uuefi-report`: Display system security status
 
-**Status**: Scripts implemented, tested on real hardware
+**Status**: `uuefi-report` is shipped for alpha; host-side mutating helpers stay gated unless `PHOENIXBOOT_ALPHA_ALLOW_UNTESTED_UUEFI_HOST=1` is set during deliberate maintainer testing
 
 #### 4. **QEMU Testing**
 Comprehensive QEMU-based testing:

@@ -66,8 +66,11 @@ working scripts, working `pf` tasks, documentation, and at least smoke tests.
 - DISA STIG helper (`dod-info`, `dod-stig-check`, `dod-secure-config`).
 
 ### 1.7 UUEFI host-side helpers
-- `uuefi-install`, `uuefi-apply`, `uuefi-report` (require root /
-  `efibootmgr`).
+- `uuefi-report` (read-only).
+- `uuefi-install` / `uuefi-apply` remain present for maintainer testing but
+  are gated for `v0.1.0-alpha` unless
+  `PHOENIXBOOT_ALPHA_ALLOW_UNTESTED_UUEFI_HOST=1` is set. They are not part of
+  the supported end-user alpha surface until broader host-side validation lands.
 
 ### 1.8 CLIs and runners
 - `./pf` — symlink to the vendored `pf-runner/pf` launcher. This is the
@@ -214,7 +217,8 @@ These are concrete, small bugs that block a clean alpha experience.
 | 4.3 | `scripts/maintenance/lint.sh` wrote to `out/lint/*.log` without `mkdir -p`. | Already fixed. |
 | 4.4 | `scripts/esp-packaging/esp-package-enroll.sh` had the wrong `source` path. | Already fixed. |
 | 4.5 | `docs/AGENTS.md` still warns about the `esp-package.sh` `cd` bug. | Update doc to reflect post-fix state. |
-| 4.6 | `./phoenixboot list` shows "wrapper commands" only when `pf` is unavailable, but the wording is good. | Keep as-is; verified. |
+| 4.6 | `./phoenixboot list` / `./phoenixboot-dod list` were treating a broken `pf` runtime as "available" and surfacing a raw `pf` error. | Probe `pf version` first, then fall back to curated wrapper output plus actionable install hints when the runner is present but unusable. |
+| 4.7 | `uuefi-install.sh` could silently fall back to `BootX64.efi`, and `uuefi-install` / `uuefi-apply` lacked broad host-side validation. | Refuse the fallback, gate the mutating host-side helpers behind `PHOENIXBOOT_ALPHA_ALLOW_UNTESTED_UUEFI_HOST=1`, and keep `uuefi-report` as the safe default. |
 
 The end-to-end "does anything work without `pf` installed" smoke for the
 alpha is `./phoenixboot help`, `./phoenixboot status`, `./phoenixboot list`,

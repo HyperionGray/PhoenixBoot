@@ -4,8 +4,8 @@ Scripts for UEFI operations and diagnostics.
 
 ## UUEFI Operations
 
-- `uuefi-install.sh` - Install UUEFI to system ESP
-- `uuefi-apply.sh` - Set BootNext for one-time UUEFI boot
+- `uuefi-install.sh` - Install UUEFI to system ESP (**alpha-gated pending broader host-side validation**)
+- `uuefi-apply.sh` - Set BootNext for one-time UUEFI boot (**alpha-gated pending broader host-side validation**)
 - `uuefi-report.sh` - Display UEFI system status
 - `host-uuefi-once.sh` - Boot UUEFI once on host
 
@@ -17,6 +17,9 @@ Scripts for UEFI operations and diagnostics.
 ## Usage
 
 ```bash
+# Alpha safety gate for host-side mutating helpers
+export PHOENIXBOOT_ALPHA_ALLOW_UNTESTED_UUEFI_HOST=1
+
 # Install UUEFI
 sudo ./scripts/uefi-tools/uuefi-install.sh
 

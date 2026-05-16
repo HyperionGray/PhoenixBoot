@@ -89,16 +89,19 @@ run_pf() {
     "Expected file: $PFYFILE" \
     "PhoenixBoot root: $PHOENIX_ROOT"
 
-  if ! command -v pf >/dev/null 2>&1; then
+  # Prefer the vendored launcher at $PHOENIX_ROOT/pf; fall back to PATH.
+  if [ ! -x "$PHOENIX_ROOT/pf" ] && ! command -v pf >/dev/null 2>&1; then
     fail_loud 127 \
-      "Cannot execute PhoenixBoot task(s) because the required 'pf' executable is not available." \
+      "Cannot execute PhoenixBoot task(s): no pf runner found." \
       "Attempted pf.py arguments: $*" \
-      "Expected launcher: $PF_SCRIPT" \
-      "Install instructions:" \
-      "  git clone https://github.com/P4X-ng/pf-runner ~/.local/src/pf-runner" \
-      "  pip install --user fabric lark" \
-      "  install -m 0755 ~/.local/src/pf-runner/pf-cli-base/pf_parser.py ~/.local/bin/pf" \
-      "Then ensure ~/.local/bin is on PATH and retry. See docs/AGENTS.md for more."
+      "Expected vendored launcher: $PHOENIX_ROOT/pf" \
+      "Tried PATH lookup for pf: not found." \
+      "Install hints:" \
+      "  - The repo vendors pf-runner under pf-runner/. If you do not have" \
+      "    pf-runner/ or the ./pf symlink, run: git checkout -- pf-runner pf" \
+      "  - If the vendored copy lacks python deps:" \
+      "      pip install --user -e ./pf-runner" \
+      "Then retry. See ALPHA_RELEASE_PLAN.md and docs/AGENTS.md for more."
   fi
 
   CURRENT_ACTION="running pf task(s): $*"
@@ -140,7 +143,7 @@ require_existing_task_paths() {
 }
 
 has_pf_runner() {
-  command -v pf >/dev/null 2>&1
+  [ -x "${PHOENIX_ROOT:-.}/pf" ] || command -v pf >/dev/null 2>&1
 }
 
 print_builtin_list() {

@@ -1,39 +1,44 @@
 #!/usr/bin/env bash
 # PhoenixBoot task runner shim.
 #
-# This script delegates to the upstream `pf` task runner, which reads task
-# definitions from the *.pf files at the repo root (Pfyfile.pf and friends).
-#
-# `pf` is not a pip package. It is installed by cloning
-# https://github.com/P4X-ng/pf-runner and putting `pf-cli-base/pf_parser.py`
-# on PATH as `pf`. See docs/AGENTS.md for the full recipe.
+# pf-runner is vendored at ./pf-runner/ in this repo. The ./pf symlink
+# at the repo root points at ./pf-runner/pf and is the recommended
+# entrypoint. This ./pf.py shim exists so that the many existing pf
+# task definitions that say `shell ./pf.py <task>` keep working; it
+# simply forwards to the vendored ./pf, then to any pf that happens to
+# be on PATH (e.g. one installed via `pip install -e ./pf-runner`).
 
 set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -x "${HERE}/pf" ]; then
+  exec "${HERE}/pf" "$@"
+fi
 
 if command -v pf >/dev/null 2>&1; then
   exec pf "$@"
 fi
 
-cat >&2 <<'EOF'
-phoenixboot ERROR: the `pf` task runner is not on PATH.
+cat >&2 <<EOF
+phoenixboot ERROR: cannot find a pf task runner.
 
-PhoenixBoot uses the `pf` runner (from P4X-ng/pf-runner) as its primary
-task interface. The wrapper at ./pf.py simply forwards arguments to it.
+PhoenixBoot ships pf-runner vendored under ./pf-runner/ and exposes it
+via the ./pf symlink at the repo root. Neither ./pf nor a system-wide
+\`pf\` on PATH was found from this script's directory:
 
-To install `pf` on a fresh machine:
+    ${HERE}
 
-    git clone https://github.com/P4X-ng/pf-runner ~/.local/src/pf-runner
-    pip install --user fabric lark
-    install -m 0755 ~/.local/src/pf-runner/pf-cli-base/pf_parser.py \
-        ~/.local/bin/pf
+If you cloned the repo without the vendored pf-runner/ tree (e.g. a
+shallow checkout that excluded it), restore it with:
 
-Make sure ~/.local/bin is on PATH, then re-run your command.
+    git checkout -- pf-runner pf
 
-Alternatives that work without `pf`:
+If the vendored copy is present but ./pf is missing python deps, run:
 
-  - ./phoenixboot help                # curated wrapper, see also `list`
-  - bash scripts/<subdir>/<script>.sh # run individual scripts directly
+    pip install --user -e ./pf-runner
 
-For the supported alpha feature set see ALPHA_RELEASE_PLAN.md.
+Then re-run your command. See ALPHA_RELEASE_PLAN.md and docs/AGENTS.md
+for the full alpha install story.
 EOF
 exit 127

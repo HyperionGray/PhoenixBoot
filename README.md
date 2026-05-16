@@ -152,8 +152,12 @@ python3 -m venv ~/.venv
 source ~/.venv/bin/activate
 pip install -r requirements.txt  # if requirements.txt exists
 
-# Run the task runner
-./pf.py <task-name>
+# Install the vendored pf-runner (pinned, ships with the repo)
+pip install -e ./pf-runner
+
+# Run a task
+./pf list
+./pf <task-name>
 ```
 
 ## 📋 Features Overview

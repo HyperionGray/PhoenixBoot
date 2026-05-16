@@ -69,12 +69,11 @@ class KernelConfigRemediator:
         try:
             # Import the analyzer
             sys.path.insert(0, str(Path(__file__).parent))
-            from kernel_hardening_analyzer import KernelHardeningAnalyzer
-            
-            analyzer = KernelHardeningAnalyzer()
+            from kernel_hardening_policy import HARDENING_CHECKS
+
             baseline_dict = {}
             
-            for check in analyzer.HARDENING_CHECKS:
+            for check in HARDENING_CHECKS:
                 baseline_dict[check.name] = check.expected_value
             
             return baseline_dict

@@ -17,6 +17,8 @@ out/
 utils/*.o
 utils/*.a
 utils/*.so
+utils/*.so.*
+utils/pgmodverify_test
 
 # Virtual environments anywhere in the tree
 **/.venv/

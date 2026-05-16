@@ -2,13 +2,31 @@
 # reboot-to-vm.sh - Reboot into PhoenixGuard Recovery VM Environment
 # This is the "nuclear option" - stages PhoenixGuard, configures UEFI boot, and reboots
 
-set -e
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+require_command() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        echo "ERROR: Required command not found: $1"
+        exit 1
+    fi
+}
 
 echo "☠ WARNING: This will REBOOT your system into PhoenixGuard recovery mode!"
+echo "☠ Risk Level: HIGH"
+echo "   Most likely: PhoenixGuard will stage a one-time recovery boot and reboot into the recovery VM."
+echo "   Could happen: BootNext or ESP staging may fail and require manual UEFI boot-menu cleanup."
+echo "   Worst case: If your existing boot configuration is already fragile, recovery may require manual EFI repair."
+echo "   Use this only after less invasive recovery steps fail."
 echo "The system will reboot automatically in 10 seconds. Press Ctrl+C to cancel."
 sleep 10 || exit 0
 
 echo "☠ Initiating PhoenixGuard Recovery VM staging..."
+
+require_command efibootmgr
+require_command findmnt
+require_command lsblk
 
 # Run bootkit detection scan first
 echo "☠ Running bootkit detection scan first..."
@@ -26,9 +44,10 @@ fi
 
 # Create backup timestamp
 TS=$(date +%F_%H%M%S)
+BACKUP_DIR="/var/lib/phoenixguard/backups/$TS"
 echo "[backup] Current UEFI boot configuration"
-sudo mkdir -p /var/lib/phoenixguard/backups
-sudo efibootmgr -v | sudo tee "/var/lib/phoenixguard/backups/efibootmgr-backup-$TS.txt" >/dev/null
+sudo mkdir -p "$BACKUP_DIR"
+sudo efibootmgr -v | sudo tee "$BACKUP_DIR/efibootmgr-before.txt" >/dev/null
 
 # Detect ESP
 echo "[esp] Detecting ESP mount point"
@@ -41,6 +60,11 @@ if [[ ! -d "$ESP/EFI" ]]; then
     exit 1
 fi
 echo "  Using ESP: $ESP"
+
+if [[ -d "$ESP/EFI/PhoenixGuard" ]]; then
+    echo "[backup] Saving existing PhoenixGuard ESP contents"
+    sudo cp -a "$ESP/EFI/PhoenixGuard" "$BACKUP_DIR/phoenixguard-esp-before"
+fi
 
 # Stage PhoenixGuard
 echo "[stage] PhoenixGuard NuclearBootEdk2.efi to ESP"
@@ -58,15 +82,31 @@ VMLINUZ="/boot/vmlinuz-$(uname -r)"
 INITRD="/boot/initrd.img-$(uname -r)"
 ROOT_UUID=$(findmnt -n -o UUID / || true)
 QCOW2="$(pwd)/ubuntu-24.04-minimal-cloudimg-amd64.qcow2"
+KVM_INSTALLER="$SCRIPT_DIR/install_kvm_snapshot_jump.sh"
+
+if [[ ! -f "$VMLINUZ" || ! -f "$INITRD" ]]; then
+    echo "ERROR: Recovery kernel or initrd missing."
+    exit 1
+fi
+
+if [[ -z "$ROOT_UUID" ]]; then
+    echo "ERROR: Could not determine root filesystem UUID."
+    exit 1
+fi
 
 if [[ ! -f "$QCOW2" ]]; then
     echo "ERROR: Recovery image not found: $QCOW2"
     exit 1
 fi
 
+if [[ ! -x "$KVM_INSTALLER" ]]; then
+    echo "ERROR: KVM snapshot installer missing or not executable: $KVM_INSTALLER"
+    exit 1
+fi
+
 # Install KVM snapshot jump configuration
 echo "[kvm] Installing KVM snapshot jump configuration"
-./scripts/install_kvm_snapshot_jump.sh \
+"$KVM_INSTALLER" \
     --esp "$ESP" --vmlinuz "$VMLINUZ" --initrd "$INITRD" --root-uuid "$ROOT_UUID" \
     --qcow2 "$QCOW2" --loadvm base-snapshot \
     --gpu-bdf 0000:02:00.0 --gpu-ids 10de:2d58 || echo "☠  KVM config failed, continuing..."
@@ -77,10 +117,9 @@ ESP_DEV=$(findmnt -n -o SOURCE "$ESP" || true)
 DISK=$(lsblk -no PKNAME "$ESP_DEV" 2>/dev/null | head -n1)
 PARTNUM=$(lsblk -no PARTNUM "$ESP_DEV" 2>/dev/null | head -n1)
 
-# Remove existing PhoenixGuard boot entries
-BOOTNUM=$(efibootmgr | awk -F'*' '/PhoenixGuard/{print $1}' | sed 's/Boot//;s/\s*$//' | head -n1)
-if [[ -n "$BOOTNUM" ]]; then
-    sudo efibootmgr -b "$BOOTNUM" -B || true
+if [[ -z "$DISK" || -z "$PARTNUM" ]]; then
+    echo "ERROR: Could not determine ESP disk or partition number."
+    exit 1
 fi
 
 # Create new boot entry
@@ -88,14 +127,19 @@ sudo efibootmgr -c -d "/dev/$DISK" -p "$PARTNUM" -L "PhoenixGuard Recovery" -l "
 
 # Set as next boot
 NEWNUM=$(efibootmgr | awk -F'*' '/PhoenixGuard Recovery/{print $1}' | sed 's/Boot//;s/\s*$//' | head -n1)
-if [[ -n "$NEWNUM" ]]; then
-    sudo efibootmgr -n "$NEWNUM" >/dev/null
+if [[ -z "$NEWNUM" ]]; then
+    echo "ERROR: PhoenixGuard Recovery UEFI entry was not created."
+    exit 1
 fi
+
+sudo efibootmgr -n "$NEWNUM" >/dev/null
+sudo efibootmgr -v | sudo tee "$BACKUP_DIR/efibootmgr-after.txt" >/dev/null
 
 echo "[reboot] System will reboot to PhoenixGuard recovery in 5 seconds..."
 echo "☠ Staged: ESP at $ESP/EFI/PhoenixGuard/"
 echo "☠ Configured: UEFI boot entry $NEWNUM (set as BootNext)"
 echo "☠ Recovery VM: $QCOW2 ready to launch"
+echo "☠ Backup saved: $BACKUP_DIR"
 echo
 echo "☠ After reboot:"
 echo "  1. PhoenixGuard menu will appear"

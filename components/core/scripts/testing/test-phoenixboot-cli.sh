@@ -85,8 +85,8 @@ fi
 echo "[TEST 6] Testing phoenixboot list..."
 if ./phoenixboot list > /tmp/phoenixboot_list_output.txt 2>&1; then
     pass "phoenixboot list works"
-elif grep -qi "fabric\|module.*not.*found" /tmp/phoenixboot_list_output.txt; then
-    skip "phoenixboot list requires fabric module (not in test env)"
+elif grep -qi "required 'pf' executable is not available\|Attempted pf.py arguments: list" /tmp/phoenixboot_list_output.txt; then
+    pass "phoenixboot list fails loudly when pf is unavailable"
 else
     fail "phoenixboot list failed"
 fi
@@ -119,24 +119,51 @@ fi
 # Test 10: Test phoenixboot with invalid command
 echo "[TEST 10] Testing error handling..."
 output=$(timeout 5 ./phoenixboot invalid_command_xyz 2>&1 || true)
-# phoenixboot passes unknown commands to pf.py, which may fail if fabric not installed
-# This is expected behavior - it shows the command was processed
-if echo "$output" | grep -qi "task\|fabric\|running"; then
-    pass "Processes unknown commands (passes to pf.py)"
+# phoenixboot should never fail silently; either the command runs or the wrapper emits
+# a clear, contextual error about what it tried to delegate.
+if echo "$output" | grep -qi "Attempted pf.py arguments: invalid_command_xyz\|forwarding command to pf.py"; then
+    pass "Unknown commands fail loudly with delegation context"
 else
-    skip "Error handling behavior unclear"
+    fail "Unknown command handling did not emit a clear contextual error"
 fi
 
-# Test 11: Check legacy phoenix-boot compatibility shim exists
-echo "[TEST 11] Checking legacy phoenix-boot compatibility..."
+# Test 11: Invalid PHOENIX_ROOT should fail loudly instead of falling back silently
+echo "[TEST 11] Testing invalid PHOENIX_ROOT handling..."
+invalid_root_output=$(PHOENIX_ROOT=/definitely/missing ./phoenixboot status 2>&1 || true)
+if echo "$invalid_root_output" | grep -q "PHOENIX_ROOT was provided"; then
+    pass "Invalid PHOENIX_ROOT fails loudly"
+else
+    fail "Invalid PHOENIX_ROOT did not fail loudly"
+fi
+
+# Test 12: Missing ISO path should fail before any deeper task execution
+echo "[TEST 12] Testing secure media path validation..."
+missing_iso_output=$(./phoenixboot secure media --iso /definitely/missing.iso 2>&1 || true)
+if echo "$missing_iso_output" | grep -q "Secure Boot source ISO does not exist"; then
+    pass "Missing ISO path is reported explicitly"
+else
+    fail "Missing ISO path was not reported explicitly"
+fi
+
+# Test 13: Missing module path should fail before task dispatch
+echo "[TEST 13] Testing module path validation..."
+missing_module_output=$(./phoenixboot secure kmod-sign --module /definitely/missing.ko 2>&1 || true)
+if echo "$missing_module_output" | grep -q "Kernel module path does not exist"; then
+    pass "Missing module path is reported explicitly"
+else
+    fail "Missing module path was not reported explicitly"
+fi
+
+# Test 14: Check legacy phoenix-boot compatibility shim exists
+echo "[TEST 14] Checking legacy phoenix-boot compatibility..."
 if [ -f "phoenix-boot" ] && [ -x "phoenix-boot" ]; then
     pass "phoenix-boot compatibility shim exists"
 else
     fail "phoenix-boot compatibility shim missing"
 fi
 
-# Test 12: Test legacy phoenix-boot help command
-echo "[TEST 12] Testing legacy phoenix-boot help..."
+# Test 15: Test legacy phoenix-boot help command
+echo "[TEST 15] Testing legacy phoenix-boot help..."
 if ./phoenix-boot help > /dev/null 2>&1; then
     pass "phoenix-boot compatibility shim works"
 else

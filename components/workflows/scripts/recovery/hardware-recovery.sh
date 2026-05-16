@@ -2,12 +2,17 @@
 # hardware-recovery.sh - BOOTKIT-PROOF Hardware-Level Firmware Recovery
 # This bypasses potentially compromised BIOS utilities and works directly with SPI flash hardware
 
-set -e
+set -euo pipefail
 
 echo "☠ PhoenixGuard BOOTKIT-PROOF Hardware-Level Firmware Recovery"
 echo "☠ EXTREME DANGER: This will directly manipulate SPI flash hardware!"
 echo "   This bypasses ASUS EZ Flash and ALL software that bootkits could compromise."
 echo "   If this fails, you may need a hardware programmer to recover!"
+echo "☠ Risk Level: CRITICAL"
+echo "   Most likely: A verify-only run will confirm whether the flash chip is accessible."
+echo "   Could happen: A write operation may fail midway and leave firmware inconsistent."
+echo "   Worst case: An incorrect image or interrupted flash can brick the motherboard."
+echo "   Only use write mode as a last resort after backups and safer recovery methods fail."
 echo
 echo "Required tools: flashrom, chipsec, dmidecode"
 echo "Install with: sudo apt install flashrom dmidecode && pip install chipsec"
@@ -67,10 +72,20 @@ echo "  sudo python3 scripts/hardware_firmware_recovery.py drivers/G615LPAS.325 
 echo "  sudo python3 scripts/hardware_firmware_recovery.py drivers/G615LPAS.325 -v"
 echo
 
-read -p "Continue with hardware recovery? [y/N]: " confirm
-if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-    echo "Hardware recovery cancelled."
-    exit 0
+if [[ -n "$VERIFY_ONLY" ]]; then
+    read -p "Continue with hardware verification only? [y/N]: " confirm
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+        echo "Hardware recovery cancelled."
+        exit 0
+    fi
+else
+    echo "☠ This run will attempt firmware writes."
+    echo "   Recommended safer path: rerun first with --verify-only."
+    read -p "Type 'FLASH' to confirm you want to continue: " confirm
+    if [[ "$confirm" != "FLASH" ]]; then
+        echo "Hardware recovery cancelled."
+        exit 0
+    fi
 fi
 
 echo
@@ -78,11 +93,21 @@ echo "☠ Starting BOOTKIT-PROOF hardware recovery..."
 
 # Check if firmware image exists
 if [ -f "$FIRMWARE_IMAGE" ]; then
-    ARGS="$FIRMWARE_IMAGE"
-    [ -n "$VERBOSE" ] && ARGS="$ARGS -v"
-    [ -n "$VERIFY_ONLY" ] && ARGS="$ARGS --verify-only"
-    
-    sudo python3 scripts/hardware_firmware_recovery.py $ARGS --output hardware_recovery_results.json
+    TS=$(date +%F_%H%M%S)
+    BACKUP_DIR="/var/lib/phoenixguard/backups/$TS"
+    RESULTS_FILE="$BACKUP_DIR/hardware_recovery_results.json"
+    sudo mkdir -p "$BACKUP_DIR"
+
+    CMD=(sudo python3 scripts/hardware_firmware_recovery.py "$FIRMWARE_IMAGE" --output "$RESULTS_FILE")
+    if [ -n "$VERBOSE" ]; then
+        CMD+=(-v)
+    fi
+    if [ -n "$VERIFY_ONLY" ]; then
+        CMD+=(--verify-only)
+    fi
+
+    "${CMD[@]}"
+    echo "☠ Recovery results saved to: $RESULTS_FILE"
 else
     echo "ERROR: Clean firmware image not found at $FIRMWARE_IMAGE"
     echo "       This must be your EXACT hardware's clean firmware dump."

@@ -29,7 +29,130 @@ typedef void* EFI_HANDLE;
 
 #define TRUE true
 #define FALSE false
+#ifndef NULL
 #define NULL ((void*)0)
+#endif
+
+#define DEMO_STR_ERROR_INVALID_PARAMETER  (-1)
+#define DEMO_STR_ERROR_TRUNCATED          (-2)
+
+static inline UINTN DemoStrLen(const CHAR16 *String) {
+  UINTN Length = 0;
+
+  if (String == NULL) {
+    return 0;
+  }
+
+  while (String[Length] != 0) {
+    Length++;
+  }
+
+  return Length;
+}
+
+static inline int DemoStrCmp(const CHAR16 *String1, const CHAR16 *String2) {
+  UINTN Index = 0;
+
+  if ((String1 == NULL) || (String2 == NULL)) {
+    return (String1 == String2) ? 0 : ((String1 == NULL) ? -1 : 1);
+  }
+
+  while ((String1[Index] != 0) && (String1[Index] == String2[Index])) {
+    Index++;
+  }
+
+  return (int)String1[Index] - (int)String2[Index];
+}
+
+static inline int DemoStrCpyS(CHAR16 *Destination, UINTN DestinationSize, const CHAR16 *Source) {
+  UINTN Index = 0;
+
+  if ((Destination == NULL) || (Source == NULL) || (DestinationSize == 0)) {
+    return DEMO_STR_ERROR_INVALID_PARAMETER;
+  }
+
+  while ((Index + 1 < DestinationSize) && (Source[Index] != 0)) {
+    Destination[Index] = Source[Index];
+    Index++;
+  }
+
+  Destination[Index] = 0;
+  return (Source[Index] == 0) ? 0 : DEMO_STR_ERROR_TRUNCATED;
+}
+
+static inline int DemoStrCatS(CHAR16 *Destination, UINTN DestinationSize, const CHAR16 *Source) {
+  UINTN DestinationLength;
+  UINTN Index = 0;
+
+  if ((Destination == NULL) || (Source == NULL) || (DestinationSize == 0)) {
+    return DEMO_STR_ERROR_INVALID_PARAMETER;
+  }
+
+  DestinationLength = DemoStrLen(Destination);
+  if (DestinationLength >= DestinationSize) {
+    return DEMO_STR_ERROR_TRUNCATED;
+  }
+
+  while ((DestinationLength + Index + 1 < DestinationSize) && (Source[Index] != 0)) {
+    Destination[DestinationLength + Index] = Source[Index];
+    Index++;
+  }
+
+  Destination[DestinationLength + Index] = 0;
+  return (Source[Index] == 0) ? 0 : DEMO_STR_ERROR_TRUNCATED;
+}
+
+static inline UINTN DemoAsciiStrLen(const CHAR8 *String) {
+  UINTN Length = 0;
+
+  if (String == NULL) {
+    return 0;
+  }
+
+  while (String[Length] != '\0') {
+    Length++;
+  }
+
+  return Length;
+}
+
+static inline int DemoAsciiStrCpyS(CHAR8 *Destination, UINTN DestinationSize, const CHAR8 *Source) {
+  UINTN Index = 0;
+
+  if ((Destination == NULL) || (Source == NULL) || (DestinationSize == 0)) {
+    return DEMO_STR_ERROR_INVALID_PARAMETER;
+  }
+
+  while ((Index + 1 < DestinationSize) && (Source[Index] != '\0')) {
+    Destination[Index] = Source[Index];
+    Index++;
+  }
+
+  Destination[Index] = '\0';
+  return (Source[Index] == '\0') ? 0 : DEMO_STR_ERROR_TRUNCATED;
+}
+
+static inline int DemoAsciiStrCatS(CHAR8 *Destination, UINTN DestinationSize, const CHAR8 *Source) {
+  UINTN DestinationLength;
+  UINTN Index = 0;
+
+  if ((Destination == NULL) || (Source == NULL) || (DestinationSize == 0)) {
+    return DEMO_STR_ERROR_INVALID_PARAMETER;
+  }
+
+  DestinationLength = DemoAsciiStrLen(Destination);
+  if (DestinationLength >= DestinationSize) {
+    return DEMO_STR_ERROR_TRUNCATED;
+  }
+
+  while ((DestinationLength + Index + 1 < DestinationSize) && (Source[Index] != '\0')) {
+    Destination[DestinationLength + Index] = Source[Index];
+    Index++;
+  }
+
+  Destination[DestinationLength + Index] = '\0';
+  return (Source[Index] == '\0') ? 0 : DEMO_STR_ERROR_TRUNCATED;
+}
 
 // EFI Status codes
 #define EFI_SUCCESS             0
@@ -57,13 +180,13 @@ typedef void* EFI_HANDLE;
 #define CompareMem(buf1, buf2, size) memcmp(buf1, buf2, size)
 
 // String functions for demo
-#define StrCmp(str1, str2) wcscmp((wchar_t*)str1, (wchar_t*)str2)
-#define StrCpyS(dest, size, src) wcscpy((wchar_t*)dest, (wchar_t*)src)
-#define StrCatS(dest, size, src) wcscat((wchar_t*)dest, (wchar_t*)src)
+#define StrCmp(str1, str2) DemoStrCmp((str1), (str2))
+#define StrCpyS(dest, size, src) DemoStrCpyS((dest), (size), (src))
+#define StrCatS(dest, size, src) DemoStrCatS((dest), (size), (src))
 #define AsciiStrCmp(str1, str2) strcmp(str1, str2)
-#define AsciiStrCpyS(dest, size, src) strcpy(dest, src)
-#define AsciiSPrint(dest, size, fmt, ...) sprintf(dest, fmt, ##__VA_ARGS__)
-#define AsciiStrCatS(dest, size, src) strcat(dest, src)
+#define AsciiStrCpyS(dest, size, src) DemoAsciiStrCpyS((dest), (size), (src))
+#define AsciiSPrint(dest, size, fmt, ...) snprintf((dest), (size), (fmt), ##__VA_ARGS__)
+#define AsciiStrCatS(dest, size, src) DemoAsciiStrCatS((dest), (size), (src))
 
 // Print function
 #define Print(fmt, ...) printf(fmt, ##__VA_ARGS__)

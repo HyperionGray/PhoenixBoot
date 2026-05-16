@@ -32,8 +32,11 @@ echo "Testing UUEFI host-side helper safety"
 echo "====================================="
 echo
 
+INSTALL_SCRIPT="$PROJECT_ROOT/scripts/uefi-tools/uuefi-install.sh"
+APPLY_SCRIPT="$PROJECT_ROOT/scripts/uefi-tools/uuefi-apply.sh"
+
 echo "[TEST 1] uuefi-install is alpha-gated by default..."
-install_output=$(bash scripts/uefi-tools/uuefi-install.sh 2>&1 || true)
+install_output=$(bash "$INSTALL_SCRIPT" 2>&1 || true)
 if echo "$install_output" | grep -q "gated off for the alpha release"; then
     pass "uuefi-install refuses to run without explicit opt-in"
 else
@@ -41,7 +44,7 @@ else
 fi
 
 echo "[TEST 2] uuefi-apply is alpha-gated by default..."
-apply_output=$(bash scripts/uefi-tools/uuefi-apply.sh 2>&1 || true)
+apply_output=$(bash "$APPLY_SCRIPT" 2>&1 || true)
 if echo "$apply_output" | grep -q "gated off for the alpha release"; then
     pass "uuefi-apply refuses to run without explicit opt-in"
 else
@@ -49,7 +52,7 @@ else
 fi
 
 echo "[TEST 3] uuefi-install refuses BootX64 placeholder fallback..."
-missing_binary_output=$(PHOENIXBOOT_ALPHA_ALLOW_UNTESTED_UUEFI_HOST=1 UUEFI_SRC=/definitely/missing/UUEFI.efi bash scripts/uefi-tools/uuefi-install.sh 2>&1 || true)
+missing_binary_output=$(PHOENIXBOOT_ALPHA_ALLOW_UNTESTED_UUEFI_HOST=1 UUEFI_SRC=/definitely/missing/UUEFI.efi bash "$INSTALL_SCRIPT" 2>&1 || true)
 if echo "$missing_binary_output" | grep -q "Refusing to fall back to BootX64.efi"; then
     pass "uuefi-install requires a real UUEFI binary"
 else

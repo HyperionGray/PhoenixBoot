@@ -7,7 +7,7 @@ set -euo pipefail
 # Requires: out/esp/esp.img to exist.
 
 cd "$(dirname "$0")/../.."
-source scripts/lib/common.sh
+source includes/lib/common.sh
 
 IMG=${ESP_IMG:-out/esp/esp.img}
 [ -f "$IMG" ] || die "Missing $IMG; run './pf.py build-package-esp' or './pf.py iso-prep' first"

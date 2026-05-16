@@ -57,8 +57,23 @@ for link in "${script_links[@]}"; do
   fi
 done
 
-if [ ! -L "scripts/lib" ] || [ ! -f "includes/lib/common.sh" ]; then
+if [ ! -f "includes/lib/common.sh" ]; then
   echo "Shared include library layout is incomplete" >&2
+  exit 1
+fi
+
+if [ -e "scripts/lib" ]; then
+  echo "Legacy scripts/lib shim should not exist" >&2
+  exit 1
+fi
+
+if grep -R -n 'source scripts/lib/common\.sh' \
+  components/core/scripts/uefi-tools \
+  components/core/scripts/validation \
+  components/secure/scripts \
+  components/workflows/scripts \
+  create-secureboot-bootable-media.sh >/dev/null; then
+  echo "Found legacy scripts/lib include paths" >&2
   exit 1
 fi
 

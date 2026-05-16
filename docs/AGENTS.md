@@ -11,7 +11,7 @@ PhoenixBoot is a UEFI Secure Boot defense system (bash + Python). The primary in
 - **Task runner**: `./pf.py list` shows all available tasks. `pf` must be on `PATH` (installed to `~/.local/bin/pf`).
 - **Build pipeline**: `pf build-setup` (toolchain check) → `pf build-build` (uses prebuilt EFI binaries in `staging/boot/`) → ESP packaging. The build-build step does NOT create `out/staging/`; you must manually copy: `mkdir -p out/staging && cp staging/boot/NuclearBootEdk2.efi out/staging/BootX64.efi && cp staging/boot/KeyEnrollEdk2.efi out/staging/ && cp staging/boot/UUEFI.efi out/staging/`.
 - **Key generation**: `pf secure-keygen` creates keys in `keys/`. Keys are needed before ESP packaging (for signing with `sbsign`).
-- **ESP packaging**: The `scripts/esp-packaging/esp-package.sh` has a path bug — `cd "$(dirname "$0")/.."` lands in `scripts/` instead of the project root, so `source scripts/lib/common.sh` fails. Workaround: source `scripts/lib/common.sh` directly from project root and run ESP steps inline, or use `create-secureboot-bootable-media.sh` which handles paths correctly.
+- **ESP packaging**: Shell helpers now live at `includes/lib/common.sh`. ESP packaging entrypoints should run from the project root so that include path resolves correctly, or use `create-secureboot-bootable-media.sh` which already does.
 - **QEMU testing**: `pf test-qemu` requires an ESP image at `out/esp/esp.img` and OVMF paths at `out/esp/ovmf_paths.txt`. KVM is not available in cloud VMs — run QEMU with `-cpu max` instead of `-cpu host -enable-kvm`. The test passes when "PhoenixGuard" appears in `out/qemu/serial.log`.
 
 ### Lint and test

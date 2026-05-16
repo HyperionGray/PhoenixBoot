@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-source scripts/lib/common.sh
+source includes/lib/common.sh
 
 info "☠ Installing UUEFI.efi to system ESP"
 

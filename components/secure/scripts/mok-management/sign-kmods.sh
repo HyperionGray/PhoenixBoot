@@ -17,7 +17,7 @@ SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 PHOENIX_ROOT="${PHOENIX_ROOT:-$(find_phoenix_root "$SCRIPT_DIR")}"
 cd "$PHOENIX_ROOT"
-source scripts/lib/common.sh
+source includes/lib/common.sh
 
 info "☠  Kernel module auto-sign (non-interactive)"
 

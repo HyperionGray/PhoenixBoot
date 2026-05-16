@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-source scripts/lib/common.sh
+source includes/lib/common.sh
 
 info "☠ Creating bootable ESP image (no sudo, mtools)"
 [ -f out/staging/BootX64.efi ] || die "No BootX64.efi found - run 'just build' first"
@@ -42,9 +42,7 @@ if [ -f keys/db.key ] && [ -f keys/db.crt ]; then
   SIGNED_TMP=$(mktemp)
   sbsign --key keys/db.key --cert keys/db.crt \
     --output "$SIGNED_TMP" out/staging/BootX64.efi
-  mcopy -i out/esp/esp.img -o "$SIGNED_TMP" ::/EFI/BOOT/BOOTX64.EFI
   mcopy -i out/esp/esp.img -o "$SIGNED_TMP" ::/EFI/PhoenixGuard/BootX64.efi
-  rm -f "$SIGNED_TMP"
 else
   die "DB signing keys missing (keys/db.key, keys/db.crt). Run 'just keygen' and 'just make-auth' to generate and enroll keys."
 fi
@@ -80,6 +78,41 @@ else
   info "shimx64.efi not found on host; will attempt direct GRUB chainload"
 fi
 
+# Choose default boot path. NuclearBoot is opt-in only:
+#   PG_BOOT_DEFAULT=nuclearboot ./pf.py build-package-esp
+BOOT_DEFAULT_MODE="grub"
+case "${PG_BOOT_DEFAULT:-grub}" in
+  nuclearboot)
+    BOOT_DEFAULT_MODE="nuclearboot"
+    mcopy -i out/esp/esp.img -o "$SIGNED_TMP" ::/EFI/BOOT/BOOTX64.EFI
+    warn "Using NuclearBoot as default BOOTX64 (PG_BOOT_DEFAULT=nuclearboot)"
+    ;;
+  *)
+    if [ -n "$SHIM_SRC" ]; then
+      BOOT_DEFAULT_MODE="shim"
+      mcopy -i out/esp/esp.img -o "$SHIM_SRC" ::/EFI/BOOT/BOOTX64.EFI
+      for mm in \
+        "/usr/lib/shim/mmx64.efi.signed" \
+        "/usr/lib/shim/mmx64.efi" \
+        "/usr/lib/shim/MokManager.efi.signed" \
+        "/usr/lib/shim/MokManager.efi"; do
+        if [ -f "$mm" ]; then
+          mcopy -i out/esp/esp.img -o "$mm" ::/EFI/BOOT/mmx64.efi || true
+          break
+        fi
+      done
+    elif [ -n "$GRUB_SRC" ]; then
+      BOOT_DEFAULT_MODE="grub-direct"
+      mcopy -i out/esp/esp.img -o "$GRUB_SRC" ::/EFI/BOOT/BOOTX64.EFI
+      warn "shim not found; defaulting BOOTX64 to grubx64.efi"
+    else
+      BOOT_DEFAULT_MODE="nuclearboot-fallback"
+      mcopy -i out/esp/esp.img -o "$SIGNED_TMP" ::/EFI/BOOT/BOOTX64.EFI
+      warn "Neither shim nor grub found; falling back to NuclearBoot default"
+    fi
+    ;;
+esac
+
 # Modules
 for mod in part_gpt fat iso9660 loopback normal linux efi_gop efi_uga search regexp test ls gzio; do
   [ -f "/usr/lib/grub/x86_64-efi/${mod}.mod" ] && mcopy -i out/esp/esp.img -o "/usr/lib/grub/x86_64-efi/${mod}.mod" ::/boot/grub/x86_64-efi/ || true
@@ -106,6 +139,7 @@ SIDE_TMP=$(mktemp)
 printf '%s\n' "$SIGNED_HASH" > "$SIDE_TMP"
 mcopy -i out/esp/esp.img -o "$SIDE_TMP" ::/EFI/PhoenixGuard/NuclearBootEdk2.sha256
 rm -f "$SIDE_TMP" "$SIGNED_TMP2"
+rm -f "$SIGNED_TMP"
 
 # Render grub.cfg from template without expanding GRUB $ variables
 TEMPLATE="scripts/templates/grub.cfg.tmpl"
@@ -197,4 +231,6 @@ else
 fi
 
 sha256sum out/esp/esp.img > out/esp/esp.img.sha256
+printf '%s\n' "$BOOT_DEFAULT_MODE" > out/esp/boot-default-mode.txt
 ok "ESP image created (no sudo): out/esp/esp.img"
+info "Default boot mode: ${BOOT_DEFAULT_MODE}"

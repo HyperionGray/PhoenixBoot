@@ -7,7 +7,7 @@
 
 ## New to PhoenixBoot?
 
-**[Start Here: Complete Bootkit Defense Workflow](BOOTKIT_DEFENSE_WORKFLOW.md)**
+**[Start Here: Complete Bootkit Defense Workflow](docs/BOOTKIT_DEFENSE_WORKFLOW.md)**
 
 This comprehensive guide walks you through **stopping bootkits completely** in three stages:
 1. **Enable SecureBoot from the start** - Create install media with custom keys
@@ -17,8 +17,8 @@ This comprehensive guide walks you through **stopping bootkits completely** in t
 **Result:** 99% of bootkits neutralized. The remaining 1% require hardware intervention (which we also support).
 
 **Also available:**
-- **[Getting Started Guide](GETTING_STARTED.md)** - Quick introduction for new users
-- **[SecureBoot Quick Reference](SECUREBOOT_QUICKSTART.md)** - One-page command reference
+- **[Getting Started Guide](docs/GETTING_STARTED.md)** - Quick introduction for new users
+- **[SecureBoot Quick Reference](docs/SECUREBOOT_QUICKSTART.md)** - One-page command reference
 
 ## Quick Start: Three Ways to Begin
 
@@ -435,6 +435,11 @@ MODULE_PATH=/path/to/module ./pf.py os-kmod-sign
 ./pf.py verify
 ./pf.py validate-all
 
+# DoD / DISA STIG helpers
+./pf.py dod-info
+./pf.py dod-stig-check
+OUTPUT=out/dod/secure_kernel.config ./pf.py dod-secure-config
+
 # SecureBoot bootable media creation
 ISO_PATH=/path/to.iso ./pf.py secureboot-create
 ISO_PATH=/path/to.iso USB_DEVICE=/dev/sdX ./pf.py secureboot-create-usb
@@ -488,6 +493,7 @@ PhoenixBoot/
 │ ├── docker-compose.yml # Container orchestration
 │ ├── phoenixboot-tui.sh # TUI launcher script
 │ ├── create-secureboot-bootable-media.sh # Standalone: Create bootable media from ISO
+│ ├── DoD/ # Distro-aware DISA STIG and security helpers
 │ ├── sign-kernel-modules.sh # User-facing: Sign kernel modules easily
 │ └── README.md, QUICKSTART.md, docs/ # Documentation
 │
@@ -693,9 +699,9 @@ MODULE_PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 
 ### Getting Started
 
-- **[Getting Started Guide](GETTING_STARTED.md)** - **START HERE** for new users
-- **[Quick Reference](QUICKSTART.md)** - Common commands and workflows
-- **[System Architecture](ARCHITECTURE.md)** - Complete architectural overview
+- **[Getting Started Guide](docs/GETTING_STARTED.md)** - **START HERE** for new users
+- **[Quick Reference](docs/QUICKSTART.md)** - Common commands and workflows
+- **[System Architecture](docs/ARCHITECTURE.md)** - Complete architectural overview
 
 ### Container Architecture & TUI
 
@@ -724,13 +730,13 @@ MODULE_PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 
 - **[E2E Testing](docs/E2E_TESTING.md)** - End-to-end test guide
 - **[Testing Guide](docs/TESTING_GUIDE.md)** - Comprehensive testing documentation
-- **[Testing Summary](TESTING_SUMMARY.md)** - Current test status
+- **[Testing Summary](docs/implementation/TESTING_SUMMARY.md)** - Current test status
 
 ### Additional Resources
 
-- **[CI/CD Review Rollup](CICD_REVIEW_ROLLUP.md)** - Comprehensive project review and status
-- **[Feature Status](FEATURES.md)** - Complete feature implementation status
-- **[Security Review](SECURITY_REVIEW_2025-12-07.md)** - Latest security audit
+- **[CI/CD Review Rollup](docs/reviews/CICD_REVIEW_ROLLUP.md)** - Comprehensive project review and status
+- **[Feature Status](docs/FEATURES.md)** - Complete feature implementation status
+- **[Security Review](docs/reviews/SECURITY_REVIEW_2025-12-07.md)** - Latest security audit
 - **[SecureBoot Bootable Media](docs/SECUREBOOT_BOOTABLE_MEDIA.md)** - Create bootable media guide
 - **[Container README](containers/README.md)** - Container directory overview
 - **[Quick Reference](docs/QUICK_REFERENCE.md)** - Command cheat sheet

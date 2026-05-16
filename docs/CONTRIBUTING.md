@@ -191,6 +191,7 @@ Include:
 When updating documentation:
 - **README.md**: High-level project overview and quick start
 - **docs/**: Detailed guides and tutorials
+- **docs/bak/**: Archived or superseded documents that should not present as current guidance
 - **Code comments**: Explain "why", not just "what"
 - **Docstrings**: Document function parameters, return values, and exceptions
 

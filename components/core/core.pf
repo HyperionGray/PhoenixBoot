@@ -126,6 +126,21 @@ task kernel-profile-compare
   shell ${PYTHON:-python3} utils/kernel_config_profiles.py --profile "${PROFILE}" --compare /boot/config-$(uname -r)
 end
 
+task dod-info
+  describe Show distro-aware DoD DISA STIG guidance
+  shell ${PYTHON:-python3} DoD/disa_stig_helper.py info
+end
+
+task dod-stig-check
+  describe Run distro-aware kernel hardening check (set CONFIG_PATH or FORMAT optional)
+  shell CONFIG_PATH="${CONFIG_PATH:-}" FORMAT="${FORMAT:-text}" OUTPUT="${OUTPUT:-}" DISTRO="${DISTRO:-}" ${PYTHON:-python3} DoD/disa_stig_helper.py check
+end
+
+task dod-secure-config
+  describe Generate a distro-aware secure kernel config fragment (set OUTPUT, PROFILE, or DISTRO optional)
+  shell OUTPUT="${OUTPUT:-out/dod/secure_kernel.config}" PROFILE="${PROFILE:-}" DISTRO="${DISTRO:-}" ${PYTHON:-python3} DoD/disa_stig_helper.py generate-secure-config
+end
+
 task secureboot-check
   describe Check Secure Boot status on host machine
   shell bash scripts/secure-boot/check-secureboot-status.sh

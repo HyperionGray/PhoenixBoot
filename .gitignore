@@ -9,6 +9,9 @@ tags/
 PROJECT.txt
 AUTOMATION.txt
 
+# DoD audit logs (runtime-generated)
+logs/
+
 # Production-first hygiene additions
 # Build artifacts and outputs
 out/
@@ -17,6 +20,8 @@ out/
 utils/*.o
 utils/*.a
 utils/*.so
+utils/*.so.*
+utils/pgmodverify_test
 
 # Virtual environments anywhere in the tree
 **/.venv/

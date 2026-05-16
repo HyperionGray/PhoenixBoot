@@ -1,6 +1,6 @@
 # PhoenixBoot - Secure Boot Defense System
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE.md)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
 
 **PhoenixBoot** (also known as PhoenixGuard) is a production-ready firmware defense system designed to protect against bootkits, rootkits, and supply chain attacks. It provides hardware-level firmware recovery, secure boot enforcement, and a complete UEFI boot chain with cryptographic verification.
@@ -65,7 +65,7 @@ This comprehensive guide walks you through **stopping bootkits completely** in t
 ./phoenixboot-tui.sh
 ```
 
-**See [TUI Guide](docs/TUI_GUIDE.md) and [SecureBoot Bootable Media Guide](docs/SECUREBOOT_BOOTABLE_MEDIA.md) for detailed instructions.**
+**See [TUI Guide](TUI_GUIDE.md) and [SecureBoot Bootable Media Guide](SECUREBOOT_BOOTABLE_MEDIA.md) for detailed instructions.**
 
 ## Container Architecture & TUI Interface
 
@@ -92,7 +92,7 @@ docker-compose --profile tui up
 - **Easy deployment** - Podman quadlet integration for systemd
 - **Clear organization** - Build, test, installer, runtime, and TUI containers
 
-**See [Container Architecture Guide](docs/CONTAINER_ARCHITECTURE.md) for detailed information.**
+**See [Container Architecture Guide](CONTAINER_ARCHITECTURE.md) for detailed information.**
 
 ### Terminal User Interface (TUI)
 
@@ -113,7 +113,7 @@ docker-compose --profile tui up
 - **Modern design** - Clean, intuitive interface
 - ⌨ **Keyboard navigation** - Full keyboard support
 
-**See [TUI Guide](docs/TUI_GUIDE.md) for usage instructions.**
+**See [TUI Guide](TUI_GUIDE.md) for usage instructions.**
 
 ## Quick Start
 
@@ -203,8 +203,8 @@ FIRMWARE_PATH=/path/to/bios.bin ./pf.py firmware-checksum-verify
 ```
 
 **Documentation**: 
-- See [Kernel Hardening Guide](docs/KERNEL_HARDENING_GUIDE.md)
-- See [Secure Boot Enablement via Kexec](docs/SECUREBOOT_ENABLEMENT_KEXEC.md)
+- See [Kernel Hardening Guide](KERNEL_HARDENING_GUIDE.md)
+- See [Secure Boot Enablement via Kexec](SECUREBOOT_ENABLEMENT_KEXEC.md)
 
 **Status**: Experimental/dev user workflow; internal boot app exists but still needs release hardening
 
@@ -275,7 +275,7 @@ Comprehensive security validation and boot integrity checker:
 
 **Usage**: `./pf.py secure-env` or `bash scripts/secure-env-check.sh`
 
-**Documentation**: See [docs/SECURE_ENV_COMMAND.md](docs/SECURE_ENV_COMMAND.md)
+**Documentation**: See [SECURE_ENV_COMMAND.md](SECURE_ENV_COMMAND.md)
 
 **Status**: Fully implemented and tested
 
@@ -434,6 +434,11 @@ PATH=/path/to/module ./pf.py os-kmod-sign
 ./pf.py verify
 ./pf.py validate-all
 
+# DoD / DISA STIG helpers
+./pf.py dod-info
+./pf.py dod-stig-check
+OUTPUT=out/dod/secure_kernel.config ./pf.py dod-secure-config
+
 # SecureBoot bootable media creation
 ISO_PATH=/path/to.iso ./pf.py secureboot-create
 ISO_PATH=/path/to.iso USB_DEVICE=/dev/sdX ./pf.py secureboot-create-usb
@@ -485,6 +490,7 @@ PhoenixBoot/
 │ ├── docker-compose.yml # Container orchestration
 │ ├── phoenixboot-tui.sh # TUI launcher script
 │ ├── create-secureboot-bootable-media.sh # Standalone: Create bootable media from ISO
+│ ├── DoD/ # Distro-aware DISA STIG and security helpers
 │ ├── sign-kernel-modules.sh # User-facing: Sign kernel modules easily
 │ └── README.md, QUICKSTART.md, docs/ # Documentation
 │
@@ -696,41 +702,42 @@ PATH=/lib/modules/$(uname -r) FORCE=1 ./pf.py os-kmod-sign
 
 ### Container Architecture & TUI
 
-- **[Container Architecture](docs/CONTAINER_ARCHITECTURE.md)** - Container-based architecture guide
-- **[Container Setup](docs/CONTAINER_SETUP.md)** - Getting started with containers
-- **[TUI Guide](docs/TUI_GUIDE.md)** - Interactive terminal interface
-- **[Architecture Diagram](docs/ARCHITECTURE_DIAGRAM.md)** - Visual system architecture
+- **[Container Architecture](CONTAINER_ARCHITECTURE.md)** - Container-based architecture guide
+- **[Container Setup](CONTAINER_SETUP.md)** - Getting started with containers
+- **[TUI Guide](TUI_GUIDE.md)** - Interactive terminal interface
+- **[Architecture Diagram](ARCHITECTURE_DIAGRAM.md)** - Visual system architecture
 
 ### Technical Documentation
 
-- **[Secure Boot Implementation](docs/SECURE_BOOT.md)** - Secure Boot guide
-- **[Boot Security Analysis](docs/BOOT_SEQUENCE_AND_ATTACK_SURFACES.md)** - Attack surface analysis
-- **[Firmware Recovery](docs/FIRMWARE_RECOVERY.md)** - Recovery procedures
-- **[Hardware Access Deep Dive](docs/HARDWARE_ACCESS_DEEP_DIVE.md)** - Hardware-level operations
-- **[Security Environment Command](docs/SECURE_ENV_COMMAND.md)** - Security scanning guide
-- **[Kernel Hardening Guide](docs/KERNEL_HARDENING_GUIDE.md)** - Kernel security configuration
+- **[Secure Boot Implementation](SECURE_BOOT.md)** - Secure Boot guide
+- **[Boot Security Analysis](BOOT_SEQUENCE_AND_ATTACK_SURFACES.md)** - Attack surface analysis
+- **[Firmware Recovery](FIRMWARE_RECOVERY.md)** - Recovery procedures
+- **[Hardware Access Deep Dive](HARDWARE_ACCESS_DEEP_DIVE.md)** - Hardware-level operations
+- **[Security Environment Command](SECURE_ENV_COMMAND.md)** - Security scanning guide
+- **[Kernel Hardening Guide](KERNEL_HARDENING_GUIDE.md)** - Kernel security configuration
 
 ### UUEFI Documentation
 
-- **[UUEFI v3.1 Features](docs/UUEFI_DEBUG_MODE.md)** - Latest debug diagnostics mode
-- **[UUEFI v3.0 Guide](docs/UUEFI_V3_GUIDE.md)** - Complete user guide
-- **[UUEFI Enhanced Features](docs/UUEFI_ENHANCED.md)** - Technical reference
-- **[Understanding Boot Artifacts](docs/UNDERSTANDING_BOOT_ARTIFACTS.md)** - Keys, shims, and boot concepts
+- **[UUEFI v3.1 Features](UUEFI_DEBUG_MODE.md)** - Latest debug diagnostics mode
+- **[UUEFI v3.0 Guide](UUEFI_V3_GUIDE.md)** - Complete user guide
+- **[UUEFI Enhanced Features](UUEFI_ENHANCED.md)** - Technical reference
+- **[Understanding Boot Artifacts](UNDERSTANDING_BOOT_ARTIFACTS.md)** - Keys, shims, and boot concepts
 
 ### Testing Documentation
 
-- **[E2E Testing](docs/E2E_TESTING.md)** - End-to-end test guide
-- **[Testing Guide](docs/TESTING_GUIDE.md)** - Comprehensive testing documentation
-- **[Testing Summary](TESTING_SUMMARY.md)** - Current test status
+- **[E2E Testing](E2E_TESTING.md)** - End-to-end test guide
+- **[Testing Guide](TESTING_GUIDE.md)** - Comprehensive testing documentation
+- **[Testing Summary](implementation/TESTING_SUMMARY.md)** - Current test status
 
 ### Additional Resources
 
-- **[CI/CD Review Rollup](CICD_REVIEW_ROLLUP.md)** - Comprehensive project review and status
+- **[CI/CD Review Rollup](reviews/CICD_REVIEW_ROLLUP.md)** - Comprehensive project review and status
 - **[Feature Status](FEATURES.md)** - Complete feature implementation status
-- **[Security Review](SECURITY_REVIEW_2025-12-07.md)** - Latest security audit
-- **[SecureBoot Bootable Media](docs/SECUREBOOT_BOOTABLE_MEDIA.md)** - Create bootable media guide
-- **[Container README](containers/README.md)** - Container directory overview
-- **[Quick Reference](docs/QUICK_REFERENCE.md)** - Command cheat sheet
+- **[Security Review](reviews/SECURITY_REVIEW_2025-12-07.md)** - Latest security audit
+- **[SecureBoot Bootable Media](SECUREBOOT_BOOTABLE_MEDIA.md)** - Create bootable media guide
+- **[Container README](../containers/README.md)** - Container directory overview
+- **[Quick Reference](QUICK_REFERENCE.md)** - Command cheat sheet
+- **[Archived Documentation](bak/README.md)** - Historical and superseded docs
 
 ## Contributing
 

@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """
-PhoenixGuard Kernel Module Signing Tool (pgmodsign)
-Part of the edk2-bootkit-defense project
+PhoenixGuard kernel module signing helpers.
 
-Signs kernel modules using PhoenixGuard certificates for SecureBoot compliance.
-Leverages the Linux kernel's scripts/sign-file utility.
+This module can be imported as a library or invoked as a CLI.
+
+Public API:
+    PhoenixGuardModuleSigner:
+        High-level wrapper around the kernel ``sign-file`` utility that manages
+        certificate selection, backups, signing, and session logging.
+    main():
+        Command-line entry point for signing one or more ``.ko`` files.
 """
 
 from __future__ import annotations
@@ -59,8 +64,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+__all__ = ["PhoenixGuardModuleSigner", "main"]
+
 
 class PhoenixGuardModuleSigner:
+    """Sign kernel modules with PhoenixBoot/PhoenixGuard MOK credentials.
+
+    Instances encapsulate the signing certificate, private key, sign-file lookup,
+    and per-session result log so importers can treat the signer like a reusable
+    library object.
+    """
+
     def __init__(self, cert_path: Optional[str] = None, key_path: Optional[str] = None):
         # Allow env override, then CLI, then defaults
         env_cert = os.environ.get("KMOD_CERT") or os.environ.get("PG_KMOD_CERT")
@@ -329,6 +343,7 @@ class PhoenixGuardModuleSigner:
         return result
 
     def sign_multiple_modules(self, module_paths: List[str], **kwargs) -> List[Dict[str, Any]]:
+        """Sign multiple modules and return one result dictionary per path."""
         results: List[Dict[str, Any]] = []
         total = len(module_paths)
         logger.info("Batch signing %d module(s)", total)
@@ -369,6 +384,7 @@ class PhoenixGuardModuleSigner:
         return results
 
     def save_signing_log(self, output_file: Optional[str] = None) -> str:
+        """Write the accumulated signing session log to JSON and return its path."""
         if not output_file:
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
             if _log_path is not None and _log_path.parent.exists():

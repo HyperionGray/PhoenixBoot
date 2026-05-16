@@ -2,8 +2,16 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
+[![Status](https://img.shields.io/badge/release-v0.1.0--alpha-orange)](ALPHA_RELEASE_PLAN.md)
 
-**PhoenixBoot** (also known as PhoenixGuard) is a production-ready firmware defense system designed to protect against bootkits, rootkits, and supply chain attacks. It provides hardware-level firmware recovery, secure boot enforcement, and a complete UEFI boot chain with cryptographic verification.
+> **Alpha status.** We are working toward the first OSS alpha tag,
+> `v0.1.0-alpha`. The supported surface for the alpha is documented in
+> [ALPHA_RELEASE_PLAN.md](ALPHA_RELEASE_PLAN.md). Anything under
+> [`experimental/`](experimental/README.md) is explicitly **not** part of
+> the alpha API: no CI, no compatibility promise, may be rewritten or
+> removed without notice.
+
+**PhoenixBoot** (also known as PhoenixGuard) is a firmware defense system designed to protect against bootkits, rootkits, and supply chain attacks. It provides Secure Boot key management, MOK-based kernel-module signing, attestation-enforced UEFI bootloaders, ESP packaging, QEMU-based end-to-end tests, and turnkey Secure-Boot-ready bootable media creation from any installer ISO.
 
 ## New to PhoenixBoot?
 
@@ -144,8 +152,12 @@ python3 -m venv ~/.venv
 source ~/.venv/bin/activate
 pip install -r requirements.txt # if requirements.txt exists
 
-# Run the task runner
-./pf.py <task-name>
+# Install the vendored pf-runner (pinned, ships with the repo)
+pip install -e ./pf-runner
+
+# Run a task
+./pf list
+./pf <task-name>
 ```
 
 ## Features Overview
@@ -573,11 +585,17 @@ PhoenixBoot/
 ├── keys/ # Secure Boot keys (PK, KEK, db, MOK) - legacy location
 ├── docs/ # Comprehensive documentation
 ├── tests/ # Test suites
-├── examples_and_samples/ # Demonstration and archive content (473MB)
-│ ├── demo/ # Demo/archive materials (291MB)
-│ └── official_bios_backup/ # BIOS backups (180MB)
-├── ideas/ # Future features and research
-├── web/ # Web interfaces (hardware database server)
+├── experimental/ # NOT alpha-API. Prototypes only (see experimental/README.md)
+│ ├── universal-bios/ # Universal BIOS generator prototype
+│ ├── universal-bios-plus/ # Newer rewrite (single file)
+│ ├── scrapers/ # Distributed hardware scraper prototype
+│ ├── hardware-database/ # Sample scraped hardware data
+│ ├── scraped-hardware/ # More sample scraped data
+│ ├── firmware-recovery-dev/ # Older copy of utils/hardware_firmware_recovery.py
+│ ├── cloud-integration/ # Cloud co-op / attestation API sketches
+│ ├── nuclear-boot-rust/ # Rust no_std PoC bootloader (source only)
+│ └── web/ # Flask hardware-database prototype server
+├── ideas/ # Plain-text future ideas (no code)
 └── resources/ # Additional resources (KVM, P4X OS ideas, firmware samples)
 ```
 
@@ -761,7 +779,8 @@ For issues, questions, or support:
 
 - **GitHub Issues**: https://github.com/P4X-ng/PhoenixBoot/issues
 - **Documentation**: `docs/` directory
-- **Examples**: `examples_and_samples/` directory
+- **Alpha scope**: [ALPHA_RELEASE_PLAN.md](ALPHA_RELEASE_PLAN.md)
+- **Experimental code (NOT alpha)**: [`experimental/`](experimental/README.md)
 
 ## Known Issues
 

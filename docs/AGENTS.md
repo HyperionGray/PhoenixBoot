@@ -4,14 +4,14 @@
 
 ### Overview
 
-PhoenixBoot is a UEFI Secure Boot defense system (bash + Python). The primary interface is `./pf.py <task>` which delegates to the `pf` task runner (installed from [pf-runner](https://github.com/P4X-ng/pf-runner)). Task definitions live in `.pf` files (`core.pf`, `secure.pf`, `workflows.pf`, `maint.pf`).
+PhoenixBoot is a UEFI Secure Boot defense system (bash + Python). The primary interface is `./pf <task>`, which is a symlink to the vendored `pf-runner/pf` launcher. The older `./pf.py` shim is kept for the many existing task bodies that say `shell ./pf.py <task>`; it prefers the vendored `./pf` and falls back to a PATH-installed `pf`. Task definitions live in `.pf` files (`Pfyfile.pf`, `core.pf`, `secure.pf`, `workflows.pf`, `hardware.pf`, `maint.pf` and the `components/*/` includes).
 
 ### Running services and tasks
 
-- **Task runner**: `./pf.py list` shows all available tasks. `pf` must be on `PATH` (installed to `~/.local/bin/pf`).
+- **Task runner**: `./pf list` shows all available tasks. pf-runner is vendored under `pf-runner/`; nothing needs to be installed globally. The Python deps it needs (`fabric`, `lark`, `typer`, `json5`) are listed in `pf-runner/pyproject.toml`; a fresh clone is bootstrapped with `pip install --user -e ./pf-runner`.
 - **Build pipeline**: `pf build-setup` (toolchain check) → `pf build-build` (uses prebuilt EFI binaries in `staging/boot/`) → ESP packaging. The build-build step does NOT create `out/staging/`; you must manually copy: `mkdir -p out/staging && cp staging/boot/NuclearBootEdk2.efi out/staging/BootX64.efi && cp staging/boot/KeyEnrollEdk2.efi out/staging/ && cp staging/boot/UUEFI.efi out/staging/`.
 - **Key generation**: `pf secure-keygen` creates keys in `keys/`. Keys are needed before ESP packaging (for signing with `sbsign`).
-- **ESP packaging**: Shell helpers now live at `includes/lib/common.sh`. ESP packaging entrypoints should run from the project root so that include path resolves correctly, or use `create-secureboot-bootable-media.sh` which already does.
+- **ESP packaging**: Shell helpers now live at `includes/lib/common.sh` (relocated from `scripts/lib/common.sh` in #235). The earlier `cd "$(dirname "$0")/.."` path bug in the ESP packaging scripts has been fixed (see `docs/TODO.md` §"Bugs Fixed"); the scripts now resolve correctly when invoked from any working directory. ESP packaging entrypoints should still run from the project root so the include path resolves, or use `create-secureboot-bootable-media.sh` which already handles that.
 - **QEMU testing**: `pf test-qemu` requires an ESP image at `out/esp/esp.img` and OVMF paths at `out/esp/ovmf_paths.txt`. KVM is not available in cloud VMs — run QEMU with `-cpu max` instead of `-cpu host -enable-kvm`. The test passes when "PhoenixGuard" appears in `out/qemu/serial.log`.
 
 ### Lint and test
@@ -26,8 +26,9 @@ The following system packages are required: `qemu-system-x86`, `ovmf`, `mtools`,
 
 ### Key caveats
 
-- `pf` (the task runner) is NOT a pip package. It is cloned from `https://github.com/P4X-ng/pf-runner` and the `pf-cli-base/pf_parser.py` file is installed as `~/.local/bin/pf` with shebang `#!/usr/bin/env python3`. It requires `fabric` and `lark` pip packages.
-- `$HOME/.local/bin` must be on `PATH` for pip-installed scripts and the `pf` runner to work.
+- `pf` is now vendored. The launcher is at `pf-runner/pf` and exposed at the repo root as the `./pf` symlink. Use `./pf list` / `./pf <task>`. The vendored copy is pinned to a single version of [`HyperionGray/pf-web-poly-compile-helper-runner`](https://github.com/HyperionGray/pf-web-poly-compile-helper-runner); upgrades are deliberate and manual, not automated.
+- Python deps for pf-runner (`fabric`, `lark`, `typer`, `json5`, plus `fastapi`/`uvicorn` for some advanced features) live in `pf-runner/pyproject.toml`. Bootstrap with `pip install --user -e ./pf-runner`. The launcher hunts for a Python that already has the deps; if none is found it errors with "could not find a usable Python 3 runtime" — that's the signal to run the pip install. You can also override via `PF_PYTHON=/path/to/python3 ./pf list`.
+- `$HOME/.local/bin` is no longer required for `pf`, but you still need it on `PATH` for other pip-installed user scripts.
 - The cloud VM does not have `/dev/kvm`, so QEMU tests must omit `-enable-kvm` and `-cpu host`.
 - The cloud VM kernel does not support `vfat` mounts, so `pf build-package-esp` and `pf test-qemu` fail out-of-the-box. Build the ESP image manually using `mtools` (`mmd`, `mcopy`) instead of `mount`. See the build steps used during initial setup for the exact recipe.
 - `uuid-runtime` (provides `uuidgen`) must be installed for `pf secure-make-auth` to work. Add it alongside the other system packages listed above.

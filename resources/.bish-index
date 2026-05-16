@@ -1,5 +1,0 @@
-./kvm/kvm-snapshot-jump-enhanced.sh
-./kvm/pg-remediate.sh
-./kvm/pg-vm-control.sh
-./kvm/kvm-snapshot-jump.sh
-./kvm/kvm-enhanced-setup.sh

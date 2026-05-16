@@ -83,9 +83,16 @@ ISO_PATH=/path/to/your.iso ./pf.py secureboot-create
 
 ### ❌ DON'T:
 - Share `.key` files with anyone
-- Commit them to public repositories (they're in .gitignore)
+- Commit them to public repositories (the project `.gitignore` blocks
+  `*.key` / `*.pem` / `*.der`, but if you re-create this directory
+  manually take care not to override the rule)
 - Store them on shared/networked drives
 - Re-use keys across different systems (generate unique keys per machine)
+
+> **Note for first-time users.** This directory is intentionally empty
+> in the upstream repo for the `v0.1.0-alpha` release; previous tags
+> shipped real-looking private keys, which was a mistake. Generate your
+> own with `./pf.py secure-keygen` before doing anything else.
 
 ## 📂 File Format Reference
 

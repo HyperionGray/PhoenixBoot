@@ -62,6 +62,50 @@ nohup*.out
 *.xxd.xxd
 *.xxd.xxd.xxd
 
+# Local indexer / bish caches (never tracked, anywhere in the tree)
+.bish-index
+.bish.sqlite
+**/.bish-index
+**/.bish.sqlite
+
+# Podman / Buildah rootless storage leftovers
+# (these accidentally land in the repo if podman is run from cwd)
+/overlay/
+/overlay-containers/
+/overlay-images/
+/overlay-layers/
+**/overlay/.has-mount-program
+# (Specific lock files for podman/buildah; do NOT match Cargo.lock etc.)
+**/containers.lock
+**/images.lock
+**/layers.lock
+
+# Kernel modules are user-specific artifacts, never tracked
+*.ko
+*.ko.unsigned
+*.ko.zst
+
+# Pre-built native libraries should be produced by the build, not tracked
+*.o
+*.a
+*.so
+*.so.*
+
+# Stray podman/sqlite dumps at the repo root
+/db.sql
+
+# Demo / vendor sample tree (license + size); fetched out-of-band for alpha.
+# Untrack everything *under* the directory but keep README.md files at
+# every level so contributors can navigate what's supposed to be there.
+examples_and_samples/**
+!examples_and_samples/**/
+!examples_and_samples/README.md
+!examples_and_samples/**/README.md
+
+# Rust build output (we ship sources for experimental/nuclear-boot-rust/ but
+# never the compiled target/ tree; cargo recreates it on demand)
+**/target/
+
 # Generated documentation files
 copilot-instructions.md
 WARP.md

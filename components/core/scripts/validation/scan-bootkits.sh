@@ -27,7 +27,9 @@ mkdir -p "${OUT_BASELINE_DIR}" "${OUT_LOGS_DIR}"
 
 # Locate baseline analyzer
 ANALYZER=""
-if [ -f dev/tools/analyze_firmware_baseline.py ]; then
+if [ -f experimental/firmware-recovery-dev/analyze_firmware_baseline.py ]; then
+  ANALYZER="experimental/firmware-recovery-dev/analyze_firmware_baseline.py"
+elif [ -f dev/tools/analyze_firmware_baseline.py ]; then
   ANALYZER="dev/tools/analyze_firmware_baseline.py"
 elif [ -f scripts/analyze_firmware_baseline.py ]; then
   ANALYZER="scripts/analyze_firmware_baseline.py"
@@ -37,7 +39,7 @@ fi
 if [ ! -f "${BASELINE_JSON}" ]; then
   echo "☠ Creating firmware baseline from clean BIOS dump..."
   if [ -z "${ANALYZER}" ]; then
-    echo "ERROR: Baseline analyzer not found (expected dev/tools/analyze_firmware_baseline.py or scripts/analyze_firmware_baseline.py)"
+    echo "ERROR: Baseline analyzer not found (expected experimental/firmware-recovery-dev/analyze_firmware_baseline.py or scripts/analyze_firmware_baseline.py)"
     echo "       Please add the analyzer or specify BASELINE_JSON pointing to an existing baseline."
     exit 1
   fi

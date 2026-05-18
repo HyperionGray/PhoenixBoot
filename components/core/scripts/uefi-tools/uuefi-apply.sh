@@ -3,14 +3,21 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 source includes/lib/common.sh
 
-info "☠ UUEFI apply (set BootNext for selected app)"
-
 # Dry-run mode: UUEFI_DRYRUN=1
 DRY=${UUEFI_DRYRUN:-}
 run() { if [ -n "$DRY" ]; then echo "DRYRUN: $*"; else "$@"; fi }
 need_sudo() {
   if [ -n "$DRY" ]; then echo sudo -n "$@" || true; else sudo -n "$@"; fi
 }
+
+require_alpha_opt_in() {
+  [ "${PHOENIXBOOT_ALPHA_ALLOW_UNTESTED_UUEFI_HOST:-0}" = "1" ] && return 0
+  die "uuefi-apply is gated off for the alpha release pending broader host-side validation. Use uuefi-report for read-only inspection, track follow-up in docs/TODO.md, and only override with PHOENIXBOOT_ALPHA_ALLOW_UNTESTED_UUEFI_HOST=1 during deliberate maintainer testing."
+}
+
+require_alpha_opt_in
+
+info "☠ UUEFI apply (set BootNext for selected app)"
 
 if ! command -v efibootmgr >/dev/null 2>&1; then
   die "efibootmgr not installed"

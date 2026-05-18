@@ -199,12 +199,12 @@ end
 
 # --- UUEFI Operations ---
 task uuefi-install
-  describe Install UUEFI.efi to system ESP
+  describe Install UUEFI.efi to system ESP (gated for alpha; set PHOENIXBOOT_ALPHA_ALLOW_UNTESTED_UUEFI_HOST=1 to override)
   shell bash scripts/uefi-tools/uuefi-install.sh
 end
 
 task uuefi-apply
-  describe UUEFI apply (set BootNext; optionally create entry)
+  describe UUEFI apply (set BootNext; gated for alpha; set PHOENIXBOOT_ALPHA_ALLOW_UNTESTED_UUEFI_HOST=1 to override)
   shell bash scripts/uefi-tools/uuefi-apply.sh
 end
 

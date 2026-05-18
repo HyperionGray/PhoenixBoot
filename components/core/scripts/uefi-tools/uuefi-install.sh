@@ -3,13 +3,20 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 source includes/lib/common.sh
 
-info "☠ Installing UUEFI.efi to system ESP"
-
 # Config
 EESP=${EESP:-/boot/efi}
 UUEFI_SRC=${UUEFI_SRC:-staging/boot/UUEFI.efi}
 OUT_DIR="out/uuefi"
 ensure_dir "$OUT_DIR"
+
+require_alpha_opt_in() {
+  [ "${PHOENIXBOOT_ALPHA_ALLOW_UNTESTED_UUEFI_HOST:-0}" = "1" ] && return 0
+  die "uuefi-install is gated off for the alpha release pending broader host-side validation. Use uuefi-report for read-only inspection, track follow-up in docs/TODO.md, and only override with PHOENIXBOOT_ALPHA_ALLOW_UNTESTED_UUEFI_HOST=1 during deliberate maintainer testing."
+}
+
+require_alpha_opt_in
+
+info "☠ Installing UUEFI.efi to system ESP"
 
 need_sudo() {
   if sudo -n true 2>/dev/null; then
@@ -19,15 +26,9 @@ need_sudo() {
   fi
 }
 
-# Resolve source binary (fallback to BootX64.efi if UUEFI.efi missing)
+# Resolve source binary
 if [ ! -f "$UUEFI_SRC" ]; then
-  warn "UUEFI source not found at $UUEFI_SRC"
-  if [ -f out/staging/BootX64.efi ]; then
-    warn "Falling back to out/staging/BootX64.efi as UUEFI placeholder"
-    UUEFI_SRC="out/staging/BootX64.efi"
-  else
-    die "No UUEFI.efi or out/staging/BootX64.efi present. Build or provide UUEFI.efi first."
-  fi
+  die "UUEFI source not found at $UUEFI_SRC. Refusing to fall back to BootX64.efi for alpha safety; provide the real UUEFI.efi binary explicitly."
 fi
 
 # Locate ESP mount
@@ -116,4 +117,3 @@ echo "  APP=UUEFI EFI_DISK=$EFI_DISK EFI_PART=$EFI_PART ./pf.py uuefi-apply"
 else
 echo "  APP=UUEFI EFI_DISK=/dev/sdX EFI_PART=1 ./pf.py uuefi-apply"
 fi
-

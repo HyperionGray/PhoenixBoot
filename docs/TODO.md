@@ -225,10 +225,12 @@ The UUEFI diagnostic tool has significantly evolved. The issue noted it was "rea
 
 - [ ] Install `efitools` (`cert-to-efi-sig-list`) to unblock `secure-make-auth` and downstream tasks
 - [ ] Install `qemu-system-x86_64` + `ovmf` + `mtools` to enable QEMU test suite
+- [ ] Add broader host-side validation for `uuefi-install` / `uuefi-apply` before removing the alpha gate (`PHOENIXBOOT_ALPHA_ALLOW_UNTESTED_UUEFI_HOST=1`)
+- [ ] Add end-to-end coverage for the DoD CLI delegation paths (`list` / unknown-command fallback) in CI, not just the main CLI smoke script
 - [ ] Install EDK2 toolchain to enable `build-build` and UEFI binary compilation
 - [ ] Fix `pf` binary installation so `pf.py list` and all task-list UX works correctly (see `.pf_fix.py` for patch details)
 - [ ] Add `pf` binary availability check to `scripts/maintenance/toolchain-check.sh`
-- [ ] Investigate `test-cli` test 6 failure: `phoenixboot list` falls through to `pf.py` which requires `pf` binary
+- [x] Make `phoenixboot` / `phoenixboot-dod` fail loudly with install hints when `pf` exists but is not actually runnable
 
 ## Modularity Follow-up
 

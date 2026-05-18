@@ -254,6 +254,24 @@ else
     fi
 fi
 
+# Test 22: DoD list command should either work or fail loudly with install context
+echo "[TEST 22] Testing phoenixboot-dod list..."
+dod_list_output=$(./phoenixboot-dod list 2>&1 || true)
+if echo "$dod_list_output" | grep -qi "Attempted pf.py arguments: list\|PhoenixBoot - Department of Defense"; then
+    pass "phoenixboot-dod list provides curated output or clear install context"
+else
+    fail "phoenixboot-dod list did not provide clear install context"
+fi
+
+# Test 23: Unknown DoD commands should fail with delegation context
+echo "[TEST 23] Testing phoenixboot-dod unknown command handling..."
+dod_unknown_output=$(timeout 5 ./phoenixboot-dod invalid_command_xyz 2>&1 || true)
+if echo "$dod_unknown_output" | grep -qi "Attempted pf.py arguments: invalid_command_xyz\|phoenixboot-dod ERROR"; then
+    pass "Unknown DoD commands fail loudly with delegation context"
+else
+    fail "Unknown DoD command handling did not emit clear contextual output"
+fi
+
 # Summary
 echo
 echo "======================="

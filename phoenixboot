@@ -104,6 +104,11 @@ run_pf() {
       "Then retry. See ALPHA_RELEASE_PLAN.md and docs/AGENTS.md for more."
   fi
 
+  if ! pf_runner_probe; then
+    print_pf_runner_unavailable "$*"
+    exit 127
+  fi
+
   CURRENT_ACTION="running pf task(s): $*"
   "$PF_SCRIPT" "$@"
 }
@@ -142,8 +147,60 @@ require_existing_task_paths() {
   fi
 }
 
+pf_runner_launcher() {
+  if [ -x "${PHOENIX_ROOT:-.}/pf" ]; then
+    printf '%s\n' "${PHOENIX_ROOT}/pf"
+    return 0
+  fi
+
+  command -v pf 2>/dev/null || return 1
+}
+
+pf_runner_probe() {
+  if [ "${PF_RUNNER_PROBED:-0}" = "1" ]; then
+    [ "${PF_RUNNER_PROBE_STATUS:-1}" -eq 0 ]
+    return
+  fi
+
+  PF_RUNNER_PROBED=1
+  PF_RUNNER_PROBE_STATUS=1
+  PF_RUNNER_PROBE_OUTPUT=""
+  PF_RUNNER_LAUNCHER=""
+
+  if ! PF_RUNNER_LAUNCHER="$(pf_runner_launcher)"; then
+    PF_RUNNER_PROBE_OUTPUT="No vendored ./pf launcher or PATH-installed pf executable was found."
+    return 1
+  fi
+
+  set +e
+  PF_RUNNER_PROBE_OUTPUT="$("$PF_RUNNER_LAUNCHER" version 2>&1)"
+  PF_RUNNER_PROBE_STATUS=$?
+  set -e
+
+  [ "$PF_RUNNER_PROBE_STATUS" -eq 0 ]
+}
+
 has_pf_runner() {
-  [ -x "${PHOENIX_ROOT:-.}/pf" ] || command -v pf >/dev/null 2>&1
+  pf_runner_probe >/dev/null 2>&1
+}
+
+print_pf_runner_unavailable() {
+  pf_runner_probe >/dev/null 2>&1 || true
+
+  local attempted_args="$1"
+  local launcher="${PF_RUNNER_LAUNCHER:-$PHOENIX_ROOT/pf}"
+  local probe_summary="${PF_RUNNER_PROBE_OUTPUT:-Unknown pf runner failure.}"
+
+  probe_summary="$(printf '%s\n' "$probe_summary" | head -n 1)"
+
+  echo "phoenixboot ERROR: cannot execute PhoenixBoot task(s)." >&2
+  echo "  - Attempted pf.py arguments: $attempted_args" >&2
+  echo "  - Probe command: $launcher version" >&2
+  echo "  - Probe result: $probe_summary" >&2
+  echo "  - Install hints:" >&2
+  echo "    - If the vendored launcher is missing, restore it with: git checkout -- pf-runner pf" >&2
+  echo "    - If the launcher exists but python deps are missing, run: pip install --user -e ./pf-runner" >&2
+  echo "    - You can also point PF_PYTHON at a working Python 3 interpreter if needed." >&2
 }
 
 print_builtin_list() {
@@ -262,8 +319,7 @@ case "$cmd" in
     else
       print_builtin_list
       echo
-      echo "Full pf task listing is unavailable because the 'pf' runner is not installed." >&2
-      echo "Install pf-runner or make 'pf' available in PATH to list all project tasks." >&2
+      print_pf_runner_unavailable "list"
     fi
     ;;
 

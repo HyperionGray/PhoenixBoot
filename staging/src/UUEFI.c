@@ -1251,8 +1251,6 @@ EditVariable(
   IN UINTN VarIndex
   )
 {
-  BOOLEAN AllowModification;
-  CHAR16 WarningMessage[MAX_WARNING_MESSAGE_SIZE];
   if (VarIndex >= gVariableCount) {
     return EFI_INVALID_PARAMETER;
   }
@@ -1276,6 +1274,8 @@ EditVariable(
   Print(L"Current Size: %lu bytes\n", var->DataSize);
   
   UINTN DataSize = var->DataSize;
+  VOID *CurrentData = AllocateZeroPool(DataSize);
+  
   EFI_STATUS Status = gRT->GetVariable(
     var->Name,
     &var->VendorGuid,
@@ -1313,6 +1313,8 @@ EditVariable(
   
   Print(L"\n⚠ WARNING: Incorrect values may cause system instability!\n");
   Print(L"\nEdit Options:\n");
+  
+  BOOLEAN IsScalarValue = IsScalarVariableSize(DataSize);
   if (IsScalarValue) {
     Print(L"  1. Set to 0 (Disable)\n");
     Print(L"  2. Set to 1 (Enable)\n");

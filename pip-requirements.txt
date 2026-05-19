@@ -5,7 +5,7 @@
 fabric>=3.2.3,<4
 
 # Testing framework
-pytest>=7.0.0
+pytest>=9.0.3
 pytest-cov>=7.1.0
 
 # Code quality tools
